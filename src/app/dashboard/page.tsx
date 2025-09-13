@@ -69,7 +69,7 @@ export default function DashboardPage() {
     switch (lead.leadStatus) {
       case 'meeting-scheduled':
         statusComponent = (
-          <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200 whitespace-nowrap">
+          <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
             <CalendarClock className="h-3 w-3 mr-1" />
             Meeting
             {lead.meetingTime && ` - ${format(new Date(lead.meetingTime), "PPp")}`}
@@ -143,7 +143,7 @@ export default function DashboardPage() {
               {dispensedLeads.length > 0 && (
                 <div className="mt-8">
                     <h3 className="text-xl font-semibold mb-4">Your Dispensed Leads</h3>
-                    <div className="border rounded-lg">
+                    <div className="border rounded-lg overflow-x-auto">
                         <Table>
                             <TableHeader>
                                 <TableRow>
