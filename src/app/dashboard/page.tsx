@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, ArrowRightLeft, ArrowLeft } from 'lucide-react';
+import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, ArrowRightLeft, ArrowLeft, ClipboardList } from 'lucide-react';
 import type { ProcessedLead } from '@/lib/types';
 import { CalendarDialog } from '@/components/calendar-dialog';
 import { Badge } from '@/components/ui/badge';
@@ -120,6 +120,7 @@ export default function Dashboard() {
   const getGlowColor = (status?: string) => {
     switch (status) {
       case 'meeting-scheduled': return 'bg-green-100/50';
+      case 'interested': return 'bg-purple-100/50';
       case 'not-interested': return 'bg-red-100/50';
       case 'call-back': return 'bg-blue-100/50';
       case 'wrong-number': return 'bg-orange-100/50';
@@ -145,6 +146,9 @@ export default function Dashboard() {
             </div>
           </Badge>
         );
+        break;
+      case 'interested':
+        statusComponent = <Badge variant="outline" className="text-purple-800 bg-purple-50 border-purple-200"><UserCheck className="h-3 w-3 mr-1" /> Interested</Badge>;
         break;
       case 'not-interested':
         statusComponent = <Badge variant="destructive"><UserX className="h-3 w-3 mr-1" /> Not Interested</Badge>;
@@ -203,6 +207,10 @@ export default function Dashboard() {
                 <Button variant="outline" onClick={() => router.push('/')}>
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     New List
+                </Button>
+                <Button variant="outline" onClick={() => router.push('/summary')}>
+                    <ClipboardList className="h-4 w-4 mr-2" />
+                    View Summary
                 </Button>
                 <Button variant="outline" onClick={() => setIsCalendarOpen(true)}>
                     <CalendarDays className="h-4 w-4 mr-2" />

@@ -24,7 +24,7 @@ import { CalendarIcon } from 'lucide-react';
 import { format, setHours, setMinutes } from 'date-fns';
 
 const formSchema = z.object({
-  leadStatus: z.enum(['new', 'contacted', 'no-answer', 'not-interested', 'call-back', 'wrong-number', 'meeting-scheduled']),
+  leadStatus: z.enum(['new', 'contacted', 'no-answer', 'not-interested', 'call-back', 'wrong-number', 'meeting-scheduled', 'interested']),
   notes: z.string().optional(),
   meetingDate: z.date().optional(),
   meetingTime: z.string().optional(),
@@ -37,6 +37,7 @@ interface LeadInteractionFormProps {
 
 const statusOptions: { value: LeadStatus; label: string }[] = [
     { value: 'meeting-scheduled', label: 'Scheduled a meeting' },
+    { value: 'interested', label: 'Interested' },
     { value: 'no-answer', label: 'No answer' },
     { value: 'not-interested', label: 'Not interested' },
     { value: 'call-back', label: 'Needs a call back' },
