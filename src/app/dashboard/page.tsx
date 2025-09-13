@@ -69,7 +69,7 @@ export default function DashboardPage() {
     switch (lead.leadStatus) {
       case 'meeting-scheduled':
         statusComponent = (
-          <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200 h-auto">
+          <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200 h-auto rounded-md">
             <div className="flex flex-col items-start">
               <div className="flex items-center">
                 <CalendarClock className="h-3 w-3 mr-1" />
