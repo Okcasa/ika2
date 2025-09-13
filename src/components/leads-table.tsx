@@ -1,6 +1,6 @@
 'use client';
 
-import { Download, Edit, Trash2, RotateCcw, Loader2 } from 'lucide-react';
+import { Download, Edit, Trash2, RotateCcw, Loader2, ScanSearch } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -20,9 +20,11 @@ interface LeadsTableProps {
   onEdit: (lead: ProcessedLead) => void;
   onDelete: (leadId: string) => void;
   onReset: () => void;
+  onScan: () => void;
+  isScanning?: boolean;
 }
 
-export function LeadsTable({ leads, onEdit, onDelete, onReset }: LeadsTableProps) {
+export function LeadsTable({ leads, onEdit, onDelete, onReset, onScan, isScanning }: LeadsTableProps) {
   
   const downloadCSV = () => {
     const headers = ['businessName', 'phoneNumber', 'website', 'businessType'];
@@ -79,6 +81,10 @@ export function LeadsTable({ leads, onEdit, onDelete, onReset }: LeadsTableProps
            <Button variant="outline" size="sm" onClick={onReset} className="flex-1 sm:flex-none">
             <RotateCcw className="mr-2 h-4 w-4" />
             Start Over
+          </Button>
+          <Button variant="outline" size="sm" onClick={onScan} disabled={isScanning} className="flex-1 sm:flex-none">
+            <ScanSearch className="mr-2 h-4 w-4" />
+            Scan for websites
           </Button>
           <Button size="sm" onClick={downloadCSV} className="flex-1 sm:flex-none">
             <Download className="mr-2 h-4 w-4" />

@@ -128,6 +128,18 @@ export default function Home() {
     setProgress(0);
   }
 
+  const handleScanForNoWebsites = () => {
+    const originalCount = leads.length;
+    const filteredLeads = leads.filter(lead => lead.correctedWebsite && lead.correctedWebsite.trim() !== '');
+    const removedCount = originalCount - filteredLeads.length;
+    setLeads(filteredLeads);
+    toast({
+      title: 'Scan complete!',
+      description: `Removed ${removedCount} leads without websites.`,
+      className: 'bg-accent text-accent-foreground border-accent'
+    });
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-grow container mx-auto px-4 py-8">
@@ -152,12 +164,24 @@ export default function Home() {
             </div>
           )}
 
-          {leads.length > 0 && (
+          {leads.length > 0 && !isLoading && (
             <LeadsTable
               leads={leads}
               onEdit={setEditingLead}
               onDelete={handleDeleteLead}
               onReset={handleReset}
+              onScan={handleScanForNoWebsites}
+            />
+          )}
+
+          {leads.length > 0 && isLoading && (
+            <LeadsTable
+              leads={leads}
+              onEdit={setEditingLead}
+              onDelete={handleDeleteLead}
+              onReset={handleReset}
+              onScan={handleScanForNoWebsites}
+              isScanning={isLoading}
             />
           )}
         </div>
