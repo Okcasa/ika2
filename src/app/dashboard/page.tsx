@@ -23,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { cn } from '@/lib/utils';
 
 const LEADS_KEY = 'leadsorter_leads';
 
@@ -33,6 +34,7 @@ export default function DashboardPage() {
   const [numLeads, setNumLeads] = useState(20);
   const [showAlert, setShowAlert] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [recentlyUpdatedId, setRecentlyUpdatedId] = useState<string | null>(null);
 
   useEffect(() => {
     const storedLeads = localStorage.getItem(LEADS_KEY);
@@ -69,7 +71,7 @@ export default function DashboardPage() {
 
     const leadsToDispense = availableLeads.slice(0, leadsToGet);
     
-    setAllLeads(leadsWithUpdatedStatus);
+    setAllLeads(recycledLeads); // Use recycled leads for the main pool
     setDispensedLeads(leadsToDispense);
     setShowAlert(false);
   };
@@ -90,13 +92,11 @@ export default function DashboardPage() {
     setAllLeads(newAllLeads);
     localStorage.setItem(LEADS_KEY, JSON.stringify(newAllLeads));
     
-    if (['not-interested', 'wrong-number'].includes(updatedLead.leadStatus!)) {
-        setDispensedLeads(dispensedLeads.filter(l => l.id !== updatedLead.id));
-    } else {
-        setDispensedLeads(dispensedLeads.map(l => l.id === updatedLead.id ? updatedLead : l));
-    }
+    setDispensedLeads(dispensedLeads.map(l => l.id === updatedLead.id ? updatedLead : l));
 
     setInteractingLead(null);
+    setRecentlyUpdatedId(updatedLead.id);
+    setTimeout(() => setRecentlyUpdatedId(null), 3000);
   }
 
   const leadsRemaining = allLeads.filter(l => l.leadStatus === 'new').length;
@@ -104,6 +104,17 @@ export default function DashboardPage() {
   const scheduledMeetings = useMemo(() => {
     return allLeads.filter(l => l.leadStatus === 'meeting-scheduled' && l.meetingTime);
   }, [allLeads]);
+
+  const getGlowColor = (status?: string) => {
+    switch (status) {
+      case 'meeting-scheduled': return 'shadow-[0_0_15px_2px_rgba(16,185,129,0.5)]'; // Green
+      case 'not-interested': return 'shadow-[0_0_15px_2px_rgba(239,68,68,0.5)]'; // Red
+      case 'call-back': return 'shadow-[0_0_15px_2px_rgba(59,130,246,0.5)]'; // Blue
+      case 'wrong-number': return 'shadow-[0_0_15px_2px_rgba(249,115,22,0.5)]'; // Orange
+      case 'no-answer': return 'shadow-[0_0_15px_2px_rgba(107,114,128,0.5)]'; // Gray
+      default: return '';
+    }
+  };
   
   const StatusDisplay = ({ lead }: { lead: ProcessedLead }) => {
     let statusComponent;
@@ -215,7 +226,13 @@ export default function DashboardPage() {
                             </TableHeader>
                             <TableBody>
                                 {dispensedLeads.map(lead => (
-                                    <TableRow key={lead.id}>
+                                    <TableRow 
+                                        key={lead.id}
+                                        className={cn(
+                                            "transition-shadow duration-300",
+                                            recentlyUpdatedId === lead.id && getGlowColor(lead.leadStatus)
+                                        )}
+                                    >
                                         <TableCell>
                                             <div className="font-medium">{lead.correctedBusinessName}</div>
                                             <div className="text-sm text-muted-foreground flex items-center gap-2">
@@ -297,5 +314,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
