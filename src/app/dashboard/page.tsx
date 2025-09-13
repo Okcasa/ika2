@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, Trash2, ArrowRightLeft, ArrowLeft, LogOut } from 'lucide-react';
+import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, Trash2, ArrowRightLeft, ArrowLeft, LogOut, Users } from 'lucide-react';
 import type { ProcessedLead } from '@/lib/types';
 import { CalendarDialog } from '@/components/calendar-dialog';
 import { Badge } from '@/components/ui/badge';
@@ -218,10 +218,16 @@ export default function Dashboard() {
               </div>
               <div className="flex gap-2">
                 {isAdmin && (
-                    <Button variant="outline" onClick={() => router.push('/')}>
-                        <ArrowLeft className="h-4 w-4 mr-2" />
-                        New List
-                    </Button>
+                    <>
+                        <Button variant="outline" onClick={() => router.push('/')}>
+                            <ArrowLeft className="h-4 w-4 mr-2" />
+                            New List
+                        </Button>
+                        <Button variant="outline" onClick={() => router.push('/admin/users')}>
+                            <Users className="h-4 w-4 mr-2" />
+                            Manage Users
+                        </Button>
+                    </>
                 )}
                 <Button variant="outline" onClick={() => setIsCalendarOpen(true)}>
                     <CalendarDays className="h-4 w-4 mr-2" />

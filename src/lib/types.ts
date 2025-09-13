@@ -20,3 +20,11 @@ export interface ProcessedLead extends Lead {
   notes?: string;
   meetingTime?: string;
 }
+
+export type UserRole = 'admin' | 'regular';
+
+export interface AppUser {
+    id: string;
+    username: string;
+    role: UserRole;
+}
