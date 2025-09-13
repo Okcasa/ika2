@@ -6,22 +6,31 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote } from 'lucide-react';
-import type { ProcessedLead, LeadStatus } from '@/lib/types';
+import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle } from 'lucide-react';
+import type { ProcessedLead } from '@/lib/types';
 import { LeadInteractionDialog } from '@/components/lead-interaction-dialog';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 const LEADS_KEY = 'leadsorter_leads';
-const VIEWED_LEADS_COUNT_KEY = 'leadsorter_viewed_count';
 
 export default function DashboardPage() {
   const [allLeads, setAllLeads] = useState<ProcessedLead[]>([]);
   const [dispensedLeads, setDispensedLeads] = useState<ProcessedLead[]>([]);
-  const [viewedCount, setViewedCount] = useState(0);
   const [interactingLead, setInteractingLead] = useState<ProcessedLead | null>(null);
   const [numLeads, setNumLeads] = useState(20);
+  const [showAlert, setShowAlert] = useState(false);
 
   useEffect(() => {
     // This effect runs only on the client side
@@ -29,27 +38,34 @@ export default function DashboardPage() {
     if (storedLeads) {
       setAllLeads(JSON.parse(storedLeads));
     }
-    const storedCount = localStorage.getItem(VIEWED_LEADS_COUNT_KEY);
-    if (storedCount) {
-      setViewedCount(parseInt(storedCount, 10));
-    }
   }, []);
   
-  const getLeads = () => {
-    const leadsToGet = Math.min(Math.max(numLeads, 1), 35);
-    const remainingLeads = allLeads.slice(viewedCount);
-    const leadsToDispense = remainingLeads.slice(0, leadsToGet);
-    setDispensedLeads(leadsToDispense);
+  const getLeads = (force = false) => {
+    const newLeadsInDispenser = dispensedLeads.filter(l => !l.leadStatus || l.leadStatus === 'new').length;
+
+    if (newLeadsInDispenser > 0 && !force) {
+      setShowAlert(true);
+      return;
+    }
     
-    const newViewedCount = viewedCount + leadsToDispense.length;
-    setViewedCount(newViewedCount);
-    localStorage.setItem(VIEWED_LEADS_COUNT_KEY, newViewedCount.toString());
+    const leadsToGet = Math.min(Math.max(numLeads, 1), 35);
+    const availableLeads = allLeads.filter(l => !l.leadStatus || l.leadStatus === 'new');
+    const leadsToDispense = availableLeads.slice(0, leadsToGet);
+    
+    // Mark these as "viewed" by updating their status in allLeads if we want to prevent re-dispensing
+    // For now, we are just pulling from the top of the available list.
+    
+    setDispensedLeads(prevDispensed => [...leadsToDispense, ...prevDispensed.filter(l => leadsToDispense.every(nl => nl.id !== l.id))]);
+    setShowAlert(false);
   };
   
   const resetProgress = () => {
-    setViewedCount(0);
     setDispensedLeads([]);
-    localStorage.setItem(VIEWED_LEADS_COUNT_KEY, '0');
+    // Optionally refetch all leads from local storage to reset statuses if needed
+    const storedLeads = localStorage.getItem(LEADS_KEY);
+    if (storedLeads) {
+      setAllLeads(JSON.parse(storedLeads));
+    }
   }
 
   const handleUpdateLeadStatus = (updatedLead: ProcessedLead) => {
@@ -62,8 +78,8 @@ export default function DashboardPage() {
     setInteractingLead(null);
   }
 
-  const leadsRemaining = allLeads.length - viewedCount;
-
+  const leadsRemaining = allLeads.filter(l => !l.leadStatus || l.leadStatus === 'new').length;
+  
   const StatusDisplay = ({ lead }: { lead: ProcessedLead }) => {
     let statusComponent;
     switch (lead.leadStatus) {
@@ -126,7 +142,7 @@ export default function DashboardPage() {
             <CardHeader>
               <CardTitle>Your Lead Dispenser</CardTitle>
               <CardDescription>
-                Get your next batch of leads to contact. You have {leadsRemaining > 0 ? leadsRemaining : 0} leads remaining.
+                Get your next batch of leads to contact. You have {leadsRemaining > 0 ? leadsRemaining : 0} new leads remaining.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -141,9 +157,9 @@ export default function DashboardPage() {
                     className="w-24"
                     placeholder="20"
                   />
-                  <Button onClick={getLeads} disabled={leadsRemaining <= 0}>Get Leads</Button>
+                  <Button onClick={() => getLeads(false)} disabled={leadsRemaining <= 0}>Get New Leads</Button>
                 </div>
-                <Button variant="outline" onClick={resetProgress}>Reset Progress</Button>
+                <Button variant="outline" onClick={resetProgress}>Reset Session</Button>
               </div>
 
               {dispensedLeads.length > 0 && (
@@ -209,6 +225,24 @@ export default function DashboardPage() {
             onOpenChange={(isOpen) => !isOpen && setInteractingLead(null)}
         />
       )}
+
+      <AlertDialog open={showAlert} onOpenChange={setShowAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center">
+                <AlertTriangle className="h-5 w-5 mr-2 text-yellow-500" />
+                Are you sure?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              You still have uncontacted leads in your current list. Are you sure you want to get new leads and leave these behind for now?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => getLeads(true)}>Continue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <footer className="text-center py-4">
         <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} LeadSorter Pro. All rights reserved.</p>
