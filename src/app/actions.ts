@@ -31,7 +31,7 @@ export async function processLeadAction(lead: Lead): Promise<ProcessedLead> {
       ...lead,
       correctedBusinessName: correctionResult.correctedBusinessName || lead.businessName,
       correctedPhoneNumber: correctionResult.correctedPhoneNumber || lead.phoneNumber,
-      correctedWebsite: correctionResult.correctedWebsite || lead.website || '',
+      correctedWebsite: correctionResult.correctedWebsite || (lead.businessType ? '' : lead.website) || '',
       businessType: classificationResult.businessType || 'Unknown',
       confidenceScore: classificationResult.confidenceScore || 0,
       status: 'completed',
