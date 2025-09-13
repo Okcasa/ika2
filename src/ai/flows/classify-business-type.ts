@@ -39,7 +39,7 @@ const prompt = ai.definePrompt({
   output: {schema: ClassifyBusinessTypeOutputSchema},
   prompt: `You are an AI assistant specializing in classifying businesses based on their name, website, and description.
 
-  Analyze the provided information and determine the most appropriate business type.
+  Analyze the provided information and determine the most appropriate business type. If a website is provided, prioritize its content as the primary source of information.
 
   Business Name: {{{businessName}}}
   Website: {{{website}}}
