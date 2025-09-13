@@ -48,8 +48,9 @@ const statusOptions: { value: LeadStatus; label: string }[] = [
     { value: 'meeting-scheduled', label: 'Scheduled a meeting' },
     { value: 'no-answer', label: 'No answer' },
     { value: 'not-interested', label: 'Not interested' },
-    { value: 'call-back', label: 'Call back later' },
+    { value: 'call-back', label: 'Needs a call back' },
     { value: 'wrong-number', label: 'Wrong number' },
+    { value: 'contacted', label: 'Contacted (no outcome)' },
 ];
 
 export function LeadInteractionDialog({ lead, onSave, onOpenChange }: LeadInteractionDialogProps) {

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, Trash2 } from 'lucide-react';
+import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, Trash2, ArrowRightLeft } from 'lucide-react';
 import type { ProcessedLead } from '@/lib/types';
 import { LeadInteractionDialog } from '@/components/lead-interaction-dialog';
 import { CalendarDialog } from '@/components/calendar-dialog';
@@ -42,17 +42,26 @@ export default function DashboardPage() {
   }, []);
   
   const getLeads = (force = false) => {
-    const newLeadsInDispenser = dispensedLeads.filter(l => !l.leadStatus || l.leadStatus === 'new').length;
+    const newLeadsInDispenser = dispensedLeads.filter(l => l.leadStatus === 'new').length;
 
     if (newLeadsInDispenser > 0 && !force) {
       setShowAlert(true);
       return;
     }
     
+    // Recycle "no-answer" and "call-back" leads from the main list back into the pool
+    const recycledLeads = allLeads.map(lead => {
+        if (lead.leadStatus === 'no-answer' || lead.leadStatus === 'call-back') {
+            return { ...lead, leadStatus: 'new' as const, notes: lead.notes };
+        }
+        return lead;
+    });
+    
     const leadsToGet = Math.min(Math.max(numLeads, 1), 35);
-    const availableLeads = allLeads.filter(l => !l.leadStatus || l.leadStatus === 'new');
+    const availableLeads = recycledLeads.filter(l => l.leadStatus === 'new');
     const leadsToDispense = availableLeads.slice(0, leadsToGet);
     
+    setAllLeads(recycledLeads);
     setDispensedLeads(leadsToDispense);
     setShowAlert(false);
   };
@@ -69,29 +78,18 @@ export default function DashboardPage() {
   }
 
   const handleUpdateLeadStatus = (updatedLead: ProcessedLead) => {
+    // Update the lead in the main list
     const newAllLeads = allLeads.map(l => l.id === updatedLead.id ? updatedLead : l);
     setAllLeads(newAllLeads);
     localStorage.setItem(LEADS_KEY, JSON.stringify(newAllLeads));
     
-    // If status is 'no-answer' or 'call-back', recycle it by treating it as 'new' for filtering, but keep its status for display
-    if (updatedLead.leadStatus === 'no-answer' || updatedLead.leadStatus === 'call-back') {
-        const recycledLead = { ...updatedLead, leadStatus: 'new' as const };
-        const updatedAllLeadsForRecycle = allLeads.map(l => l.id === updatedLead.id ? recycledLead : l);
-        setAllLeads(updatedAllLeadsForRecycle);
-        localStorage.setItem(LEADS_KEY, JSON.stringify(updatedAllLeadsForRecycle));
-        setDispensedLeads(dispensedLeads.filter(l => l.id !== updatedLead.id));
-    } else if (updatedLead.leadStatus && updatedLead.leadStatus !== 'new') {
-        // For other statuses, just remove from dispenser
-        setDispensedLeads(dispensedLeads.filter(l => l.id !== updatedLead.id));
-    } else {
-        // For edits that don't change status from 'new'
-        setDispensedLeads(dispensedLeads.map(l => l.id === updatedLead.id ? updatedLead : l));
-    }
+    // Update the lead in the currently displayed dispenser list
+    setDispensedLeads(dispensedLeads.map(l => l.id === updatedLead.id ? updatedLead : l));
 
     setInteractingLead(null);
   }
 
-  const leadsRemaining = allLeads.filter(l => !l.leadStatus || l.leadStatus === 'new').length;
+  const leadsRemaining = allLeads.filter(l => l.leadStatus === 'new').length;
   
   const scheduledMeetings = useMemo(() => {
     return allLeads.filter(l => l.leadStatus === 'meeting-scheduled' && l.meetingTime);
@@ -125,7 +123,7 @@ export default function DashboardPage() {
         statusComponent = <Badge variant="outline" className="text-gray-800 bg-gray-50 border-gray-200"><PhoneOff className="h-3 w-3 mr-1" /> No Answer</Badge>;
         break;
       case 'call-back':
-        statusComponent = <Badge variant="outline" className="text-blue-800 bg-blue-50 border-blue-200"><CalendarClock className="h-3 w-3 mr-1" />Call Back</Badge>;
+        statusComponent = <Badge variant="outline" className="text-blue-800 bg-blue-50 border-blue-200"><ArrowRightLeft className="h-3 w-3 mr-1" />Call Back</Badge>;
         break;
       case 'wrong-number':
         statusComponent = <Badge variant="outline" className="text-orange-800 bg-orange-50 border-orange-200"><PhoneOff className="h-3 w-3 mr-1" />Wrong Number</Badge>;
@@ -271,7 +269,7 @@ export default function DashboardPage() {
                 Are you sure?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              You still have uncontacted leads in your current list. Are you sure you want to get new leads and leave these behind for now?
+              You still have uncontacted leads in your current list. Are you sure you want to get new leads and leave these behind for now? They will be returned to the pool.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
