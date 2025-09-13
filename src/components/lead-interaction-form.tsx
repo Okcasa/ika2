@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -81,7 +82,7 @@ export function LeadInteractionForm({ lead, onSave }: LeadInteractionFormProps) 
       meetingDate: lead.meetingTime ? new Date(lead.meetingTime) : new Date(),
       meetingTime: lead.meetingTime ? format(new Date(lead.meetingTime), 'HH:mm') : '09:00',
     })
-  }, [lead, form.reset]);
+  }, [lead, form]);
 
   return (
     <Form {...form}>
