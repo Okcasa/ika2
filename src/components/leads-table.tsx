@@ -86,13 +86,6 @@ export function LeadsTable({ leads, onEdit, onDelete, onReset, onScan, isScannin
         return <Badge variant="secondary" className="bg-accent/20 border border-accent/30 text-green-800 dark:text-green-300">Completed</Badge>;
       case 'error':
         return <Badge variant="destructive">Error</Badge>;
-      case 'processing':
-        return (
-          <Badge variant="outline" className="flex items-center gap-1.5">
-            <Loader2 className="h-3 w-3 animate-spin" />
-            Processing
-          </Badge>
-        );
       default:
         return null;
     }
@@ -123,7 +116,7 @@ export function LeadsTable({ leads, onEdit, onDelete, onReset, onScan, isScannin
       <CardHeader ref={cardHeaderRef} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
             <CardTitle>2. Review & Download</CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">Review the AI-corrected data, edit as needed, and download your clean list.</p>
+            <p className="text-sm text-muted-foreground mt-1">Review the data, edit as needed, and download your clean list.</p>
         </div>
         <ActionButtons />
       </CardHeader>
@@ -146,7 +139,7 @@ export function LeadsTable({ leads, onEdit, onDelete, onReset, onScan, isScannin
               </TableHeader>
               <TableBody>
                 {leads.map((lead) => (
-                  <TableRow key={lead.id} className={cn("h-[60px]", lead.status === 'processing' && 'opacity-50')}>
+                  <TableRow key={lead.id} className={cn("h-[60px]")}>
                     <TableCell className="font-medium font-code">{lead.correctedBusinessName}</TableCell>
                     <TableCell className="font-code">{lead.correctedPhoneNumber}</TableCell>
                     <TableCell className="font-code text-sm">
@@ -175,20 +168,16 @@ export function LeadsTable({ leads, onEdit, onDelete, onReset, onScan, isScannin
                     </TableCell>
                     <TableCell className="text-right">
                        <div className="flex items-center justify-end gap-2">
-                        {lead.status !== 'processing' ? (
-                          <>
-                            <Button variant="ghost" size="icon" onClick={() => onEdit(lead)}>
-                              <Edit className="h-4 w-4" />
-                              <span className="sr-only">Edit</span>
-                            </Button>
-                            <Button variant="ghost" size="icon" className="text-destructive/70 hover:text-destructive" onClick={() => onDelete(lead.id)}>
-                              <Trash2 className="h-4 w-4" />
-                              <span className="sr-only">Delete</span>
-                            </Button>
-                          </>
-                        ) : (
-                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                        )}
+                        <>
+                          <Button variant="ghost" size="icon" onClick={() => onEdit(lead)}>
+                            <Edit className="h-4 w-4" />
+                            <span className="sr-only">Edit</span>
+                          </Button>
+                          <Button variant="ghost" size="icon" className="text-destructive/70 hover:text-destructive" onClick={() => onDelete(lead.id)}>
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">Delete</span>
+                          </Button>
+                        </>
                       </div>
                     </TableCell>
                   </TableRow>

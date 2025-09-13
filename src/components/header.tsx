@@ -23,7 +23,7 @@ export function Header() {
               LeadSorter Pro
             </h1>
             <p className="mt-2 text-lg text-muted-foreground max-w-2xl mx-auto">
-              Upload your CSV, and let AI sort, correct, and classify your business leads instantly.
+              Upload your CSV to sort, review, and clean your business leads instantly.
             </p>
         </div>
     </header>

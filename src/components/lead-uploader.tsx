@@ -69,24 +69,22 @@ export function LeadUploader({ onLeadsUpload }: LeadUploaderProps) {
           let website = '';
           let businessType = businessTypeIndex !== -1 ? (values[businessTypeIndex]?.trim().replace(/"/g, '') || undefined) : undefined;
           
-          let potentialWebsite = '';
-          let potentialBusinessType = '';
-
-          values.forEach((value, i) => {
+          values.forEach((value) => {
               const cleanValue = value?.trim().replace(/"/g, '') || '';
-              if (i !== nameIndex && i !== phoneIndex) {
-                  if (cleanValue.includes('www') || cleanValue.includes('http')) {
-                      if (!website) potentialWebsite = cleanValue;
-                  } else if (i !== businessTypeIndex && cleanValue) {
-                      if (!potentialBusinessType) potentialBusinessType = cleanValue;
-                  }
+              if (cleanValue.includes('www') || cleanValue.includes('http')) {
+                  website = cleanValue;
               }
           });
 
-          website = potentialWebsite;
           if (!businessType) {
-              businessType = potentialBusinessType;
+            values.forEach((value, i) => {
+              const cleanValue = value?.trim().replace(/"/g, '') || '';
+               if (i !== nameIndex && i !== phoneIndex && i !== businessTypeIndex && !website && cleanValue && !cleanValue.match(/^\d/) && !cleanValue.includes('@')) {
+                businessType = cleanValue;
+               }
+            });
           }
+
 
           let phoneNumber = values[phoneIndex]?.trim().replace(/"/g, '') || '';
           if (phoneNumber.startsWith('tel:')) {
@@ -125,7 +123,7 @@ export function LeadUploader({ onLeadsUpload }: LeadUploaderProps) {
     <Card className="w-full animate-in fade-in duration-500">
       <CardHeader>
         <CardTitle>1. Upload Your Leads</CardTitle>
-        <CardDescription>Drag & drop your CSV file here or click to browse. The AI will automatically process the data.</CardDescription>
+        <CardDescription>Drag & drop your CSV file here or click to browse. The data will be loaded instantly.</CardDescription>
       </CardHeader>
       <CardContent>
         <div

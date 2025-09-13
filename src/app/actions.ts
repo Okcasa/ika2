@@ -1,44 +1,21 @@
 'use server';
 
-import { classifyBusinessType } from '@/ai/flows/classify-business-type';
-import { correctLeadData } from '@/ai/flows/correct-lead-data';
 import type { Lead, ProcessedLead } from '@/lib/types';
 
 export async function processLeadAction(lead: Lead): Promise<ProcessedLead> {
+  // This function now simply maps the raw lead data to the processed lead format
+  // without any AI processing.
   try {
-    const correctionPromise = correctLeadData({
-      businessName: lead.businessName,
-      phoneNumber: lead.phoneNumber,
-      website: lead.website,
-      address: '', // No address from CSV
-    });
-    
-    // Only classify if businessType is not provided in the lead
-    const classificationPromise = lead.businessType
-      ? Promise.resolve({ businessType: lead.businessType, confidenceScore: 1 })
-      : classifyBusinessType({
-          businessName: lead.businessName,
-          website: lead.website,
-          description: '', // No description from CSV
-        });
-
-    const [correctionResult, classificationResult] = await Promise.all([
-      correctionPromise,
-      classificationPromise,
-    ]);
-    
     const processedLead: ProcessedLead = {
       ...lead,
-      correctedBusinessName: correctionResult.correctedBusinessName || lead.businessName,
-      correctedPhoneNumber: correctionResult.correctedPhoneNumber || lead.phoneNumber,
-      correctedWebsite: correctionResult.correctedWebsite || (lead.businessType ? '' : lead.website) || '',
-      businessType: classificationResult.businessType || 'Unknown',
-      confidenceScore: classificationResult.confidenceScore || 0,
+      correctedBusinessName: lead.businessName,
+      correctedPhoneNumber: lead.phoneNumber,
+      correctedWebsite: lead.website || '',
+      businessType: lead.businessType || 'Unknown',
+      confidenceScore: 1, // Default confidence to 1 as it's user-provided or unknown
       status: 'completed',
     };
-
     return processedLead;
-
   } catch (error) {
     console.error(`Error processing lead "${lead.businessName}":`, error);
     return {
@@ -49,7 +26,7 @@ export async function processLeadAction(lead: Lead): Promise<ProcessedLead> {
       businessType: 'Error',
       confidenceScore: 0,
       status: 'error',
-      errorMessage: error instanceof Error ? error.message : 'An unknown error occurred during AI processing',
+      errorMessage: error instanceof Error ? error.message : 'An unknown error occurred during processing',
     };
   }
 }
