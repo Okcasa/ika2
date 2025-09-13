@@ -62,7 +62,11 @@ export default function DashboardPage() {
     );
     
     const leadsToGet = Math.min(Math.max(numLeads, 1), 35);
-    const availableLeads = leadsWithUpdatedStatus.filter(l => l.leadStatus === 'new');
+    
+    // Shuffle the available leads before slicing
+    const availableLeads = leadsWithUpdatedStatus.filter(l => l.leadStatus === 'new')
+      .sort(() => Math.random() - 0.5);
+
     const leadsToDispense = availableLeads.slice(0, leadsToGet);
     
     setAllLeads(leadsWithUpdatedStatus);
