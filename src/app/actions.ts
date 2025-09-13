@@ -6,19 +6,25 @@ import type { Lead, ProcessedLead } from '@/lib/types';
 
 export async function processLeadAction(lead: Lead): Promise<ProcessedLead> {
   try {
-    // Run both AI flows in parallel for efficiency
+    const correctionPromise = correctLeadData({
+      businessName: lead.businessName,
+      phoneNumber: lead.phoneNumber,
+      website: lead.website,
+      address: '', // No address from CSV
+    });
+    
+    // Only classify if businessType is not provided in the lead
+    const classificationPromise = lead.businessType
+      ? Promise.resolve({ businessType: lead.businessType, confidenceScore: 1 })
+      : classifyBusinessType({
+          businessName: lead.businessName,
+          website: lead.website,
+          description: '', // No description from CSV
+        });
+
     const [correctionResult, classificationResult] = await Promise.all([
-      correctLeadData({
-        businessName: lead.businessName,
-        phoneNumber: lead.phoneNumber,
-        website: lead.website,
-        address: '', // No address from CSV
-      }),
-      classifyBusinessType({
-        businessName: lead.businessName,
-        website: lead.website,
-        description: '', // No description from CSV
-      }),
+      correctionPromise,
+      classificationPromise,
     ]);
     
     const processedLead: ProcessedLead = {

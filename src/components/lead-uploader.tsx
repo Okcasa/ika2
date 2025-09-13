@@ -58,6 +58,7 @@ export function LeadUploader({ onLeadsUpload }: LeadUploaderProps) {
         const nameIndex = headers.findIndex(h => h.includes('name'));
         const phoneIndex = headers.findIndex(h => h.includes('phone'));
         const websiteIndex = headers.findIndex(h => h.includes('website') || h.includes('url'));
+        const businessTypeIndex = headers.findIndex(h => h.includes('businesstype') || h.includes('business type'));
         
         if (nameIndex === -1 || phoneIndex === -1) {
           throw new Error("CSV must contain 'name' and 'phone' columns.");
@@ -70,6 +71,7 @@ export function LeadUploader({ onLeadsUpload }: LeadUploaderProps) {
             businessName: values[nameIndex]?.trim().replace(/"/g, '') || '',
             phoneNumber: values[phoneIndex]?.trim().replace(/"/g, '') || '',
             website: websiteIndex !== -1 ? (values[websiteIndex]?.trim().replace(/"/g, '') || '') : '',
+            businessType: businessTypeIndex !== -1 ? (values[businessTypeIndex]?.trim().replace(/"/g, '') || '') : undefined,
           };
         }).filter(lead => lead.businessName && lead.phoneNumber);
 
@@ -123,7 +125,7 @@ export function LeadUploader({ onLeadsUpload }: LeadUploaderProps) {
             <Button onClick={() => fileInputRef.current?.click()}>
                 Browse Files
             </Button>
-            <p className="text-xs text-muted-foreground mt-2">Required CSV columns: <span className="font-semibold">name</span>, <span className="font-semibold">phone</span>. Optional: <span className="font-semibold">website</span>.</p>
+            <p className="text-xs text-muted-foreground mt-2">Required CSV columns: <span className="font-semibold">name</span>, <span className="font-semibold">phone</span>. Optional: <span className="font-semibold">website</span>, <span className="font-semibold">business type</span>.</p>
         </div>
       </CardContent>
     </Card>

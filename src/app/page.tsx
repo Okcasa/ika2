@@ -33,8 +33,8 @@ export default function Home() {
         correctedBusinessName: lead.businessName,
         correctedPhoneNumber: lead.phoneNumber,
         correctedWebsite: lead.website,
-        businessType: 'Unknown',
-        confidenceScore: 0,
+        businessType: lead.businessType || 'Unknown',
+        confidenceScore: lead.businessType ? 1 : 0,
         status: 'completed',
       }));
       setLeads(nonAiLeads);
@@ -52,8 +52,8 @@ export default function Home() {
       correctedBusinessName: lead.businessName,
       correctedPhoneNumber: lead.phoneNumber,
       correctedWebsite: lead.website,
-      businessType: 'Processing...',
-      confidenceScore: 0,
+      businessType: lead.businessType || 'Processing...',
+      confidenceScore: lead.businessType ? 1 : 0,
       status: 'processing' as const,
     }));
     setLeads(initialLeads);

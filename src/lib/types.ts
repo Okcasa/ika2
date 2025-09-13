@@ -3,6 +3,7 @@ export interface Lead {
   businessName: string;
   phoneNumber: string;
   website: string;
+  businessType?: string;
 }
 
 export interface ProcessedLead extends Lead {
