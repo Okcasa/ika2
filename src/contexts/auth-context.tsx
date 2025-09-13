@@ -33,45 +33,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [username, setUsername] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [users, setUsers] = useState<AppUser[]>(() => {
-    if (typeof window === 'undefined') {
-        return defaultUsers;
-    }
+  const [users, setUsers] = useState<AppUser[]>([]);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
     try {
         const storedUsers = localStorage.getItem(USERS_KEY);
         if (storedUsers) {
-            return JSON.parse(storedUsers);
+            setUsers(JSON.parse(storedUsers));
         } else {
             localStorage.setItem(USERS_KEY, JSON.stringify(defaultUsers));
-            return defaultUsers;
+            setUsers(defaultUsers);
         }
     } catch (error) {
         console.error("Failed to load users from localStorage", error);
-        return defaultUsers;
+        setUsers(defaultUsers);
     }
-  });
-  const router = useRouter();
-  const pathname = usePathname();
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
         if (firebaseUser) {
         setUser(firebaseUser);
         const storedUsername = localStorage.getItem(USERNAME_KEY);
-        const appUser = users.find(u => u.username === storedUsername);
+        // Ensure users array is populated before checking
+        if (users.length > 0) {
+            const appUser = users.find(u => u.username === storedUsername);
 
-        if (appUser) {
-            setUsername(appUser.username);
-            setIsAdmin(appUser.role === 'admin');
-        } else {
-            // If there's a firebase user but no app user, something is wrong, log out.
-            auth.signOut();
-            localStorage.removeItem(USERNAME_KEY);
+            if (appUser) {
+                setUsername(appUser.username);
+                setIsAdmin(appUser.role === 'admin');
+            } else {
+                // If there's a firebase user but no app user, something is wrong, log out.
+                auth.signOut();
+                localStorage.removeItem(USERNAME_KEY);
+            }
         }
         } else {
-        setUser(null);
-        setUsername(null);
-        setIsAdmin(false);
+            setUser(null);
+            setUsername(null);
+            setIsAdmin(false);
         }
         setLoading(false);
     });
@@ -100,10 +102,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const appUser = users.find(u => u.username.toLowerCase() === inputUsername.toLowerCase());
 
     if (!appUser) {
-        // In a real app, you'd show an error. For now, we'll just log it.
         console.error("User not found");
         setLoading(false);
-        // Maybe show a toast message here
         alert("Invalid username.");
         return;
     }
@@ -140,7 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  if (loading) {
+  if (loading && users.length === 0) {
     return (
         <div className="flex h-screen w-full items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
