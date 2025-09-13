@@ -56,12 +56,16 @@ export default function DashboardPage() {
         }
         return lead;
     });
+
+    const leadsWithUpdatedStatus = recycledLeads.filter(lead => 
+      lead.leadStatus !== 'not-interested' && lead.leadStatus !== 'wrong-number' && lead.leadStatus !== 'meeting-scheduled' && lead.leadStatus !== 'contacted'
+    );
     
     const leadsToGet = Math.min(Math.max(numLeads, 1), 35);
-    const availableLeads = recycledLeads.filter(l => l.leadStatus === 'new');
+    const availableLeads = leadsWithUpdatedStatus.filter(l => l.leadStatus === 'new');
     const leadsToDispense = availableLeads.slice(0, leadsToGet);
     
-    setAllLeads(recycledLeads);
+    setAllLeads(leadsWithUpdatedStatus);
     setDispensedLeads(leadsToDispense);
     setShowAlert(false);
   };
@@ -78,13 +82,15 @@ export default function DashboardPage() {
   }
 
   const handleUpdateLeadStatus = (updatedLead: ProcessedLead) => {
-    // Update the lead in the main list
     const newAllLeads = allLeads.map(l => l.id === updatedLead.id ? updatedLead : l);
     setAllLeads(newAllLeads);
     localStorage.setItem(LEADS_KEY, JSON.stringify(newAllLeads));
     
-    // Update the lead in the currently displayed dispenser list
-    setDispensedLeads(dispensedLeads.map(l => l.id === updatedLead.id ? updatedLead : l));
+    if (['not-interested', 'wrong-number'].includes(updatedLead.leadStatus!)) {
+        setDispensedLeads(dispensedLeads.filter(l => l.id !== updatedLead.id));
+    } else {
+        setDispensedLeads(dispensedLeads.map(l => l.id === updatedLead.id ? updatedLead : l));
+    }
 
     setInteractingLead(null);
   }
@@ -104,7 +110,7 @@ export default function DashboardPage() {
             <div className="flex flex-col items-start">
               <div className="flex items-center">
                 <CalendarClock className="h-3 w-3 mr-1" />
-                Meeting
+                Meeting Scheduled
               </div>
               {lead.meetingTime && 
                 <span className="text-xs font-normal mt-1">{format(new Date(lead.meetingTime), "PPp")}</span>
@@ -123,10 +129,10 @@ export default function DashboardPage() {
         statusComponent = <Badge variant="outline" className="text-gray-800 bg-gray-50 border-gray-200"><PhoneOff className="h-3 w-3 mr-1" /> No Answer</Badge>;
         break;
       case 'call-back':
-        statusComponent = <Badge variant="outline" className="text-blue-800 bg-blue-50 border-blue-200"><ArrowRightLeft className="h-3 w-3 mr-1" />Call Back</Badge>;
+        statusComponent = <Badge variant="outline" className="text-blue-800 bg-blue-50 border-blue-200"><ArrowRightLeft className="h-3 w-3 mr-1" /> Call Back</Badge>;
         break;
       case 'wrong-number':
-        statusComponent = <Badge variant="outline" className="text-orange-800 bg-orange-50 border-orange-200"><PhoneOff className="h-3 w-3 mr-1" />Wrong Number</Badge>;
+        statusComponent = <Badge variant="outline" className="text-orange-800 bg-orange-50 border-orange-200"><PhoneOff className="h-3 w-3 mr-1" /> Wrong Number</Badge>;
         break;
       default:
         statusComponent = <Badge variant="outline">New</Badge>;
@@ -214,16 +220,18 @@ export default function DashboardPage() {
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            <a href={`tel:${lead.correctedPhoneNumber}`} className="flex items-center gap-2 hover:text-primary whitespace-nowrap">
-                                                <Phone className="h-4 w-4" />
-                                                {lead.correctedPhoneNumber}
-                                            </a>
-                                            {lead.correctedWebsite ? (
-                                                <a href={lead.correctedWebsite.startsWith('http') ? lead.correctedWebsite : `https://${lead.correctedWebsite}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 underline hover:text-primary mt-1">
-                                                    <Globe className="h-4 w-4" />
-                                                    Visit Website
+                                            <div className="flex flex-col">
+                                                <a href={`tel:${lead.correctedPhoneNumber}`} className="flex items-center gap-2 hover:text-primary whitespace-nowrap">
+                                                    <Phone className="h-4 w-4" />
+                                                    {lead.correctedPhoneNumber}
                                                 </a>
-                                            ) : <div className="text-muted-foreground mt-1 flex items-center gap-2"><Globe className="h-4 w-4" />N/A</div>}
+                                                {lead.correctedWebsite ? (
+                                                    <a href={lead.correctedWebsite.startsWith('http') ? lead.correctedWebsite : `https://${lead.correctedWebsite}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 underline hover:text-primary mt-1">
+                                                        <Globe className="h-4 w-4" />
+                                                        Visit Website
+                                                    </a>
+                                                ) : <div className="text-muted-foreground mt-1 flex items-center gap-2"><Globe className="h-4 w-4" />N/A</div>}
+                                            </div>
                                         </TableCell>
                                         <TableCell>
                                             <StatusDisplay lead={lead} />
@@ -285,3 +293,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    

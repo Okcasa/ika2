@@ -59,7 +59,7 @@ export function LeadInteractionDialog({ lead, onSave, onOpenChange }: LeadIntera
     defaultValues: {
       leadStatus: lead.leadStatus || 'new',
       notes: lead.notes || '',
-      meetingDate: lead.meetingTime ? new Date(lead.meetingTime) : undefined,
+      meetingDate: lead.meetingTime ? new Date(lead.meetingTime) : new Date(),
       meetingTime: lead.meetingTime ? format(new Date(lead.meetingTime), 'HH:mm') : '09:00',
     },
   });
@@ -155,7 +155,7 @@ export function LeadInteractionDialog({ lead, onSave, onOpenChange }: LeadIntera
                                 mode="single"
                                 selected={field.value}
                                 onSelect={field.onChange}
-                                disabled={(date) => date < new Date() || date < new Date("1900-01-01")}
+                                disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))}
                                 initialFocus
                             />
                             </PopoverContent>
@@ -208,3 +208,5 @@ export function LeadInteractionDialog({ lead, onSave, onOpenChange }: LeadIntera
     </Dialog>
   );
 }
+
+    
