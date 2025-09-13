@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle } from 'lucide-react';
+import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays } from 'lucide-react';
 import type { ProcessedLead } from '@/lib/types';
 import { LeadInteractionDialog } from '@/components/lead-interaction-dialog';
+import { CalendarDialog } from '@/components/calendar-dialog';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -31,6 +32,7 @@ export default function DashboardPage() {
   const [interactingLead, setInteractingLead] = useState<ProcessedLead | null>(null);
   const [numLeads, setNumLeads] = useState(20);
   const [showAlert, setShowAlert] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   useEffect(() => {
     const storedLeads = localStorage.getItem(LEADS_KEY);
@@ -83,15 +85,8 @@ export default function DashboardPage() {
 
   const leadsRemaining = allLeads.filter(l => !l.leadStatus || l.leadStatus === 'new').length;
   
-  const contactedLeads = useMemo(() => {
-    const sortedLeads = allLeads
-      .filter(l => l.leadStatus && l.leadStatus !== 'new')
-      .sort((a, b) => {
-        if (a.leadStatus === 'meeting-scheduled' && b.leadStatus !== 'meeting-scheduled') return -1;
-        if (a.leadStatus !== 'meeting-scheduled' && b.leadStatus === 'meeting-scheduled') return 1;
-        return 0;
-      });
-    return sortedLeads;
+  const scheduledMeetings = useMemo(() => {
+    return allLeads.filter(l => l.leadStatus === 'meeting-scheduled' && l.meetingTime);
   }, [allLeads]);
 
   
@@ -122,6 +117,12 @@ export default function DashboardPage() {
       case 'no-answer':
         statusComponent = <Badge variant="outline"><PhoneOff className="h-3 w-3 mr-1" /> No Answer</Badge>;
         break;
+      case 'call-back':
+        statusComponent = <Badge variant="outline" className="text-blue-800 bg-blue-50 border-blue-200">Call Back</Badge>;
+        break;
+      case 'wrong-number':
+        statusComponent = <Badge variant="outline" className="text-orange-800 bg-orange-50 border-orange-200">Wrong Number</Badge>;
+        break;
       default:
         statusComponent = <Badge variant="outline">New</Badge>;
     }
@@ -147,58 +148,6 @@ export default function DashboardPage() {
     return statusComponent;
   };
 
-  const LeadsTableComponent = ({ leads, tableTitle }: { leads: ProcessedLead[], tableTitle: string }) => (
-    <div className="mt-8">
-        <h3 className="text-xl font-semibold mb-4">{tableTitle}</h3>
-        <div className="border rounded-lg overflow-x-auto">
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Business</TableHead>
-                        <TableHead>Contact</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {leads.map(lead => (
-                        <TableRow key={lead.id}>
-                            <TableCell>
-                                <div className="font-medium">{lead.correctedBusinessName}</div>
-                                <div className="text-sm text-muted-foreground flex items-center gap-2">
-                                    <Building className="h-4 w-4" />
-                                    {lead.businessType}
-                                </div>
-                            </TableCell>
-                            <TableCell>
-                                <a href={`tel:${lead.correctedPhoneNumber}`} className="flex items-center gap-2 hover:text-primary whitespace-nowrap">
-                                    <Phone className="h-4 w-4" />
-                                    {lead.correctedPhoneNumber}
-                                </a>
-                                {lead.correctedWebsite ? (
-                                    <a href={lead.correctedWebsite.startsWith('http') ? lead.correctedWebsite : `https://${lead.correctedWebsite}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 underline hover:text-primary mt-1">
-                                        <Globe className="h-4 w-4" />
-                                        Visit Website
-                                    </a>
-                                ) : <div className="text-muted-foreground mt-1 flex items-center gap-2"><Globe className="h-4 w-4" />N/A</div>}
-                            </TableCell>
-                            <TableCell>
-                                <StatusDisplay lead={lead} />
-                            </TableCell>
-                            <TableCell className="text-right">
-                                <Button variant="outline" size="sm" onClick={() => setInteractingLead(lead)}>
-                                    <Edit className="h-4 w-4 mr-2" />
-                                    Log Interaction
-                                </Button>
-                            </TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-        </div>
-    </div>
-  );
-
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -206,11 +155,17 @@ export default function DashboardPage() {
         <Header />
         <div className="mt-8 max-w-7xl mx-auto">
           <Card>
-            <CardHeader>
-              <CardTitle>Your Lead Dispenser</CardTitle>
-              <CardDescription>
-                Get your next batch of leads to contact. You have {leadsRemaining > 0 ? leadsRemaining : 0} new leads remaining.
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Your Lead Dispenser</CardTitle>
+                <CardDescription>
+                  Get your next batch of leads to contact. You have {leadsRemaining > 0 ? leadsRemaining : 0} new leads remaining.
+                </CardDescription>
+              </div>
+              <Button variant="outline" onClick={() => setIsCalendarOpen(true)}>
+                <CalendarDays className="h-4 w-4 mr-2" />
+                View Calendar
+              </Button>
             </CardHeader>
             <CardContent>
               <div className="flex gap-4 items-center">
@@ -230,11 +185,54 @@ export default function DashboardPage() {
               </div>
 
               {dispensedLeads.length > 0 && (
-                <LeadsTableComponent leads={dispensedLeads} tableTitle="Your Dispensed Leads" />
-              )}
-              
-              {contactedLeads.length > 0 && (
-                <LeadsTableComponent leads={contactedLeads} tableTitle="Your Contacted Leads" />
+                 <div className="mt-8">
+                    <div className="border rounded-lg overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Business</TableHead>
+                                    <TableHead>Contact</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {dispensedLeads.map(lead => (
+                                    <TableRow key={lead.id}>
+                                        <TableCell>
+                                            <div className="font-medium">{lead.correctedBusinessName}</div>
+                                            <div className="text-sm text-muted-foreground flex items-center gap-2">
+                                                <Building className="h-4 w-4" />
+                                                {lead.businessType}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <a href={`tel:${lead.correctedPhoneNumber}`} className="flex items-center gap-2 hover:text-primary whitespace-nowrap">
+                                                <Phone className="h-4 w-4" />
+                                                {lead.correctedPhoneNumber}
+                                            </a>
+                                            {lead.correctedWebsite ? (
+                                                <a href={lead.correctedWebsite.startsWith('http') ? lead.correctedWebsite : `https://${lead.correctedWebsite}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 underline hover:text-primary mt-1">
+                                                    <Globe className="h-4 w-4" />
+                                                    Visit Website
+                                                </a>
+                                            ) : <div className="text-muted-foreground mt-1 flex items-center gap-2"><Globe className="h-4 w-4" />N/A</div>}
+                                        </TableCell>
+                                        <TableCell>
+                                            <StatusDisplay lead={lead} />
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <Button variant="outline" size="sm" onClick={() => setInteractingLead(lead)}>
+                                                <Edit className="h-4 w-4 mr-2" />
+                                                Log Interaction
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </div>
               )}
 
             </CardContent>
@@ -249,6 +247,12 @@ export default function DashboardPage() {
             onOpenChange={(isOpen) => !isOpen && setInteractingLead(null)}
         />
       )}
+
+      <CalendarDialog 
+        isOpen={isCalendarOpen} 
+        onOpenChange={setIsCalendarOpen}
+        leads={scheduledMeetings}
+      />
 
       <AlertDialog open={showAlert} onOpenChange={setShowAlert}>
         <AlertDialogContent>
