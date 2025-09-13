@@ -32,6 +32,7 @@ export default function Home() {
       businessType: lead.businessType || 'Unknown',
       confidenceScore: 1,
       status: 'completed' as const,
+      leadStatus: 'new' as const,
     }));
     
     setAllLeads(processedLeads);
