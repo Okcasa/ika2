@@ -5,11 +5,12 @@ import { Header } from '@/components/header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck } from 'lucide-react';
+import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote } from 'lucide-react';
 import type { ProcessedLead, LeadStatus } from '@/lib/types';
 import { LeadInteractionDialog } from '@/components/lead-interaction-dialog';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const LEADS_KEY = 'leadsorter_leads';
 const VIEWED_LEADS_COUNT_KEY = 'leadsorter_viewed_count';
@@ -61,24 +62,49 @@ export default function DashboardPage() {
   const leadsRemaining = allLeads.length - viewedCount;
 
   const StatusDisplay = ({ lead }: { lead: ProcessedLead }) => {
+    let statusComponent;
     switch (lead.leadStatus) {
       case 'meeting-scheduled':
-        return (
-          <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
+        statusComponent = (
+          <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200 whitespace-nowrap">
             <CalendarClock className="h-3 w-3 mr-1" />
             Meeting
             {lead.meetingTime && ` - ${format(new Date(lead.meetingTime), "PPp")}`}
           </Badge>
         );
+        break;
       case 'not-interested':
-        return <Badge variant="destructive"><UserX className="h-3 w-3 mr-1" /> Not Interested</Badge>
+        statusComponent = <Badge variant="destructive"><UserX className="h-3 w-3 mr-1" /> Not Interested</Badge>;
+        break;
       case 'contacted':
-        return <Badge variant="outline"><UserCheck className="h-3 w-3 mr-1" /> Contacted</Badge>
+        statusComponent = <Badge variant="outline"><UserCheck className="h-3 w-3 mr-1" /> Contacted</Badge>;
+        break;
       case 'no-answer':
-        return <Badge variant="outline"><PhoneOff className="h-3 w-3 mr-1" /> No Answer</Badge>
+        statusComponent = <Badge variant="outline"><PhoneOff className="h-3 w-3 mr-1" /> No Answer</Badge>;
+        break;
       default:
-        return <Badge variant="outline">New</Badge>;
+        statusComponent = <Badge variant="outline">New</Badge>;
     }
+
+    if (lead.notes) {
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-1">
+                {statusComponent}
+                <StickyNote className="h-3.5 w-3.5 text-muted-foreground" />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="max-w-xs">{lead.notes}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+    
+    return statusComponent;
   };
 
 
