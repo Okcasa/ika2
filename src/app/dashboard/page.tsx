@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { Header } from '@/components/header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, Trash2, ArrowRightLeft } from 'lucide-react';
+import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, Trash2, ArrowRightLeft, ArrowLeft } from 'lucide-react';
 import type { ProcessedLead } from '@/lib/types';
 import { LeadInteractionDialog } from '@/components/lead-interaction-dialog';
 import { CalendarDialog } from '@/components/calendar-dialog';
@@ -24,10 +25,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { cn } from '@/lib/utils';
+import { ScriptPanel } from '@/components/script-panel';
+import { SidebarProvider, Sidebar, SidebarInset, useSidebar, SidebarTrigger } from '@/components/ui/sidebar';
 
 const LEADS_KEY = 'leadsorter_leads';
 
-export default function DashboardPage() {
+function Dashboard() {
   const [allLeads, setAllLeads] = useState<ProcessedLead[]>([]);
   const [dispensedLeads, setDispensedLeads] = useState<ProcessedLead[]>([]);
   const [interactingLead, setInteractingLead] = useState<ProcessedLead | null>(null);
@@ -35,6 +38,9 @@ export default function DashboardPage() {
   const [showAlert, setShowAlert] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [recentlyUpdatedId, setRecentlyUpdatedId] = useState<string | null>(null);
+  const router = useRouter();
+  const { setOpen: setSidebarOpen } = useSidebar();
+
 
   useEffect(() => {
     const storedLeads = localStorage.getItem(LEADS_KEY);
@@ -51,7 +57,6 @@ export default function DashboardPage() {
       return;
     }
     
-    // Recycle "no-answer" and "call-back" leads from the main list back into the pool
     const recycledLeads = allLeads.map(lead => {
         if (lead.leadStatus === 'no-answer' || lead.leadStatus === 'call-back') {
             return { ...lead, leadStatus: 'new' as const, notes: lead.notes };
@@ -60,18 +65,17 @@ export default function DashboardPage() {
     });
 
     const leadsWithUpdatedStatus = recycledLeads.filter(lead => 
-      lead.leadStatus !== 'not-interested' && lead.leadStatus !== 'wrong-number' && lead.leadStatus !== 'meeting-scheduled' && lead.leadStatus !== 'contacted'
+      lead.leadStatus !== 'not-interested' && lead.leadStatus !== 'wrong-number' && lead.leadStatus !== 'meeting-scheduled'
     );
     
     const leadsToGet = Math.min(Math.max(numLeads, 1), 35);
     
-    // Shuffle the available leads before slicing
     const availableLeads = leadsWithUpdatedStatus.filter(l => l.leadStatus === 'new')
       .sort(() => Math.random() - 0.5);
 
     const leadsToDispense = availableLeads.slice(0, leadsToGet);
     
-    setAllLeads(recycledLeads); // Use recycled leads for the main pool
+    setAllLeads(recycledLeads);
     setDispensedLeads(leadsToDispense);
     setShowAlert(false);
   };
@@ -94,9 +98,13 @@ export default function DashboardPage() {
     
     setDispensedLeads(dispensedLeads.map(l => l.id === updatedLead.id ? updatedLead : l));
 
-    setInteractingLead(null);
     setRecentlyUpdatedId(updatedLead.id);
     setTimeout(() => setRecentlyUpdatedId(null), 3000);
+  }
+  
+  const handleSelectLead = (lead: ProcessedLead) => {
+    setInteractingLead(lead);
+    setSidebarOpen(true);
   }
 
   const leadsRemaining = allLeads.filter(l => l.leadStatus === 'new').length;
@@ -107,11 +115,11 @@ export default function DashboardPage() {
 
   const getGlowColor = (status?: string) => {
     switch (status) {
-      case 'meeting-scheduled': return 'bg-green-100/50'; // Green
-      case 'not-interested': return 'bg-red-100/50'; // Red
-      case 'call-back': return 'bg-blue-100/50'; // Blue
-      case 'wrong-number': return 'bg-orange-100/50'; // Orange
-      case 'no-answer': return 'bg-gray-100/50'; // Gray
+      case 'meeting-scheduled': return 'bg-green-100/50';
+      case 'not-interested': return 'bg-red-100/50';
+      case 'call-back': return 'bg-blue-100/50';
+      case 'wrong-number': return 'bg-orange-100/50';
+      case 'no-answer': return 'bg-gray-100/50';
       default: return '';
     }
   };
@@ -176,113 +184,126 @@ export default function DashboardPage() {
 
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <main className="flex-grow container mx-auto px-4 py-8">
-        <Header />
-        <div className="mt-8 max-w-7xl mx-auto">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Your Lead Dispenser</CardTitle>
-                <CardDescription>
-                  Get your next batch of leads to contact. You have {leadsRemaining > 0 ? leadsRemaining : 0} new leads remaining.
-                </CardDescription>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setIsCalendarOpen(true)}>
-                    <CalendarDays className="h-4 w-4 mr-2" />
-                    View Calendar
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-4 items-center">
-                <div className='flex items-center gap-2'>
-                  <Input
-                    type="number"
-                    value={numLeads}
-                    onChange={(e) => setNumLeads(parseInt(e.target.value, 10))}
-                    min="1"
-                    max="35"
-                    className="w-24"
-                    placeholder="20"
-                  />
-                  <Button onClick={() => getLeads(false)} disabled={leadsRemaining <= 0}>Get New Leads</Button>
+    <>
+      <SidebarInset className="flex flex-col min-h-screen">
+        <main className="flex-grow container mx-auto px-4 py-8">
+          <Header />
+          <div className="mt-8 max-w-7xl mx-auto">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Your Lead Dispenser</CardTitle>
+                  <CardDescription>
+                    Get your next batch of leads to contact. You have {leadsRemaining > 0 ? leadsRemaining : 0} new leads remaining.
+                  </CardDescription>
                 </div>
-                <Button variant="outline" onClick={resetProgress}>Reset Session</Button>
-              </div>
-
-              {dispensedLeads.length > 0 && (
-                 <div className="mt-8">
-                    <div className="border rounded-lg overflow-x-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Business</TableHead>
-                                    <TableHead>Contact</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {dispensedLeads.map(lead => (
-                                    <TableRow 
-                                        key={lead.id}
-                                        className={cn(
-                                            "transition-colors duration-500",
-                                            recentlyUpdatedId === lead.id ? getGlowColor(lead.leadStatus) : 'bg-transparent'
-                                        )}
-                                    >
-                                        <TableCell>
-                                            <div className="font-medium">{lead.correctedBusinessName}</div>
-                                            <div className="text-sm text-muted-foreground flex items-center gap-2">
-                                                <Building className="h-4 w-4" />
-                                                {lead.businessType}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-col">
-                                                <a href={`tel:${lead.correctedPhoneNumber}`} className="flex items-center gap-2 hover:text-primary whitespace-nowrap">
-                                                    <Phone className="h-4 w-4" />
-                                                    {lead.correctedPhoneNumber}
-                                                </a>
-                                                {lead.correctedWebsite ? (
-                                                    <a href={lead.correctedWebsite.startsWith('http') ? lead.correctedWebsite : `https://${lead.correctedWebsite}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 underline hover:text-primary mt-1">
-                                                        <Globe className="h-4 w-4" />
-                                                        Visit Website
-                                                    </a>
-                                                ) : <div className="text-muted-foreground mt-1 flex items-center gap-2"><Globe className="h-4 w-4" />N/A</div>}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <StatusDisplay lead={lead} />
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <Button variant="outline" size="sm" onClick={() => setInteractingLead(lead)}>
-                                                <Edit className="h-4 w-4 mr-2" />
-                                                Log Interaction
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => router.push('/')}>
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    New List
+                  </Button>
+                  <Button variant="outline" onClick={() => setIsCalendarOpen(true)}>
+                      <CalendarDays className="h-4 w-4 mr-2" />
+                      View Calendar
+                  </Button>
                 </div>
-              )}
+              </CardHeader>
+              <CardContent>
+                <div className="flex gap-4 items-center">
+                  <div className='flex items-center gap-2'>
+                    <Input
+                      type="number"
+                      value={numLeads}
+                      onChange={(e) => setNumLeads(parseInt(e.target.value, 10))}
+                      min="1"
+                      max="35"
+                      className="w-24"
+                      placeholder="20"
+                    />
+                    <Button onClick={() => getLeads(false)} disabled={leadsRemaining <= 0}>Get New Leads</Button>
+                  </div>
+                  <Button variant="outline" onClick={resetProgress}>Reset Session</Button>
+                </div>
 
-            </CardContent>
-          </Card>
-        </div>
-      </main>
+                {dispensedLeads.length > 0 && (
+                   <div className="mt-8">
+                      <div className="border rounded-lg overflow-x-auto">
+                          <Table>
+                              <TableHeader>
+                                  <TableRow>
+                                      <TableHead>Business</TableHead>
+                                      <TableHead>Contact</TableHead>
+                                      <TableHead>Status</TableHead>
+                                      <TableHead className="text-right">Actions</TableHead>
+                                  </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                  {dispensedLeads.map(lead => (
+                                      <TableRow 
+                                          key={lead.id}
+                                          className={cn(
+                                              "transition-colors duration-500 cursor-pointer hover:bg-muted/50",
+                                              recentlyUpdatedId === lead.id ? getGlowColor(lead.leadStatus) : 'bg-transparent'
+                                          )}
+                                          onClick={() => handleSelectLead(lead)}
+                                      >
+                                          <TableCell>
+                                              <div className="font-medium">{lead.correctedBusinessName}</div>
+                                              <div className="text-sm text-muted-foreground flex items-center gap-2">
+                                                  <Building className="h-4 w-4" />
+                                                  {lead.businessType}
+                                              </div>
+                                          </TableCell>
+                                          <TableCell>
+                                              <div className="flex flex-col">
+                                                  <a href={`tel:${lead.correctedPhoneNumber}`} onClick={e => e.stopPropagation()} className="flex items-center gap-2 hover:text-primary whitespace-nowrap">
+                                                      <Phone className="h-4 w-4" />
+                                                      {lead.correctedPhoneNumber}
+                                                  </a>
+                                                  {lead.correctedWebsite ? (
+                                                      <a href={lead.correctedWebsite.startsWith('http') ? lead.correctedWebsite : `https://${lead.correctedWebsite}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="flex items-center gap-2 underline hover:text-primary mt-1">
+                                                          <Globe className="h-4 w-4" />
+                                                          Visit Website
+                                                      </a>
+                                                  ) : <div className="text-muted-foreground mt-1 flex items-center gap-2"><Globe className="h-4 w-4" />N/A</div>}
+                                              </div>
+                                          </TableCell>
+                                          <TableCell>
+                                              <StatusDisplay lead={lead} />
+                                          </TableCell>
+                                          <TableCell className="text-right">
+                                              <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); handleSelectLead(lead); }}>
+                                                  <Edit className="h-4 w-4 mr-2" />
+                                                  Log Interaction
+                                              </Button>
+                                          </TableCell>
+                                      </TableRow>
+                                  ))}
+                              </TableBody>
+                          </Table>
+                      </div>
+                  </div>
+                )}
+
+              </CardContent>
+            </Card>
+          </div>
+        </main>
+        
+        <footer className="text-center py-4">
+          <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} LeadSorter Pro. All rights reserved.</p>
+        </footer>
+      </SidebarInset>
+
+      <Sidebar variant="inset" side="right" collapsible="offcanvas">
+        {interactingLead && (
+            <ScriptPanel 
+                lead={interactingLead} 
+                onSave={handleUpdateLeadStatus}
+            />
+        )}
+      </Sidebar>
       
-      {interactingLead && (
-        <LeadInteractionDialog
-            lead={interactingLead}
-            onSave={handleUpdateLeadStatus}
-            onOpenChange={(isOpen) => !isOpen && setInteractingLead(null)}
-        />
-      )}
 
       <CalendarDialog 
         isOpen={isCalendarOpen} 
@@ -307,10 +328,14 @@ export default function DashboardPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      <footer className="text-center py-4">
-        <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} LeadSorter Pro. All rights reserved.</p>
-      </footer>
-    </div>
+    </>
   );
+}
+
+export default function DashboardPage() {
+  return (
+    <SidebarProvider>
+      <Dashboard />
+    </SidebarProvider>
+  )
 }
