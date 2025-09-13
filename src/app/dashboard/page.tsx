@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Header } from '@/components/header';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote } from 'lucide-react';
@@ -20,6 +21,7 @@ export default function DashboardPage() {
   const [dispensedLeads, setDispensedLeads] = useState<ProcessedLead[]>([]);
   const [viewedCount, setViewedCount] = useState(0);
   const [interactingLead, setInteractingLead] = useState<ProcessedLead | null>(null);
+  const [numLeads, setNumLeads] = useState(20);
 
   useEffect(() => {
     // This effect runs only on the client side
@@ -34,8 +36,9 @@ export default function DashboardPage() {
   }, []);
   
   const getLeads = () => {
+    const leadsToGet = Math.min(Math.max(numLeads, 1), 35);
     const remainingLeads = allLeads.slice(viewedCount);
-    const leadsToDispense = remainingLeads.slice(0, 20);
+    const leadsToDispense = remainingLeads.slice(0, leadsToGet);
     setDispensedLeads(leadsToDispense);
     
     const newViewedCount = viewedCount + leadsToDispense.length;
@@ -122,13 +125,24 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="flex gap-4 items-center">
-                <Button onClick={getLeads} disabled={leadsRemaining <= 0}>Get 20 Leads</Button>
+                <div className='flex items-center gap-2'>
+                  <Input
+                    type="number"
+                    value={numLeads}
+                    onChange={(e) => setNumLeads(parseInt(e.target.value, 10))}
+                    min="1"
+                    max="35"
+                    className="w-24"
+                    placeholder="20"
+                  />
+                  <Button onClick={getLeads} disabled={leadsRemaining <= 0}>Get Leads</Button>
+                </div>
                 <Button variant="outline" onClick={resetProgress}>Reset Progress</Button>
               </div>
 
               {dispensedLeads.length > 0 && (
                 <div className="mt-8">
-                    <h3 className="text-xl font-semibold mb-4">Your 20 Leads for Today</h3>
+                    <h3 className="text-xl font-semibold mb-4">Your Dispensed Leads</h3>
                     <div className="border rounded-lg">
                         <Table>
                             <TableHeader>
@@ -150,7 +164,7 @@ export default function DashboardPage() {
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            <a href={`tel:${lead.correctedPhoneNumber}`} className="flex items-center gap-2 hover:text-primary">
+                                            <a href={`tel:${lead.correctedPhoneNumber}`} className="flex items-center gap-2 hover:text-primary whitespace-nowrap">
                                                 <Phone className="h-4 w-4" />
                                                 {lead.correctedPhoneNumber}
                                             </a>
