@@ -12,7 +12,7 @@ const USERNAME_KEY = 'leadsorter_username';
 
 
 const defaultUsers: AppUser[] = [
-    { id: '1', username: 'admin', role: 'admin' },
+    { id: '1', username: 'okcasa', role: 'admin' },
 ];
 
 type AuthContextType = {
