@@ -28,14 +28,13 @@ export default function SummaryPage() {
     .filter(lead => lead.leadStatus === 'meeting-scheduled' && lead.meetingTime)
     .sort((a, b) => new Date(a.meetingTime!).getTime() - new Date(b.meetingTime!).getTime());
 
-  const leadsWithNotes = allLeads.filter(lead => lead.notes && lead.notes.trim() !== '');
+  const leadsWithNotes = allLeads.filter(lead => lead.notes && lead.notes.trim() !== '' && lead.leadStatus !== 'meeting-scheduled');
 
   const otherInteractions = allLeads.filter(
     lead =>
       lead.leadStatus &&
       lead.leadStatus !== 'new' &&
-      lead.leadStatus !== 'meeting-scheduled' &&
-      (!lead.notes || lead.notes.trim() === '')
+      lead.leadStatus !== 'meeting-scheduled'
   );
 
   return (
@@ -65,13 +64,16 @@ export default function SummaryPage() {
                   </AccordionTrigger>
                   <AccordionContent>
                     {scheduledMeetings.length > 0 ? (
-                      <ul className="space-y-2 pt-2">
+                      <ul className="space-y-3 pt-2">
                         {scheduledMeetings.map(lead => (
                           <li key={lead.id} className="p-3 bg-muted/50 rounded-lg">
                             <p className="font-medium">{lead.correctedBusinessName}</p>
                             <p className="text-sm text-muted-foreground">
                               {format(new Date(lead.meetingTime!), 'PPP p')}
                             </p>
+                            {lead.notes && (
+                                <p className="text-sm text-muted-foreground italic mt-2">"{lead.notes}"</p>
+                            )}
                           </li>
                         ))}
                       </ul>
@@ -80,42 +82,25 @@ export default function SummaryPage() {
                     )}
                   </AccordionContent>
                 </AccordionItem>
-                <AccordionItem value="notes">
-                  <AccordionTrigger>
-                    <div className="flex items-center gap-2">
-                        <StickyNote className="h-5 w-5 text-primary" />
-                        <span className="font-semibold">Leads with Notes ({leadsWithNotes.length})</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    {leadsWithNotes.length > 0 ? (
-                      <ul className="space-y-3 pt-2">
-                        {leadsWithNotes.map(lead => (
-                          <li key={lead.id} className="p-3 bg-muted/50 rounded-lg">
-                            <p className="font-medium">{lead.correctedBusinessName}</p>
-                            <p className="text-sm text-muted-foreground italic">"{lead.notes}"</p>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-muted-foreground text-center py-4">No leads have notes yet.</p>
-                    )}
-                  </AccordionContent>
-                </AccordionItem>
                 <AccordionItem value="interactions">
                   <AccordionTrigger>
                     <div className="flex items-center gap-2">
                         <FileText className="h-5 w-5 text-primary" />
-                        <span className="font-semibold">Other Interactions ({otherInteractions.length})</span>
+                        <span className="font-semibold">All Interactions ({otherInteractions.length})</span>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
                     {otherInteractions.length > 0 ? (
-                      <ul className="space-y-2 pt-2">
+                      <ul className="space-y-3 pt-2">
                         {otherInteractions.map(lead => (
-                          <li key={lead.id} className="p-3 bg-muted/50 rounded-lg flex justify-between items-center">
-                            <p className="font-medium">{lead.correctedBusinessName}</p>
-                            <p className="text-sm text-muted-foreground capitalize">{lead.leadStatus?.replace('-', ' ')}</p>
+                          <li key={lead.id} className="p-3 bg-muted/50 rounded-lg">
+                            <div className="flex justify-between items-center">
+                                <p className="font-medium">{lead.correctedBusinessName}</p>
+                                <p className="text-sm text-muted-foreground capitalize">{lead.leadStatus?.replace('-', ' ')}</p>
+                            </div>
+                            {lead.notes && (
+                                <p className="text-sm text-muted-foreground italic mt-2">"{lead.notes}"</p>
+                            )}
                           </li>
                         ))}
                       </ul>
