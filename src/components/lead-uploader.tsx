@@ -66,12 +66,23 @@ export function LeadUploader({ onLeadsUpload }: LeadUploaderProps) {
         
         const leadsData: Lead[] = lines.map((line, index) => {
           const values = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); // Handle commas inside quotes
+          
+          let website = websiteIndex !== -1 ? (values[websiteIndex]?.trim().replace(/"/g, '') || '') : '';
+          let businessType = businessTypeIndex !== -1 ? (values[businessTypeIndex]?.trim().replace(/"/g, '') || undefined) : undefined;
+          
+          if(website && !website.includes('http') && !website.includes('www')) {
+            if (!businessType) { // only move if businessType is not already set from its own column
+              businessType = website;
+            }
+            website = '';
+          }
+
           return {
             id: `lead-${index}-${Date.now()}`,
             businessName: values[nameIndex]?.trim().replace(/"/g, '') || '',
             phoneNumber: values[phoneIndex]?.trim().replace(/"/g, '') || '',
-            website: websiteIndex !== -1 ? (values[websiteIndex]?.trim().replace(/"/g, '') || '') : '',
-            businessType: businessTypeIndex !== -1 ? (values[businessTypeIndex]?.trim().replace(/"/g, '') || '') : undefined,
+            website: website,
+            businessType: businessType,
           };
         }).filter(lead => lead.businessName && lead.phoneNumber);
 
