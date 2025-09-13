@@ -70,13 +70,13 @@ export default function SummaryPage() {
                     {scheduledMeetings.length > 0 ? (
                       <ul className="space-y-3 pt-2">
                         {scheduledMeetings.map(lead => (
-                          <li key={lead.id} className="p-3 bg-muted/50 rounded-lg">
-                            <p className="font-medium">{lead.correctedBusinessName}</p>
-                            <p className="text-sm text-muted-foreground">
+                          <li key={lead.id} className="p-4 bg-muted/50 rounded-lg border">
+                            <p className="font-semibold text-base">{lead.correctedBusinessName}</p>
+                            <p className="text-sm text-muted-foreground mt-1">
                               {format(new Date(lead.meetingTime!), 'PPP p')}
                             </p>
                             {lead.notes && (
-                                <p className="text-sm text-muted-foreground italic mt-2">"{lead.notes}"</p>
+                                <p className="text-sm text-foreground/80 italic mt-2 border-l-2 border-primary/20 pl-3">"{lead.notes}"</p>
                             )}
                           </li>
                         ))}
@@ -98,13 +98,13 @@ export default function SummaryPage() {
                       <>
                         <ul className="space-y-3 pt-2">
                           {otherInteractions.slice(0, visibleInteractionsCount).map(lead => (
-                            <li key={lead.id} className="p-3 bg-muted/50 rounded-lg">
+                            <li key={lead.id} className="p-4 bg-muted/50 rounded-lg border">
                               <div className="flex justify-between items-center">
-                                  <p className="font-medium">{lead.correctedBusinessName}</p>
+                                  <p className="font-semibold text-base">{lead.correctedBusinessName}</p>
                                   <p className="text-sm text-muted-foreground capitalize">{lead.leadStatus?.replace('-', ' ')}</p>
                               </div>
                               {lead.notes && (
-                                  <p className="text-sm text-muted-foreground italic mt-2">"{lead.notes}"</p>
+                                  <p className="text-sm text-foreground/80 italic mt-2 border-l-2 border-primary/20 pl-3">"{lead.notes}"</p>
                               )}
                             </li>
                           ))}
