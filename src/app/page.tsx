@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Header } from '@/components/header';
 import { LeadUploader } from '@/components/lead-uploader';
 import { LeadsTable } from '@/components/leads-table';
@@ -9,12 +10,16 @@ import type { Lead, ProcessedLead } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast";
 
 const PAGE_SIZE = 50;
+const LEADS_KEY = 'leadsorter_leads';
+const VIEWED_LEADS_COUNT_KEY = 'leadsorter_viewed_count';
+
 
 export default function Home() {
   const [allLeads, setAllLeads] = useState<ProcessedLead[]>([]);
   const [visibleLeads, setVisibleLeads] = useState<ProcessedLead[]>([]);
   const [editingLead, setEditingLead] = useState<ProcessedLead | null>(null);
   const { toast } = useToast();
+  const router = useRouter();
 
   const handleLeadsUpload = async (rawLeads: Lead[]) => {
     const totalLeads = rawLeads.length;
@@ -90,6 +95,27 @@ export default function Home() {
     });
   };
 
+  const handleNext = () => {
+    // Save to localStorage
+    try {
+        localStorage.setItem(LEADS_KEY, JSON.stringify(allLeads));
+        localStorage.setItem(VIEWED_LEADS_COUNT_KEY, '0'); // Reset viewed count
+        toast({
+            title: "Leads Saved!",
+            description: "Your leads have been saved. You're being redirected to the dashboard.",
+            className: 'bg-accent text-accent-foreground border-accent'
+        });
+        // Redirect to dashboard
+        router.push('/dashboard');
+    } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "Failed to save leads",
+            description: "There was an error saving your leads to the browser storage.",
+        });
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-grow container mx-auto px-4 py-8">
@@ -108,6 +134,7 @@ export default function Home() {
               onReset={handleReset}
               onScan={handleScanForWebsites}
               onLoadMore={loadMoreLeads}
+              onNext={handleNext}
             />
           )}
         </div>

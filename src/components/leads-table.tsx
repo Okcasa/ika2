@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Download, Edit, Trash2, RotateCcw, Loader2, ScanSearch } from 'lucide-react';
+import { Download, Edit, Trash2, RotateCcw, Loader2, ScanSearch, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import {
@@ -26,9 +26,10 @@ interface LeadsTableProps {
   onScan: () => void;
   isScanning?: boolean;
   onLoadMore: () => void;
+  onNext: () => void;
 }
 
-export function LeadsTable({ leads, totalLeads, onEdit, onDelete, onReset, onScan, isScanning, onLoadMore }: LeadsTableProps) {
+export function LeadsTable({ leads, totalLeads, onEdit, onDelete, onReset, onScan, isScanning, onLoadMore, onNext }: LeadsTableProps) {
   const [isFloating, setIsFloating] = useState(false);
   const cardHeaderRef = useRef<HTMLDivElement>(null);
 
@@ -95,7 +96,7 @@ export function LeadsTable({ leads, totalLeads, onEdit, onDelete, onReset, onSca
 
   const ActionButtons = ({ isFloatingButtons = false }: { isFloatingButtons?: boolean }) => (
     <div className={cn(
-      "flex gap-2 w-full sm:w-auto",
+      "flex flex-wrap gap-2 w-full sm:w-auto",
       isFloatingButtons && "fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-background/80 backdrop-blur-sm p-2 rounded-xl border shadow-lg"
     )}>
       <Button variant="outline" size="sm" onClick={onReset} className="flex-1 sm:flex-none">
@@ -109,6 +110,10 @@ export function LeadsTable({ leads, totalLeads, onEdit, onDelete, onReset, onSca
       <Button size="sm" onClick={downloadCSV} className="flex-1 sm:flex-none">
         <Download className="mr-2 h-4 w-4" />
         Download CSV
+      </Button>
+      <Button size="sm" onClick={onNext} className="flex-1 sm:flex-none bg-accent hover:bg-accent/90">
+        Next
+        <ArrowRight className="ml-2 h-4 w-4" />
       </Button>
     </div>
   );
