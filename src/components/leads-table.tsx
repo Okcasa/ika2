@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect, useRef } from 'react';
 import { Download, Edit, Trash2, RotateCcw, Loader2, ScanSearch } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +15,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { ProcessedLead } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 interface LeadsTableProps {
   leads: ProcessedLead[];
@@ -25,6 +27,32 @@ interface LeadsTableProps {
 }
 
 export function LeadsTable({ leads, onEdit, onDelete, onReset, onScan, isScanning }: LeadsTableProps) {
+  const [isFloating, setIsFloating] = useState(false);
+  const cardHeaderRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsFloating(!entry.isIntersecting);
+      },
+      { threshold: 0, rootMargin: '-80px 0px 0px 0px' } 
+    );
+
+    if (cardHeaderRef.current) {
+      observer.observe(cardHeaderRef.current);
+    }
+
+    return () => {
+      if (cardHeaderRef.current) {
+        observer.unobserve(cardHeaderRef.current);
+      }
+    };
+  }, []);
+
+  const handleScanClick = () => {
+    onScan();
+    setIsFloating(false); 
+  };
   
   const downloadCSV = () => {
     const headers = ['businessName', 'phoneNumber', 'website', 'businessType'];
@@ -70,28 +98,38 @@ export function LeadsTable({ leads, onEdit, onDelete, onReset, onScan, isScannin
     }
   }
 
+  const ActionButtons = ({ isFloatingButtons = false }: { isFloatingButtons?: boolean }) => (
+    <div className={cn(
+      "flex gap-2 w-full sm:w-auto",
+      isFloatingButtons && "fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-background/80 backdrop-blur-sm p-2 rounded-xl border shadow-lg"
+    )}>
+      <Button variant="outline" size="sm" onClick={onReset} className="flex-1 sm:flex-none">
+        <RotateCcw className="mr-2 h-4 w-4" />
+        Start Over
+      </Button>
+      <Button variant="outline" size="sm" onClick={handleScanClick} disabled={isScanning} className="flex-1 sm:flex-none">
+        <ScanSearch className="mr-2 h-4 w-4" />
+        Remove with websites
+      </Button>
+      <Button size="sm" onClick={downloadCSV} className="flex-1 sm:flex-none">
+        <Download className="mr-2 h-4 w-4" />
+        Download CSV
+      </Button>
+    </div>
+  );
+
   return (
     <Card className="animate-in fade-in duration-500">
-      <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <CardHeader ref={cardHeaderRef} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
             <CardTitle>2. Review & Download</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">Review the AI-corrected data, edit as needed, and download your clean list.</p>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-           <Button variant="outline" size="sm" onClick={onReset} className="flex-1 sm:flex-none">
-            <RotateCcw className="mr-2 h-4 w-4" />
-            Start Over
-          </Button>
-          <Button variant="outline" size="sm" onClick={onScan} disabled={isScanning} className="flex-1 sm:flex-none">
-            <ScanSearch className="mr-2 h-4 w-4" />
-            Remove with websites
-          </Button>
-          <Button size="sm" onClick={downloadCSV} className="flex-1 sm:flex-none">
-            <Download className="mr-2 h-4 w-4" />
-            Download CSV
-          </Button>
-        </div>
+        <ActionButtons />
       </CardHeader>
+
+      {isFloating && !isScanning && <ActionButtons isFloatingButtons />}
+
       <CardContent>
         <TooltipProvider>
           <div className="overflow-x-auto border rounded-lg">
@@ -108,7 +146,7 @@ export function LeadsTable({ leads, onEdit, onDelete, onReset, onScan, isScannin
               </TableHeader>
               <TableBody>
                 {leads.map((lead) => (
-                  <TableRow key={lead.id} className="h-[60px]">
+                  <TableRow key={lead.id} className={cn("h-[60px]", lead.status === 'processing' && 'opacity-50')}>
                     <TableCell className="font-medium font-code">{lead.correctedBusinessName}</TableCell>
                     <TableCell className="font-code">{lead.correctedPhoneNumber}</TableCell>
                     <TableCell className="font-code text-sm">
@@ -136,15 +174,21 @@ export function LeadsTable({ leads, onEdit, onDelete, onReset, onScan, isScannin
                       ) : getStatusBadge(lead.status)}
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => onEdit(lead)}>
-                          <Edit className="h-4 w-4" />
-                          <span className="sr-only">Edit</span>
-                        </Button>
-                        <Button variant="ghost" size="icon" className="text-destructive/70 hover:text-destructive" onClick={() => onDelete(lead.id)}>
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">Delete</span>
-                        </Button>
+                       <div className="flex items-center justify-end gap-2">
+                        {lead.status !== 'processing' ? (
+                          <>
+                            <Button variant="ghost" size="icon" onClick={() => onEdit(lead)}>
+                              <Edit className="h-4 w-4" />
+                              <span className="sr-only">Edit</span>
+                            </Button>
+                            <Button variant="ghost" size="icon" className="text-destructive/70 hover:text-destructive" onClick={() => onDelete(lead.id)}>
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">Delete</span>
+                            </Button>
+                          </>
+                        ) : (
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
