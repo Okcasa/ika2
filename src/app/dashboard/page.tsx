@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays } from 'lucide-react';
+import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, Trash2 } from 'lucide-react';
 import type { ProcessedLead } from '@/lib/types';
 import { LeadInteractionDialog } from '@/components/lead-interaction-dialog';
 import { CalendarDialog } from '@/components/calendar-dialog';
@@ -70,16 +70,24 @@ export default function DashboardPage() {
 
   const handleUpdateLeadStatus = (updatedLead: ProcessedLead) => {
     const newAllLeads = allLeads.map(l => l.id === updatedLead.id ? updatedLead : l);
-    
     setAllLeads(newAllLeads);
-    // Remove the updated lead from the dispensed list if its status is no longer 'new'
-    if (updatedLead.leadStatus && updatedLead.leadStatus !== 'new') {
+    localStorage.setItem(LEADS_KEY, JSON.stringify(newAllLeads));
+    
+    // If status is 'no-answer' or 'call-back', recycle it by treating it as 'new' for filtering, but keep its status for display
+    if (updatedLead.leadStatus === 'no-answer' || updatedLead.leadStatus === 'call-back') {
+        const recycledLead = { ...updatedLead, leadStatus: 'new' as const };
+        const updatedAllLeadsForRecycle = allLeads.map(l => l.id === updatedLead.id ? recycledLead : l);
+        setAllLeads(updatedAllLeadsForRecycle);
+        localStorage.setItem(LEADS_KEY, JSON.stringify(updatedAllLeadsForRecycle));
+        setDispensedLeads(dispensedLeads.filter(l => l.id !== updatedLead.id));
+    } else if (updatedLead.leadStatus && updatedLead.leadStatus !== 'new') {
+        // For other statuses, just remove from dispenser
         setDispensedLeads(dispensedLeads.filter(l => l.id !== updatedLead.id));
     } else {
+        // For edits that don't change status from 'new'
         setDispensedLeads(dispensedLeads.map(l => l.id === updatedLead.id ? updatedLead : l));
     }
 
-    localStorage.setItem(LEADS_KEY, JSON.stringify(newAllLeads));
     setInteractingLead(null);
   }
 
@@ -88,7 +96,6 @@ export default function DashboardPage() {
   const scheduledMeetings = useMemo(() => {
     return allLeads.filter(l => l.leadStatus === 'meeting-scheduled' && l.meetingTime);
   }, [allLeads]);
-
   
   const StatusDisplay = ({ lead }: { lead: ProcessedLead }) => {
     let statusComponent;
@@ -115,13 +122,13 @@ export default function DashboardPage() {
         statusComponent = <Badge variant="outline"><UserCheck className="h-3 w-3 mr-1" /> Contacted</Badge>;
         break;
       case 'no-answer':
-        statusComponent = <Badge variant="outline"><PhoneOff className="h-3 w-3 mr-1" /> No Answer</Badge>;
+        statusComponent = <Badge variant="outline" className="text-gray-800 bg-gray-50 border-gray-200"><PhoneOff className="h-3 w-3 mr-1" /> No Answer</Badge>;
         break;
       case 'call-back':
-        statusComponent = <Badge variant="outline" className="text-blue-800 bg-blue-50 border-blue-200">Call Back</Badge>;
+        statusComponent = <Badge variant="outline" className="text-blue-800 bg-blue-50 border-blue-200"><CalendarClock className="h-3 w-3 mr-1" />Call Back</Badge>;
         break;
       case 'wrong-number':
-        statusComponent = <Badge variant="outline" className="text-orange-800 bg-orange-50 border-orange-200">Wrong Number</Badge>;
+        statusComponent = <Badge variant="outline" className="text-orange-800 bg-orange-50 border-orange-200"><PhoneOff className="h-3 w-3 mr-1" />Wrong Number</Badge>;
         break;
       default:
         statusComponent = <Badge variant="outline">New</Badge>;
@@ -162,10 +169,12 @@ export default function DashboardPage() {
                   Get your next batch of leads to contact. You have {leadsRemaining > 0 ? leadsRemaining : 0} new leads remaining.
                 </CardDescription>
               </div>
-              <Button variant="outline" onClick={() => setIsCalendarOpen(true)}>
-                <CalendarDays className="h-4 w-4 mr-2" />
-                View Calendar
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setIsCalendarOpen(true)}>
+                    <CalendarDays className="h-4 w-4 mr-2" />
+                    View Calendar
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="flex gap-4 items-center">
