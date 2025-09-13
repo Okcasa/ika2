@@ -6,6 +6,8 @@ export interface Lead {
   businessType?: string;
 }
 
+export type LeadStatus = 'new' | 'contacted' | 'no-answer' | 'not-interested' | 'call-back' | 'wrong-number' | 'meeting-scheduled';
+
 export interface ProcessedLead extends Lead {
   correctedBusinessName: string;
   correctedPhoneNumber: string;
@@ -14,4 +16,7 @@ export interface ProcessedLead extends Lead {
   confidenceScore: number;
   status: 'processing' | 'completed' | 'error';
   errorMessage?: string;
+  leadStatus?: LeadStatus;
+  notes?: string;
+  meetingTime?: string;
 }
