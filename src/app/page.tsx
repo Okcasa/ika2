@@ -128,14 +128,14 @@ export default function Home() {
     setProgress(0);
   }
 
-  const handleScanForNoWebsites = () => {
+  const handleScanForWebsites = () => {
     const originalCount = leads.length;
-    const filteredLeads = leads.filter(lead => lead.correctedWebsite && lead.correctedWebsite.trim() !== '');
+    const filteredLeads = leads.filter(lead => !lead.correctedWebsite || lead.correctedWebsite.trim() === '');
     const removedCount = originalCount - filteredLeads.length;
     setLeads(filteredLeads);
     toast({
       title: 'Scan complete!',
-      description: `Removed ${removedCount} leads without websites.`,
+      description: `Removed ${removedCount} leads with websites.`,
       className: 'bg-accent text-accent-foreground border-accent'
     });
   };
@@ -170,7 +170,7 @@ export default function Home() {
               onEdit={setEditingLead}
               onDelete={handleDeleteLead}
               onReset={handleReset}
-              onScan={handleScanForNoWebsites}
+              onScan={handleScanForWebsites}
             />
           )}
 
@@ -180,7 +180,7 @@ export default function Home() {
               onEdit={setEditingLead}
               onDelete={handleDeleteLead}
               onReset={handleReset}
-              onScan={handleScanForNoWebsites}
+              onScan={handleScanForWebsites}
               isScanning={isLoading}
             />
           )}

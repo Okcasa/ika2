@@ -84,7 +84,7 @@ export function LeadsTable({ leads, onEdit, onDelete, onReset, onScan, isScannin
           </Button>
           <Button variant="outline" size="sm" onClick={onScan} disabled={isScanning} className="flex-1 sm:flex-none">
             <ScanSearch className="mr-2 h-4 w-4" />
-            Scan for websites
+            Remove with websites
           </Button>
           <Button size="sm" onClick={downloadCSV} className="flex-1 sm:flex-none">
             <Download className="mr-2 h-4 w-4" />
