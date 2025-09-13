@@ -9,7 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, Trash2, ArrowRightLeft, ArrowLeft } from 'lucide-react';
 import type { ProcessedLead } from '@/lib/types';
-import { LeadInteractionDialog } from '@/components/lead-interaction-dialog';
 import { CalendarDialog } from '@/components/calendar-dialog';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
@@ -39,7 +38,7 @@ function Dashboard() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [recentlyUpdatedId, setRecentlyUpdatedId] = useState<string | null>(null);
   const router = useRouter();
-  const { setOpen: setSidebarOpen } = useSidebar();
+  const { open: isSidebarOpen, setOpen: setSidebarOpen } = useSidebar();
 
 
   useEffect(() => {
@@ -182,13 +181,19 @@ function Dashboard() {
     return statusComponent;
   };
 
+  useEffect(() => {
+    if (!isSidebarOpen) {
+      setInteractingLead(null);
+    }
+  }, [isSidebarOpen]);
+
 
   return (
     <>
-      <SidebarInset className="flex flex-col min-h-screen">
+      <SidebarInset>
         <main className="flex-grow container mx-auto px-4 py-8">
           <Header />
-          <div className="mt-8 max-w-7xl mx-auto">
+          <div className="mt-8">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
