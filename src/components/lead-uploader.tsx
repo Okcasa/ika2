@@ -57,7 +57,6 @@ export function LeadUploader({ onLeadsUpload }: LeadUploaderProps) {
         
         const nameIndex = headers.findIndex(h => h.includes('name'));
         const phoneIndex = headers.findIndex(h => h.includes('phone'));
-        const websiteIndex = headers.findIndex(h => h.includes('website') || h.includes('url'));
         const businessTypeIndex = headers.findIndex(h => h.includes('businesstype') || h.includes('business type'));
         
         if (nameIndex === -1 || phoneIndex === -1) {
@@ -67,20 +66,37 @@ export function LeadUploader({ onLeadsUpload }: LeadUploaderProps) {
         const leadsData: Lead[] = lines.map((line, index) => {
           const values = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); // Handle commas inside quotes
           
-          let website = websiteIndex !== -1 ? (values[websiteIndex]?.trim().replace(/"/g, '') || '') : '';
+          let website = '';
           let businessType = businessTypeIndex !== -1 ? (values[businessTypeIndex]?.trim().replace(/"/g, '') || undefined) : undefined;
           
-          if(website && !website.includes('http') && !website.includes('www')) {
-            if (!businessType) { // only move if businessType is not already set from its own column
-              businessType = website;
-            }
-            website = '';
+          let potentialWebsite = '';
+          let potentialBusinessType = '';
+
+          values.forEach((value, i) => {
+              const cleanValue = value?.trim().replace(/"/g, '') || '';
+              if (i !== nameIndex && i !== phoneIndex) {
+                  if (cleanValue.includes('www') || cleanValue.includes('http')) {
+                      if (!website) potentialWebsite = cleanValue;
+                  } else if (i !== businessTypeIndex && cleanValue) {
+                      if (!potentialBusinessType) potentialBusinessType = cleanValue;
+                  }
+              }
+          });
+
+          website = potentialWebsite;
+          if (!businessType) {
+              businessType = potentialBusinessType;
+          }
+
+          let phoneNumber = values[phoneIndex]?.trim().replace(/"/g, '') || '';
+          if (phoneNumber.startsWith('tel:')) {
+            phoneNumber = phoneNumber.substring(4);
           }
 
           return {
             id: `lead-${index}-${Date.now()}`,
             businessName: values[nameIndex]?.trim().replace(/"/g, '') || '',
-            phoneNumber: values[phoneIndex]?.trim().replace(/"/g, '') || '',
+            phoneNumber: phoneNumber,
             website: website,
             businessType: businessType,
           };
