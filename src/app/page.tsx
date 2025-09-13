@@ -5,12 +5,14 @@ import { Header } from '@/components/header';
 import { LeadUploader } from '@/components/lead-uploader';
 import { LeadsTable } from '@/components/leads-table';
 import { EditLeadDialog } from '@/components/edit-lead-dialog';
-import { processLeadAction } from '@/app/actions';
 import type { Lead, ProcessedLead } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast";
 
+const PAGE_SIZE = 50;
+
 export default function Home() {
-  const [leads, setLeads] = useState<ProcessedLead[]>([]);
+  const [allLeads, setAllLeads] = useState<ProcessedLead[]>([]);
+  const [visibleLeads, setVisibleLeads] = useState<ProcessedLead[]>([]);
   const [editingLead, setEditingLead] = useState<ProcessedLead | null>(null);
   const { toast } = useToast();
 
@@ -27,7 +29,8 @@ export default function Home() {
       status: 'completed' as const,
     }));
     
-    setLeads(processedLeads);
+    setAllLeads(processedLeads);
+    setVisibleLeads(processedLeads.slice(0, PAGE_SIZE));
     
     toast({
       title: "Upload complete!",
@@ -35,9 +38,20 @@ export default function Home() {
       className: 'bg-accent text-accent-foreground border-accent'
     });
   };
+  
+  const loadMoreLeads = () => {
+    const currentLength = visibleLeads.length;
+    const nextLeads = allLeads.slice(currentLength, currentLength + PAGE_SIZE);
+    setVisibleLeads([...visibleLeads, ...nextLeads]);
+  };
 
   const handleUpdateLead = (updatedLead: ProcessedLead) => {
-    setLeads(leads.map(lead => lead.id === updatedLead.id ? updatedLead : lead));
+    const newAllLeads = allLeads.map(lead => lead.id === updatedLead.id ? updatedLead : lead);
+    const newVisibleLeads = visibleLeads.map(lead => lead.id === updatedLead.id ? updatedLead : lead);
+
+    setAllLeads(newAllLeads);
+    setVisibleLeads(newVisibleLeads);
+    
     setEditingLead(null);
     toast({
         title: "Lead Updated",
@@ -47,7 +61,12 @@ export default function Home() {
   };
 
   const handleDeleteLead = (leadId: string) => {
-    setLeads(leads.filter(lead => lead.id !== leadId));
+    const newAllLeads = allLeads.filter(lead => lead.id !== leadId);
+    const newVisibleLeads = visibleLeads.filter(lead => lead.id !== leadId);
+
+    setAllLeads(newAllLeads);
+    setVisibleLeads(newVisibleLeads);
+    
     toast({
       title: "Lead Deleted",
       description: "The lead has been removed from the list.",
@@ -55,14 +74,15 @@ export default function Home() {
   };
   
   const handleReset = () => {
-    setLeads([]);
+    setAllLeads([]);
+    setVisibleLeads([]);
   }
 
   const handleScanForWebsites = () => {
-    const originalCount = leads.length;
-    const filteredLeads = leads.filter(lead => !lead.correctedWebsite || lead.correctedWebsite.trim() === '');
-    const removedCount = originalCount - filteredLeads.length;
-    setLeads(filteredLeads);
+    const filteredLeads = allLeads.filter(lead => !lead.correctedWebsite || lead.correctedWebsite.trim() === '');
+    const removedCount = allLeads.length - filteredLeads.length;
+    setAllLeads(filteredLeads);
+    setVisibleLeads(filteredLeads.slice(0, PAGE_SIZE));
     toast({
       title: 'Scan complete!',
       description: `Removed ${removedCount} leads with websites.`,
@@ -75,17 +95,19 @@ export default function Home() {
       <main className="flex-grow container mx-auto px-4 py-8">
         <Header />
         <div className="mt-8 max-w-7xl mx-auto">
-          {leads.length === 0 && (
+          {allLeads.length === 0 && (
             <LeadUploader onLeadsUpload={handleLeadsUpload} />
           )}
           
-          {leads.length > 0 && (
+          {allLeads.length > 0 && (
             <LeadsTable
-              leads={leads}
+              leads={visibleLeads}
+              totalLeads={allLeads.length}
               onEdit={setEditingLead}
               onDelete={handleDeleteLead}
               onReset={handleReset}
               onScan={handleScanForWebsites}
+              onLoadMore={loadMoreLeads}
             />
           )}
         </div>

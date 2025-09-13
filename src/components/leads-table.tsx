@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Download, Edit, Trash2, RotateCcw, Loader2, ScanSearch } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -19,14 +19,16 @@ import { cn } from '@/lib/utils';
 
 interface LeadsTableProps {
   leads: ProcessedLead[];
+  totalLeads: number;
   onEdit: (lead: ProcessedLead) => void;
   onDelete: (leadId: string) => void;
   onReset: () => void;
   onScan: () => void;
   isScanning?: boolean;
+  onLoadMore: () => void;
 }
 
-export function LeadsTable({ leads, onEdit, onDelete, onReset, onScan, isScanning }: LeadsTableProps) {
+export function LeadsTable({ leads, totalLeads, onEdit, onDelete, onReset, onScan, isScanning, onLoadMore }: LeadsTableProps) {
   const [isFloating, setIsFloating] = useState(false);
   const cardHeaderRef = useRef<HTMLDivElement>(null);
 
@@ -111,6 +113,8 @@ export function LeadsTable({ leads, onEdit, onDelete, onReset, onScan, isScannin
     </div>
   );
 
+  const hasMoreLeads = leads.length < totalLeads;
+
   return (
     <Card className="animate-in fade-in duration-500">
       <CardHeader ref={cardHeaderRef} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -187,6 +191,16 @@ export function LeadsTable({ leads, onEdit, onDelete, onReset, onScan, isScannin
           </div>
         </TooltipProvider>
       </CardContent>
+      {hasMoreLeads && (
+        <CardFooter className="flex-col items-stretch gap-4 border-t px-6 py-4">
+            <div className="flex items-center justify-center">
+                <Button onClick={onLoadMore}>Show More</Button>
+            </div>
+            <p className="text-xs text-muted-foreground text-center">
+                Showing {leads.length} of {totalLeads} leads
+            </p>
+        </CardFooter>
+      )}
     </Card>
   );
 }
