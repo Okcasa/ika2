@@ -107,11 +107,11 @@ export default function DashboardPage() {
 
   const getGlowColor = (status?: string) => {
     switch (status) {
-      case 'meeting-scheduled': return 'shadow-[0_0_15px_2px_rgba(16,185,129,0.5)]'; // Green
-      case 'not-interested': return 'shadow-[0_0_15px_2px_rgba(239,68,68,0.5)]'; // Red
-      case 'call-back': return 'shadow-[0_0_15px_2px_rgba(59,130,246,0.5)]'; // Blue
-      case 'wrong-number': return 'shadow-[0_0_15px_2px_rgba(249,115,22,0.5)]'; // Orange
-      case 'no-answer': return 'shadow-[0_0_15px_2px_rgba(107,114,128,0.5)]'; // Gray
+      case 'meeting-scheduled': return 'bg-green-100/50'; // Green
+      case 'not-interested': return 'bg-red-100/50'; // Red
+      case 'call-back': return 'bg-blue-100/50'; // Blue
+      case 'wrong-number': return 'bg-orange-100/50'; // Orange
+      case 'no-answer': return 'bg-gray-100/50'; // Gray
       default: return '';
     }
   };
@@ -229,8 +229,8 @@ export default function DashboardPage() {
                                     <TableRow 
                                         key={lead.id}
                                         className={cn(
-                                            "transition-shadow duration-300",
-                                            recentlyUpdatedId === lead.id && getGlowColor(lead.leadStatus)
+                                            "transition-colors duration-500",
+                                            recentlyUpdatedId === lead.id ? getGlowColor(lead.leadStatus) : 'bg-transparent'
                                         )}
                                     >
                                         <TableCell>
