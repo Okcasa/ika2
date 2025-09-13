@@ -8,17 +8,13 @@ import { LeadsTable } from '@/components/leads-table';
 import { EditLeadDialog } from '@/components/edit-lead-dialog';
 import type { Lead, ProcessedLead } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from '@/contexts/auth-context';
 import { Loader2 } from 'lucide-react';
 
 const PAGE_SIZE = 50;
-const LEADS_KEY_PREFIX = 'leadsorter_leads_';
+const LEADS_KEY = 'leadsorter_leads';
 
 
 export default function Home() {
-  const { user, loading: authLoading } = useAuth();
-  const [leadsKey, setLeadsKey] = useState('');
-  
   const [allLeads, setAllLeads] = useState<ProcessedLead[]>([]);
   const [visibleLeads, setVisibleLeads] = useState<ProcessedLead[]>([]);
   const [editingLead, setEditingLead] = useState<ProcessedLead | null>(null);
@@ -26,17 +22,13 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    if (user) {
-        const key = `${LEADS_KEY_PREFIX}${user.uid}`;
-        setLeadsKey(key);
-        const storedLeads = localStorage.getItem(key);
-        if (storedLeads) {
-            const parsedLeads = JSON.parse(storedLeads);
-            setAllLeads(parsedLeads);
-            setVisibleLeads(parsedLeads.slice(0, PAGE_SIZE));
-        }
+    const storedLeads = localStorage.getItem(LEADS_KEY);
+    if (storedLeads) {
+        const parsedLeads = JSON.parse(storedLeads);
+        setAllLeads(parsedLeads);
+        setVisibleLeads(parsedLeads.slice(0, PAGE_SIZE));
     }
-  }, [user]);
+  }, []);
 
 
   const handleLeadsUpload = async (rawLeads: Lead[]) => {
@@ -100,6 +92,7 @@ export default function Home() {
   const handleReset = () => {
     setAllLeads([]);
     setVisibleLeads([]);
+    localStorage.removeItem(LEADS_KEY);
   }
 
   const handleScanForWebsites = () => {
@@ -117,8 +110,7 @@ export default function Home() {
   const handleNext = () => {
     // Save to localStorage
     try {
-        if (!leadsKey) throw new Error("User not authenticated.");
-        localStorage.setItem(leadsKey, JSON.stringify(allLeads));
+        localStorage.setItem(LEADS_KEY, JSON.stringify(allLeads));
         toast({
             title: "Leads Saved!",
             description: "Your leads have been saved. You're being redirected to the dashboard.",
@@ -134,14 +126,6 @@ export default function Home() {
         });
     }
   };
-
-  if (authLoading) {
-    return (
-        <div className="flex h-screen w-full items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-    );
-  }
 
   return (
     <div className="flex flex-col min-h-screen">

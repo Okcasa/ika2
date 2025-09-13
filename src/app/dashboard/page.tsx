@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, Trash2, ArrowRightLeft, ArrowLeft, LogOut, Users } from 'lucide-react';
+import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, ArrowRightLeft, ArrowLeft } from 'lucide-react';
 import type { ProcessedLead } from '@/lib/types';
 import { CalendarDialog } from '@/components/calendar-dialog';
 import { Badge } from '@/components/ui/badge';
@@ -32,14 +32,10 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { LeadInteractionForm } from '@/components/lead-interaction-form';
-import { useAuth } from '@/contexts/auth-context';
 
-const LEADS_KEY_PREFIX = 'leadsorter_leads_';
+const LEADS_KEY = 'leadsorter_leads';
 
 export default function Dashboard() {
-  const { user, username, isAdmin, logout } = useAuth();
-  const [leadsKey, setLeadsKey] = useState('');
-  
   const [allLeads, setAllLeads] = useState<ProcessedLead[]>([]);
   const [dispensedLeads, setDispensedLeads] = useState<ProcessedLead[]>([]);
   const [interactingLead, setInteractingLead] = useState<ProcessedLead | null>(null);
@@ -50,27 +46,14 @@ export default function Dashboard() {
   const router = useRouter();
 
   useEffect(() => {
-    if (user) {
-        const key = `${LEADS_KEY_PREFIX}${user.uid}`;
-        setLeadsKey(key);
-        const storedLeads = localStorage.getItem(key);
-        if (storedLeads) {
-            setAllLeads(JSON.parse(storedLeads));
-        } else {
-            setAllLeads([]);
-            setDispensedLeads([]);
-        }
+    const storedLeads = localStorage.getItem(LEADS_KEY);
+    if (storedLeads) {
+        setAllLeads(JSON.parse(storedLeads));
+    } else {
+        setAllLeads([]);
+        setDispensedLeads([]);
     }
-  }, [user]);
-
-  useEffect(() => {
-    if (leadsKey) {
-        const storedLeads = localStorage.getItem(leadsKey);
-        if (storedLeads) {
-            setAllLeads(JSON.parse(storedLeads));
-        }
-    }
-  }, [leadsKey]);
+  }, []);
   
   const getLeads = (force = false) => {
     const newLeadsInDispenser = dispensedLeads.filter(l => l.leadStatus === 'new').length;
@@ -103,19 +86,19 @@ export default function Dashboard() {
   
   const resetProgress = () => {
     setDispensedLeads([]);
-    const storedLeads = localStorage.getItem(leadsKey);
+    const storedLeads = localStorage.getItem(LEADS_KEY);
     if (storedLeads) {
       const parsedLeads: ProcessedLead[] = JSON.parse(storedLeads);
       const resetLeads = parsedLeads.map(l => ({ ...l, leadStatus: 'new' as const, notes: undefined, meetingTime: undefined }));
       setAllLeads(resetLeads);
-      localStorage.setItem(leadsKey, JSON.stringify(resetLeads));
+      localStorage.setItem(LEADS_KEY, JSON.stringify(resetLeads));
     }
   }
 
   const handleUpdateLeadStatus = (updatedLead: ProcessedLead) => {
     const newAllLeads = allLeads.map(l => l.id === updatedLead.id ? updatedLead : l);
     setAllLeads(newAllLeads);
-    localStorage.setItem(leadsKey, JSON.stringify(newAllLeads));
+    localStorage.setItem(LEADS_KEY, JSON.stringify(newAllLeads));
     
     setDispensedLeads(dispensedLeads.map(l => l.id === updatedLead.id ? updatedLead : l));
 
@@ -213,29 +196,17 @@ export default function Dashboard() {
               <div>
                 <CardTitle>Your Lead Dispenser</CardTitle>
                 <CardDescription>
-                  Welcome, {username}! You have {leadsRemaining > 0 ? leadsRemaining : 0} new leads remaining.
+                  You have {leadsRemaining > 0 ? leadsRemaining : 0} new leads remaining.
                 </CardDescription>
               </div>
               <div className="flex gap-2">
-                {isAdmin && (
-                    <>
-                        <Button variant="outline" onClick={() => router.push('/')}>
-                            <ArrowLeft className="h-4 w-4 mr-2" />
-                            New List
-                        </Button>
-                        <Button variant="outline" onClick={() => router.push('/admin/users')}>
-                            <Users className="h-4 w-4 mr-2" />
-                            Manage Users
-                        </Button>
-                    </>
-                )}
+                <Button variant="outline" onClick={() => router.push('/')}>
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    New List
+                </Button>
                 <Button variant="outline" onClick={() => setIsCalendarOpen(true)}>
                     <CalendarDays className="h-4 w-4 mr-2" />
                     View Calendar
-                </Button>
-                <Button variant="ghost" size="sm" onClick={logout}>
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Logout
                 </Button>
               </div>
             </CardHeader>
