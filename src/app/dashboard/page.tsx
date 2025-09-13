@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Header } from '@/components/header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,7 +33,6 @@ export default function DashboardPage() {
   const [showAlert, setShowAlert] = useState(false);
 
   useEffect(() => {
-    // This effect runs only on the client side
     const storedLeads = localStorage.getItem(LEADS_KEY);
     if (storedLeads) {
       setAllLeads(JSON.parse(storedLeads));
@@ -52,33 +51,49 @@ export default function DashboardPage() {
     const availableLeads = allLeads.filter(l => !l.leadStatus || l.leadStatus === 'new');
     const leadsToDispense = availableLeads.slice(0, leadsToGet);
     
-    // Mark these as "viewed" by updating their status in allLeads if we want to prevent re-dispensing
-    // For now, we are just pulling from the top of the available list.
-    
-    setDispensedLeads(prevDispensed => [...leadsToDispense, ...prevDispensed.filter(l => leadsToDispense.every(nl => nl.id !== l.id))]);
+    setDispensedLeads(leadsToDispense);
     setShowAlert(false);
   };
   
   const resetProgress = () => {
     setDispensedLeads([]);
-    // Optionally refetch all leads from local storage to reset statuses if needed
     const storedLeads = localStorage.getItem(LEADS_KEY);
     if (storedLeads) {
-      setAllLeads(JSON.parse(storedLeads));
+      const parsedLeads: ProcessedLead[] = JSON.parse(storedLeads);
+      const resetLeads = parsedLeads.map(l => ({ ...l, leadStatus: 'new' as const, notes: undefined, meetingTime: undefined }));
+      setAllLeads(resetLeads);
+      localStorage.setItem(LEADS_KEY, JSON.stringify(resetLeads));
     }
   }
 
   const handleUpdateLeadStatus = (updatedLead: ProcessedLead) => {
     const newAllLeads = allLeads.map(l => l.id === updatedLead.id ? updatedLead : l);
-    const newDispensedLeads = dispensedLeads.map(l => l.id === updatedLead.id ? updatedLead : l);
-
+    
     setAllLeads(newAllLeads);
-    setDispensedLeads(newDispensedLeads);
+    // Remove the updated lead from the dispensed list if its status is no longer 'new'
+    if (updatedLead.leadStatus && updatedLead.leadStatus !== 'new') {
+        setDispensedLeads(dispensedLeads.filter(l => l.id !== updatedLead.id));
+    } else {
+        setDispensedLeads(dispensedLeads.map(l => l.id === updatedLead.id ? updatedLead : l));
+    }
+
     localStorage.setItem(LEADS_KEY, JSON.stringify(newAllLeads));
     setInteractingLead(null);
   }
 
   const leadsRemaining = allLeads.filter(l => !l.leadStatus || l.leadStatus === 'new').length;
+  
+  const contactedLeads = useMemo(() => {
+    const sortedLeads = allLeads
+      .filter(l => l.leadStatus && l.leadStatus !== 'new')
+      .sort((a, b) => {
+        if (a.leadStatus === 'meeting-scheduled' && b.leadStatus !== 'meeting-scheduled') return -1;
+        if (a.leadStatus !== 'meeting-scheduled' && b.leadStatus === 'meeting-scheduled') return 1;
+        return 0;
+      });
+    return sortedLeads;
+  }, [allLeads]);
+
   
   const StatusDisplay = ({ lead }: { lead: ProcessedLead }) => {
     let statusComponent;
@@ -132,6 +147,58 @@ export default function DashboardPage() {
     return statusComponent;
   };
 
+  const LeadsTableComponent = ({ leads, tableTitle }: { leads: ProcessedLead[], tableTitle: string }) => (
+    <div className="mt-8">
+        <h3 className="text-xl font-semibold mb-4">{tableTitle}</h3>
+        <div className="border rounded-lg overflow-x-auto">
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Business</TableHead>
+                        <TableHead>Contact</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {leads.map(lead => (
+                        <TableRow key={lead.id}>
+                            <TableCell>
+                                <div className="font-medium">{lead.correctedBusinessName}</div>
+                                <div className="text-sm text-muted-foreground flex items-center gap-2">
+                                    <Building className="h-4 w-4" />
+                                    {lead.businessType}
+                                </div>
+                            </TableCell>
+                            <TableCell>
+                                <a href={`tel:${lead.correctedPhoneNumber}`} className="flex items-center gap-2 hover:text-primary whitespace-nowrap">
+                                    <Phone className="h-4 w-4" />
+                                    {lead.correctedPhoneNumber}
+                                </a>
+                                {lead.correctedWebsite ? (
+                                    <a href={lead.correctedWebsite.startsWith('http') ? lead.correctedWebsite : `https://${lead.correctedWebsite}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 underline hover:text-primary mt-1">
+                                        <Globe className="h-4 w-4" />
+                                        Visit Website
+                                    </a>
+                                ) : <div className="text-muted-foreground mt-1 flex items-center gap-2"><Globe className="h-4 w-4" />N/A</div>}
+                            </TableCell>
+                            <TableCell>
+                                <StatusDisplay lead={lead} />
+                            </TableCell>
+                            <TableCell className="text-right">
+                                <Button variant="outline" size="sm" onClick={() => setInteractingLead(lead)}>
+                                    <Edit className="h-4 w-4 mr-2" />
+                                    Log Interaction
+                                </Button>
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        </div>
+    </div>
+  );
+
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -163,56 +230,13 @@ export default function DashboardPage() {
               </div>
 
               {dispensedLeads.length > 0 && (
-                <div className="mt-8">
-                    <h3 className="text-xl font-semibold mb-4">Your Dispensed Leads</h3>
-                    <div className="border rounded-lg overflow-x-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Business</TableHead>
-                                    <TableHead>Contact</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {dispensedLeads.map(lead => (
-                                    <TableRow key={lead.id}>
-                                        <TableCell>
-                                            <div className="font-medium">{lead.correctedBusinessName}</div>
-                                            <div className="text-sm text-muted-foreground flex items-center gap-2">
-                                                <Building className="h-4 w-4" />
-                                                {lead.businessType}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <a href={`tel:${lead.correctedPhoneNumber}`} className="flex items-center gap-2 hover:text-primary whitespace-nowrap">
-                                                <Phone className="h-4 w-4" />
-                                                {lead.correctedPhoneNumber}
-                                            </a>
-                                            {lead.correctedWebsite ? (
-                                                <a href={lead.correctedWebsite.startsWith('http') ? lead.correctedWebsite : `https://${lead.correctedWebsite}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 underline hover:text-primary mt-1">
-                                                    <Globe className="h-4 w-4" />
-                                                    Visit Website
-                                                </a>
-                                            ) : <div className="text-muted-foreground mt-1 flex items-center gap-2"><Globe className="h-4 w-4" />N/A</div>}
-                                        </TableCell>
-                                        <TableCell>
-                                            <StatusDisplay lead={lead} />
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <Button variant="outline" size="sm" onClick={() => setInteractingLead(lead)}>
-                                                <Edit className="h-4 w-4 mr-2" />
-                                                Log Interaction
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </div>
+                <LeadsTableComponent leads={dispensedLeads} tableTitle="Your Dispensed Leads" />
               )}
+              
+              {contactedLeads.length > 0 && (
+                <LeadsTableComponent leads={contactedLeads} tableTitle="Your Contacted Leads" />
+              )}
+
             </CardContent>
           </Card>
         </div>
