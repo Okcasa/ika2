@@ -10,6 +10,7 @@ import { ArrowLeft, Calendar, TrendingUp, XCircle, FileText } from 'lucide-react
 import type { ProcessedLead } from '@/lib/types';
 import { format } from 'date-fns';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { SessionTimer } from '@/components/session-timer';
 
 const LEADS_KEY = 'leadsorter_leads';
 const VISIBLE_INTERACTIONS_LIMIT = 7;
@@ -76,10 +77,13 @@ export default function SummaryPage() {
                 <CardTitle>Activity Summary</CardTitle>
                 <CardDescription>A complete overview of all your lead interactions.</CardDescription>
               </div>
-              <Button variant="outline" onClick={() => router.push('/dashboard')}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Dashboard
-              </Button>
+              <div className="flex items-center gap-4">
+                <SessionTimer />
+                <Button variant="outline" onClick={() => router.push('/dashboard')}>
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Back to Dashboard
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <Accordion type="single" collapsible className="w-full" defaultValue="meetings">

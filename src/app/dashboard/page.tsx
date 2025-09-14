@@ -32,10 +32,11 @@ import {
 import { cn } from '@/lib/utils';
 import { LeadInteractionForm } from '@/components/lead-interaction-form';
 import { Logo } from '@/components/logo';
-import { SessionTimer } from '@/components/session-timer';
 
 const LEADS_KEY = 'leadsorter_leads';
 const DISPENSED_LEADS_KEY = 'leadsorter_dispensed_leads';
+const SESSION_START_KEY = 'leadsorter_session_start';
+
 
 export default function Dashboard() {
   const [allLeads, setAllLeads] = useState<ProcessedLead[]>([]);
@@ -55,6 +56,10 @@ export default function Dashboard() {
     const storedDispensedLeads = localStorage.getItem(DISPENSED_LEADS_KEY);
     if (storedDispensedLeads) {
         setDispensedLeads(JSON.parse(storedDispensedLeads));
+    }
+    // Init session timer
+    if (!localStorage.getItem(SESSION_START_KEY)) {
+      localStorage.setItem(SESSION_START_KEY, new Date().toISOString());
     }
   }, []);
 
@@ -104,7 +109,7 @@ export default function Dashboard() {
     if (isConfirmed) {
       setDispensedLeads([]);
       localStorage.removeItem(DISPENSED_LEADS_KEY);
-      localStorage.removeItem('leadsorter_session_start');
+      localStorage.removeItem(SESSION_START_KEY);
       const storedLeads = localStorage.getItem(LEADS_KEY);
       if (storedLeads) {
         const parsedLeads: ProcessedLead[] = JSON.parse(storedLeads);
@@ -238,7 +243,6 @@ export default function Dashboard() {
                     </p>
                 </div>
                 <div className="flex items-center space-x-2">
-                    <SessionTimer />
                     <Button variant="outline" onClick={() => setIsCalendarOpen(true)}>
                         <CalendarDays className="mr-2 h-4 w-4" />
                         View Calendar
