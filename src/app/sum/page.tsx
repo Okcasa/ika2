@@ -31,7 +31,7 @@ export default function SummaryPage() {
     .sort((a, b) => new Date(a.meetingTime!).getTime() - new Date(b.meetingTime!).getTime());
   
   const salesMade = allLeads.filter(
-    lead => lead.leadStatus === 'sale-made' || lead.leadStatus === 'client'
+    lead => lead.leadStatus === 'sale-made'
   );
 
   const closedLost = allLeads.filter(lead => lead.leadStatus === 'closed-lost');
@@ -42,7 +42,6 @@ export default function SummaryPage() {
       lead.leadStatus !== 'new' &&
       lead.leadStatus !== 'meeting-scheduled' &&
       lead.leadStatus !== 'sale-made' &&
-      lead.leadStatus !== 'client' &&
       lead.leadStatus !== 'closed-lost'
   ).sort((a,b) => (a.notes || '').localeCompare(b.notes || ''));
 

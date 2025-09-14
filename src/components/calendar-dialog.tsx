@@ -12,7 +12,7 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProcessedLead, LeadStatus } from '@/lib/types';
-import { Phone, MoreHorizontal, TrendingUp, UserPlus, XCircle } from 'lucide-react';
+import { Phone, MoreHorizontal, TrendingUp, XCircle } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 
@@ -56,10 +56,6 @@ export function CalendarDialog({ isOpen, onOpenChange, leads, onUpdateLead }: Ca
         <DropdownMenuItem onClick={() => handleStatusUpdate(lead, 'sale-made')}>
           <TrendingUp className="mr-2 h-4 w-4" />
           Sale Made
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleStatusUpdate(lead, 'client')}>
-          <UserPlus className="mr-2 h-4 w-4" />
-          Became Client
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => handleStatusUpdate(lead, 'closed-lost')} className="text-destructive">
           <XCircle className="mr-2 h-4 w-4" />
