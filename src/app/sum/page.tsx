@@ -44,7 +44,7 @@ export default function SummaryPage() {
       lead.leadStatus !== 'sale-made' &&
       lead.leadStatus !== 'client' &&
       lead.leadStatus !== 'closed-lost'
-  );
+  ).sort((a,b) => (a.notes || '').localeCompare(b.notes || ''));
 
 
   const handleShowMore = () => {
@@ -54,6 +54,12 @@ export default function SummaryPage() {
   const getStatusLabel = (status: string | undefined) => {
     if (!status) return 'Unknown';
     switch (status) {
+        case 'interested': return 'Interested';
+        case 'no-answer': return 'No Answer';
+        case 'not-interested': return 'Not Interested';
+        case 'call-back': return 'Call Back';
+        case 'wrong-number': return 'Wrong Number';
+        case 'contacted': return 'Contacted';
         case 'sale-made': return 'Sale Made';
         case 'closed-lost': return 'Closed (Lost)';
         default: return status.replace(/-/g, ' ');
@@ -162,7 +168,7 @@ export default function SummaryPage() {
                 <AccordionItem value="interactions">
                   <AccordionTrigger>
                     <div className="flex items-center gap-2">
-                        <FileText className="h-5 w-5 text-primary" />
+                        <FileText className="h-5 w-5 text-blue-500" />
                         <span className="font-semibold">Other Interactions ({otherInteractions.length})</span>
                     </div>
                   </AccordionTrigger>
@@ -185,7 +191,7 @@ export default function SummaryPage() {
                         {otherInteractions.length > visibleInteractionsCount && (
                           <div className="mt-4 text-center">
                             <Button variant="outline" onClick={handleShowMore}>
-                              See More ({otherInteractions.length - visibleInteractionsCount} more)
+                              Show More ({otherInteractions.length - visibleInteractionsCount} more)
                             </Button>
                           </div>
                         )}
@@ -206,3 +212,5 @@ export default function SummaryPage() {
     </div>
   );
 }
+
+    

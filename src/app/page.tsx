@@ -47,6 +47,7 @@ export default function Home() {
     
     setAllLeads(processedLeads);
     setVisibleLeads(processedLeads.slice(0, PAGE_SIZE));
+    localStorage.setItem(LEADS_KEY, JSON.stringify(processedLeads));
     
     toast({
       title: "Upload complete!",
@@ -67,6 +68,7 @@ export default function Home() {
 
     setAllLeads(newAllLeads);
     setVisibleLeads(newVisibleLeads);
+    localStorage.setItem(LEADS_KEY, JSON.stringify(newAllLeads));
     
     setEditingLead(null);
     toast({
@@ -82,6 +84,7 @@ export default function Home() {
 
     setAllLeads(newAllLeads);
     setVisibleLeads(newVisibleLeads);
+    localStorage.setItem(LEADS_KEY, JSON.stringify(newAllLeads));
     
     toast({
       title: "Lead Deleted",
@@ -93,6 +96,7 @@ export default function Home() {
     setAllLeads([]);
     setVisibleLeads([]);
     localStorage.removeItem(LEADS_KEY);
+    localStorage.removeItem('leadsorter_dispensed_leads');
   }
 
   const handleScanForWebsites = () => {
@@ -100,6 +104,7 @@ export default function Home() {
     const removedCount = allLeads.length - filteredLeads.length;
     setAllLeads(filteredLeads);
     setVisibleLeads(filteredLeads.slice(0, PAGE_SIZE));
+    localStorage.setItem(LEADS_KEY, JSON.stringify(filteredLeads));
     toast({
       title: 'Scan complete!',
       description: `Removed ${removedCount} leads with websites.`,
@@ -108,7 +113,6 @@ export default function Home() {
   };
 
   const handleNext = () => {
-    // Save to localStorage
     try {
         localStorage.setItem(LEADS_KEY, JSON.stringify(allLeads));
         toast({
@@ -116,7 +120,6 @@ export default function Home() {
             description: "Your leads have been saved. You're being redirected to the dashboard.",
             className: 'bg-accent text-accent-foreground border-accent'
         });
-        // Redirect to dashboard
         router.push('/dashboard');
     } catch (error) {
         toast({
@@ -164,3 +167,5 @@ export default function Home() {
     </div>
   );
 }
+
+    

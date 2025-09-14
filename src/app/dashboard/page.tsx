@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, ArrowRightLeft, ArrowLeft, TrendingUp, UserPlus, XCircle } from 'lucide-react';
+import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, ArrowRightLeft, ArrowLeft, TrendingUp, UserPlus, XCircle, FileText } from 'lucide-react';
 import type { ProcessedLead, LeadStatus } from '@/lib/types';
 import { CalendarDialog } from '@/components/calendar-dialog';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +34,7 @@ import { cn } from '@/lib/utils';
 import { LeadInteractionForm } from '@/components/lead-interaction-form';
 
 const LEADS_KEY = 'leadsorter_leads';
+const DISPENSED_LEADS_KEY = 'leadsorter_dispensed_leads';
 
 export default function Dashboard() {
   const [allLeads, setAllLeads] = useState<ProcessedLead[]>([]);
@@ -49,11 +50,24 @@ export default function Dashboard() {
     const storedLeads = localStorage.getItem(LEADS_KEY);
     if (storedLeads) {
         setAllLeads(JSON.parse(storedLeads));
-    } else {
-        setAllLeads([]);
-        setDispensedLeads([]);
+    }
+    const storedDispensedLeads = localStorage.getItem(DISPENSED_LEADS_KEY);
+    if (storedDispensedLeads) {
+        setDispensedLeads(JSON.parse(storedDispensedLeads));
     }
   }, []);
+
+  useEffect(() => {
+    if (allLeads.length > 0) {
+      localStorage.setItem(LEADS_KEY, JSON.stringify(allLeads));
+    }
+  }, [allLeads]);
+  
+  useEffect(() => {
+    if (dispensedLeads.length > 0) {
+      localStorage.setItem(DISPENSED_LEADS_KEY, JSON.stringify(dispensedLeads));
+    }
+  }, [dispensedLeads]);
   
   const getLeads = (force = false) => {
     const newLeadsInDispenser = dispensedLeads.filter(l => l.leadStatus === 'new').length;
@@ -86,19 +100,18 @@ export default function Dashboard() {
   
   const resetProgress = () => {
     setDispensedLeads([]);
+    localStorage.removeItem(DISPENSED_LEADS_KEY);
     const storedLeads = localStorage.getItem(LEADS_KEY);
     if (storedLeads) {
       const parsedLeads: ProcessedLead[] = JSON.parse(storedLeads);
       const resetLeads = parsedLeads.map(l => ({ ...l, leadStatus: 'new' as const, notes: undefined, meetingTime: undefined }));
       setAllLeads(resetLeads);
-      localStorage.setItem(LEADS_KEY, JSON.stringify(resetLeads));
     }
   }
 
   const handleUpdateLeadStatus = (updatedLead: ProcessedLead) => {
     const newAllLeads = allLeads.map(l => l.id === updatedLead.id ? updatedLead : l);
     setAllLeads(newAllLeads);
-    localStorage.setItem(LEADS_KEY, JSON.stringify(newAllLeads));
     
     setDispensedLeads(dispensedLeads.map(l => l.id === updatedLead.id ? updatedLead : l));
 
@@ -219,6 +232,10 @@ export default function Dashboard() {
                 <Button variant="outline" onClick={() => router.push('/')}>
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     New List
+                </Button>
+                <Button variant="outline" onClick={() => router.push('/sum')}>
+                    <FileText className="h-4 w-4 mr-2" />
+                    View Summary
                 </Button>
                 <Button variant="outline" onClick={() => setIsCalendarOpen(true)}>
                     <CalendarDays className="h-4 w-4 mr-2" />
@@ -354,3 +371,5 @@ export default function Dashboard() {
     </>
   );
 }
+
+    
