@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -232,10 +233,6 @@ export default function Dashboard() {
                 <Button variant="outline" onClick={() => router.push('/')}>
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     New List
-                </Button>
-                <Button variant="outline" onClick={() => router.push('/sum')}>
-                    <FileText className="h-4 w-4 mr-2" />
-                    View Summary
                 </Button>
                 <Button variant="outline" onClick={() => setIsCalendarOpen(true)}>
                     <CalendarDays className="h-4 w-4 mr-2" />
