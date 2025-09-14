@@ -57,7 +57,6 @@ export default function SummaryPage() {
   const getStatusLabel = (status: string | undefined) => {
     if (!status) return 'Unknown';
     switch (status) {
-        case 'interested': return 'Interested';
         case 'no-answer': return 'No Answer';
         case 'not-interested': return 'Not Interested';
         case 'call-back': return 'Call Back';

@@ -145,7 +145,6 @@ export default function Dashboard() {
   const getGlowColor = (status?: string) => {
     switch (status) {
       case 'meeting-scheduled': return 'bg-green-100/50';
-      case 'interested': return 'bg-purple-100/50';
       case 'not-interested': return 'bg-red-100/50';
       case 'call-back': return 'bg-blue-100/50';
       case 'wrong-number': return 'bg-orange-100/50';
@@ -173,9 +172,6 @@ export default function Dashboard() {
             </div>
           </Badge>
         );
-        break;
-      case 'interested':
-        statusComponent = <Badge variant="outline" className="text-purple-800 bg-purple-50 border-purple-200"><UserCheck className="h-3 w-3 mr-1" /> Interested</Badge>;
         break;
       case 'not-interested':
         statusComponent = <Badge variant="destructive"><UserX className="h-3 w-3 mr-1" /> Not Interested</Badge>;
