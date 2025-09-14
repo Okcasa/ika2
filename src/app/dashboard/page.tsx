@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, TrendingUp, XCircle, RotateCcw, ArrowRight, TrendingDown, MoreHorizontal, BarChart, Users, Percent, ListTodo, Handshake } from 'lucide-react';
+import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, TrendingUp, XCircle, RotateCcw, ArrowRight, TrendingDown, MoreHorizontal, BarChart, Users, Percent, ListTodo, Handshake, Sun, Moon } from 'lucide-react';
 import type { ProcessedLead, LeadStatus } from '@/lib/types';
 import { CalendarDialog } from '@/components/calendar-dialog';
 import { Badge } from '@/components/ui/badge';
@@ -44,6 +44,7 @@ import { Logo } from '@/components/logo';
 const LEADS_KEY = 'leadsorter_leads';
 const DISPENSED_LEADS_KEY = 'leadsorter_dispensed_leads';
 const SESSION_START_KEY = 'leadsorter_session_start';
+const THEME_KEY = 'leadsorter_theme';
 
 
 export default function Dashboard() {
@@ -55,6 +56,7 @@ export default function Dashboard() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [recentlyUpdatedId, setRecentlyUpdatedId] = useState<string | null>(null);
+  const [theme, setTheme] = useState('light');
   const router = useRouter();
 
   useEffect(() => {
@@ -70,7 +72,21 @@ export default function Dashboard() {
     if (!localStorage.getItem(SESSION_START_KEY)) {
       localStorage.setItem(SESSION_START_KEY, new Date().toISOString());
     }
+
+    // Theme
+    const storedTheme = localStorage.getItem(THEME_KEY);
+    if (storedTheme) {
+      setTheme(storedTheme);
+      document.documentElement.classList.toggle('dark', storedTheme === 'dark');
+    }
   }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    localStorage.setItem(THEME_KEY, newTheme);
+    document.documentElement.classList.toggle('dark', newTheme === 'dark');
+  };
 
   useEffect(() => {
     if (allLeads.length > 0) {
@@ -167,13 +183,13 @@ export default function Dashboard() {
 
   const getGlowColor = (status?: string) => {
     switch (status) {
-      case 'meeting-scheduled': return 'bg-green-100/50';
-      case 'not-interested': return 'bg-red-100/50';
-      case 'call-back': return 'bg-blue-100/50';
-      case 'wrong-number': return 'bg-orange-100/50';
-      case 'no-answer': return 'bg-gray-100/50';
-      case 'sale-made': return 'bg-yellow-100/50';
-      case 'closed-lost': return 'bg-red-200/50';
+      case 'meeting-scheduled': return 'bg-green-100/50 dark:bg-green-900/20';
+      case 'not-interested': return 'bg-red-100/50 dark:bg-red-900/20';
+      case 'call-back': return 'bg-blue-100/50 dark:bg-blue-900/20';
+      case 'wrong-number': return 'bg-orange-100/50 dark:bg-orange-900/20';
+      case 'no-answer': return 'bg-gray-100/50 dark:bg-gray-700/20';
+      case 'sale-made': return 'bg-yellow-100/50 dark:bg-yellow-900/20';
+      case 'closed-lost': return 'bg-red-200/50 dark:bg-red-800/20';
       default: return '';
     }
   };
@@ -204,7 +220,7 @@ export default function Dashboard() {
       case 'meeting-scheduled':
         statusComponent = (
           <div className="flex items-center gap-1">
-            <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200 h-auto rounded-md">
+            <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700 h-auto rounded-md">
                 <div className="flex flex-col items-start">
                 <div className="flex items-center">
                     <CalendarClock className="h-3 w-3 mr-1" />
@@ -226,19 +242,19 @@ export default function Dashboard() {
         statusComponent = <Badge variant="outline"><UserCheck className="h-3 w-3 mr-1" /> Contacted</Badge>;
         break;
       case 'no-answer':
-        statusComponent = <Badge variant="outline" className="text-gray-800 bg-gray-50 border-gray-200"><PhoneOff className="h-3 w-3 mr-1" /> No Answer</Badge>;
+        statusComponent = <Badge variant="outline" className="text-gray-800 bg-gray-50 border-gray-200 dark:text-gray-300 dark:bg-gray-800 dark:border-gray-700"><PhoneOff className="h-3 w-3 mr-1" /> No Answer</Badge>;
         break;
       case 'call-back':
-        statusComponent = <Badge variant="outline" className="text-blue-800 bg-blue-50 border-blue-200"><CalendarClock className="h-3 w-3 mr-1" /> Call Back</Badge>;
+        statusComponent = <Badge variant="outline" className="text-blue-800 bg-blue-50 border-blue-200 dark:text-blue-300 dark:bg-blue-900/30 dark:border-blue-700"><CalendarClock className="h-3 w-3 mr-1" /> Call Back</Badge>;
         break;
       case 'wrong-number':
-        statusComponent = <Badge variant="outline" className="text-orange-800 bg-orange-50 border-orange-200"><PhoneOff className="h-3 w-3 mr-1" /> Wrong Number</Badge>;
+        statusComponent = <Badge variant="outline" className="text-orange-800 bg-orange-50 border-orange-200 dark:text-orange-300 dark:bg-orange-900/30 dark:border-orange-700"><PhoneOff className="h-3 w-3 mr-1" /> Wrong Number</Badge>;
         break;
       case 'sale-made':
-        statusComponent = <Badge variant="outline" className="text-yellow-800 bg-yellow-50 border-yellow-200"><TrendingUp className="h-3 w-3 mr-1" /> Sale Made</Badge>;
+        statusComponent = <Badge variant="outline" className="text-yellow-800 bg-yellow-50 border-yellow-200 dark:text-yellow-300 dark:bg-yellow-900/30 dark:border-yellow-700"><TrendingUp className="h-3 w-3 mr-1" /> Sale Made</Badge>;
         break;
       case 'closed-lost':
-        statusComponent = <Badge variant="destructive" className="bg-red-100 text-red-800 border-red-200"><XCircle className="h-3 w-3 mr-1" /> Closed (Lost)</Badge>;
+        statusComponent = <Badge variant="destructive" className="bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700"><XCircle className="h-3 w-3 mr-1" /> Closed (Lost)</Badge>;
         break;
       default:
         statusComponent = <Badge variant="outline">New</Badge>;
@@ -273,6 +289,11 @@ export default function Dashboard() {
                 <Logo className="h-6 w-6" />
                 <h1 className="text-xl font-bold ml-2">LeadSorter</h1>
                 <div className="ml-auto flex items-center space-x-4">
+                    <Button variant="ghost" size="icon" onClick={toggleTheme}>
+                        <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                        <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                        <span className="sr-only">Toggle theme</span>
+                    </Button>
                     <Button variant="outline" size="sm" onClick={() => router.push('/sum')}>
                         View Full Summary <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
