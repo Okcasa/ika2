@@ -57,7 +57,7 @@ export function CalendarDialog({ isOpen, onOpenChange, leads, onUpdateLead }: Ca
           <TrendingUp className="mr-2 h-4 w-4" />
           Sale Made
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleStatusUpdate(lead, 'closed-lost')} className="text-destructive">
+        <DropdownMenuItem onClick={() => handleStatusUpdate(lead, 'closed-lost')} className="text-destructive focus:bg-destructive">
           <XCircle className="mr-2 h-4 w-4" />
           Closed (Lost)
         </DropdownMenuItem>
