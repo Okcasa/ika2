@@ -32,7 +32,6 @@ import {
 import { cn } from '@/lib/utils';
 import { LeadInteractionForm } from '@/components/lead-interaction-form';
 import { Logo } from '@/components/logo';
-import { UserNav } from '@/components/user-nav';
 
 const LEADS_KEY = 'leadsorter_leads';
 const DISPENSED_LEADS_KEY = 'leadsorter_dispensed_leads';
@@ -228,7 +227,6 @@ export default function Dashboard() {
                 <Logo className="h-6 w-6" />
                 <h1 className="text-xl font-bold ml-2">LeadSorter</h1>
                 <div className="ml-auto flex items-center space-x-4">
-                    <UserNav />
                 </div>
             </div>
         </div>
@@ -244,6 +242,10 @@ export default function Dashboard() {
                     <Button variant="outline" onClick={() => setIsCalendarOpen(true)}>
                         <CalendarDays className="mr-2 h-4 w-4" />
                         View Calendar
+                    </Button>
+                    <Button variant="outline" onClick={() => router.push('/sum')}>
+                        <Activity className="mr-2 h-4 w-4" />
+                        View Summary
                     </Button>
                 </div>
             </div>
