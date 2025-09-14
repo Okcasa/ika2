@@ -291,6 +291,7 @@ export default function Dashboard() {
                           <Table>
                               <TableHeader>
                                   <TableRow>
+                                      <TableHead className="w-[50px]">#</TableHead>
                                       <TableHead>Business</TableHead>
                                       <TableHead>Contact</TableHead>
                                       <TableHead>Status</TableHead>
@@ -298,7 +299,7 @@ export default function Dashboard() {
                                   </TableRow>
                               </TableHeader>
                               <TableBody>
-                                  {dispensedLeads.map(lead => (
+                                  {dispensedLeads.map((lead, index) => (
                                       <TableRow 
                                           key={lead.id}
                                           className={cn(
@@ -306,6 +307,7 @@ export default function Dashboard() {
                                               recentlyUpdatedId === lead.id ? getGlowColor(lead.leadStatus) : 'bg-transparent'
                                           )}
                                       >
+                                          <TableCell className="text-muted-foreground">{index + 1}</TableCell>
                                           <TableCell>
                                               <div className="font-medium">{lead.correctedBusinessName}</div>
                                               <div className="text-sm text-muted-foreground flex items-center gap-2">
