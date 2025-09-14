@@ -256,8 +256,11 @@ export default function Dashboard() {
                   <div className='flex items-center gap-2'>
                     <Input
                       type="number"
-                      value={numLeads}
-                      onChange={(e) => setNumLeads(parseInt(e.target.value, 10))}
+                      value={numLeads > 0 ? numLeads : ''}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value, 10);
+                        setNumLeads(isNaN(value) ? 0 : value);
+                      }}
                       min="1"
                       max="35"
                       className="w-24"
