@@ -239,6 +239,9 @@ export default function Dashboard() {
                 <Logo className="h-6 w-6" />
                 <h1 className="text-xl font-bold ml-2">LeadSorter</h1>
                 <div className="ml-auto flex items-center space-x-4">
+                    <Button variant="outline" size="sm" onClick={() => router.push('/sum')}>
+                        View Full Summary <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
                 </div>
             </div>
         </div>
@@ -258,52 +261,42 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            <div className="mb-8">
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-semibold tracking-tight">Session Stats</h3>
-                    <Button variant="outline" size="sm" onClick={() => router.push('/sum')}>
-                        View Full Summary <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                </div>
+            <div className="mb-4">
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                     <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Meetings Scheduled</CardTitle>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3">
+                            <CardTitle className="text-xs font-medium">Meetings</CardTitle>
                             <CalendarClock className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{sessionStats.meetings}</div>
-                            <p className="text-xs text-muted-foreground">Total meetings booked this session</p>
+                        <CardContent className="p-3 pt-0">
+                            <div className="text-xl font-bold">{sessionStats.meetings}</div>
                         </CardContent>
                     </Card>
                     <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Contact Rate</CardTitle>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3">
+                            <CardTitle className="text-xs font-medium">Contact Rate</CardTitle>
                             <UserCheck className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{sessionStats.contactRate.toFixed(1)}%</div>
-                            <p className="text-xs text-muted-foreground">Of leads with an outcome</p>
+                        <CardContent className="p-3 pt-0">
+                            <div className="text-xl font-bold">{sessionStats.contactRate.toFixed(1)}%</div>
                         </CardContent>
                     </Card>
                     <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Positive Outcomes</CardTitle>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3">
+                            <CardTitle className="text-xs font-medium">Sales</CardTitle>
                             <TrendingUp className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">+{sessionStats.sales}</div>
-                             <p className="text-xs text-muted-foreground">Total sales made</p>
+                        <CardContent className="p-3 pt-0">
+                            <div className="text-xl font-bold">+{sessionStats.sales}</div>
                         </CardContent>
                     </Card>
                     <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Not Interested</CardTitle>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3">
+                            <CardTitle className="text-xs font-medium">Not Interested</CardTitle>
                             <TrendingDown className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{sessionStats.notInterested}</div>
-                             <p className="text-xs text-muted-foreground">Leads who were not interested</p>
+                        <CardContent className="p-3 pt-0">
+                            <div className="text-xl font-bold">{sessionStats.notInterested}</div>
                         </CardContent>
                     </Card>
                 </div>
@@ -462,5 +455,3 @@ export default function Dashboard() {
     </>
   );
 }
-
-    
