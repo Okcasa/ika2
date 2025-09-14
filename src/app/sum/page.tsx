@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Header } from '@/components/header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ArrowLeft, Calendar, TrendingUp, XCircle, FileText } from 'lucide-react';
+import { ArrowLeft, Calendar, TrendingUp, XCircle, FileText, PhoneOff } from 'lucide-react';
 import type { ProcessedLead } from '@/lib/types';
 import { format } from 'date-fns';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -37,13 +37,16 @@ export default function SummaryPage() {
 
   const closedLost = allLeads.filter(lead => lead.leadStatus === 'closed-lost');
 
+  const wrongNumbers = allLeads.filter(lead => lead.leadStatus === 'wrong-number');
+
   const otherInteractions = allLeads.filter(
     lead =>
       lead.leadStatus &&
       lead.leadStatus !== 'new' &&
       lead.leadStatus !== 'meeting-scheduled' &&
       lead.leadStatus !== 'sale-made' &&
-      lead.leadStatus !== 'closed-lost'
+      lead.leadStatus !== 'closed-lost' &&
+      lead.leadStatus !== 'wrong-number'
   ).sort((a,b) => (a.notes || '').localeCompare(b.notes || ''));
 
 
@@ -168,6 +171,31 @@ export default function SummaryPage() {
                   </AccordionContent>
                 </AccordionItem>
 
+                <AccordionItem value="wrong-numbers">
+                  <AccordionTrigger>
+                    <div className="flex items-center gap-2">
+                        <PhoneOff className="h-5 w-5 text-orange-500" />
+                        <span className="font-semibold">Wrong Numbers ({wrongNumbers.length})</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    {wrongNumbers.length > 0 ? (
+                      <ul className="space-y-3 pt-2">
+                        {wrongNumbers.map(lead => (
+                          <li key={lead.id} className="p-4 bg-orange-500/10 rounded-lg border border-orange-500/20">
+                            <p className="font-semibold text-base">{lead.correctedBusinessName}</p>
+                            {lead.notes && (
+                                <p className="text-sm text-foreground/80 italic mt-2 border-l-2 border-orange-500/20 pl-3">"{lead.notes}"</p>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-muted-foreground text-center py-4">No wrong numbers logged.</p>
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+
                 <AccordionItem value="interactions">
                   <AccordionTrigger>
                     <div className="flex items-center gap-2">
@@ -215,5 +243,3 @@ export default function SummaryPage() {
     </div>
   );
 }
-
-    
