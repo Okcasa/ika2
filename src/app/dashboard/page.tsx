@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, ArrowRightLeft, ArrowLeft } from 'lucide-react';
-import type { ProcessedLead } from '@/lib/types';
+import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, ArrowRightLeft, ArrowLeft, TrendingUp, UserPlus, XCircle } from 'lucide-react';
+import type { ProcessedLead, LeadStatus } from '@/lib/types';
 import { CalendarDialog } from '@/components/calendar-dialog';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
@@ -125,6 +125,9 @@ export default function Dashboard() {
       case 'call-back': return 'bg-blue-100/50';
       case 'wrong-number': return 'bg-orange-100/50';
       case 'no-answer': return 'bg-gray-100/50';
+      case 'sale-made': return 'bg-yellow-100/50';
+      case 'client': return 'bg-green-200/50';
+      case 'closed-lost': return 'bg-red-200/50';
       default: return '';
     }
   };
@@ -164,6 +167,15 @@ export default function Dashboard() {
         break;
       case 'wrong-number':
         statusComponent = <Badge variant="outline" className="text-orange-800 bg-orange-50 border-orange-200"><PhoneOff className="h-3 w-3 mr-1" /> Wrong Number</Badge>;
+        break;
+      case 'sale-made':
+        statusComponent = <Badge variant="outline" className="text-yellow-800 bg-yellow-50 border-yellow-200"><TrendingUp className="h-3 w-3 mr-1" /> Sale Made</Badge>;
+        break;
+      case 'client':
+        statusComponent = <Badge variant="secondary" className="text-green-800 bg-green-100 border-green-200"><UserPlus className="h-3 w-3 mr-1" /> Client</Badge>;
+        break;
+      case 'closed-lost':
+        statusComponent = <Badge variant="destructive" className="bg-red-100 text-red-800 border-red-200"><XCircle className="h-3 w-3 mr-1" /> Closed (Lost)</Badge>;
         break;
       default:
         statusComponent = <Badge variant="outline">New</Badge>;
@@ -303,6 +315,7 @@ export default function Dashboard() {
         isOpen={isCalendarOpen} 
         onOpenChange={setIsCalendarOpen}
         leads={scheduledMeetings}
+        onUpdateLead={handleUpdateLeadStatus}
       />
 
       {interactingLead && (

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Header } from '@/components/header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ArrowLeft, Calendar, FileText, StickyNote } from 'lucide-react';
+import { ArrowLeft, Calendar, FileText } from 'lucide-react';
 import type { ProcessedLead } from '@/lib/types';
 import { format } from 'date-fns';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -40,6 +40,15 @@ export default function SummaryPage() {
   const handleShowMore = () => {
     setVisibleInteractionsCount(otherInteractions.length);
   };
+
+  const getStatusLabel = (status: string | undefined) => {
+    if (!status) return 'Unknown';
+    switch (status) {
+        case 'sale-made': return 'Sale Made';
+        case 'closed-lost': return 'Closed (Lost)';
+        default: return status.replace('-', ' ');
+    }
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -101,7 +110,7 @@ export default function SummaryPage() {
                             <li key={lead.id} className="p-4 bg-muted/50 rounded-lg border">
                               <div className="flex justify-between items-center">
                                   <p className="font-semibold text-base">{lead.correctedBusinessName}</p>
-                                  <p className="text-sm text-muted-foreground capitalize">{lead.leadStatus?.replace('-', ' ')}</p>
+                                  <p className="text-sm text-muted-foreground capitalize">{getStatusLabel(lead.leadStatus)}</p>
                               </div>
                               {lead.notes && (
                                   <p className="text-sm text-foreground/80 italic mt-2 border-l-2 border-primary/20 pl-3">"{lead.notes}"</p>

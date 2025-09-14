@@ -24,7 +24,7 @@ import { CalendarIcon } from 'lucide-react';
 import { format, setHours, setMinutes } from 'date-fns';
 
 const formSchema = z.object({
-  leadStatus: z.enum(['new', 'contacted', 'no-answer', 'not-interested', 'call-back', 'wrong-number', 'meeting-scheduled', 'interested']),
+  leadStatus: z.enum(['new', 'contacted', 'no-answer', 'not-interested', 'call-back', 'wrong-number', 'meeting-scheduled', 'interested', 'sale-made', 'client', 'closed-lost']),
   notes: z.string().optional(),
   meetingDate: z.date().optional(),
   meetingTime: z.string().optional(),

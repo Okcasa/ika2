@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { isSameDay } from 'date-fns';
 import {
   Dialog,
   DialogContent,
@@ -12,16 +11,19 @@ import {
 } from '@/components/ui/dialog';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ProcessedLead } from '@/lib/types';
-import { Phone } from 'lucide-react';
+import { ProcessedLead, LeadStatus } from '@/lib/types';
+import { Phone, MoreHorizontal, TrendingUp, UserPlus, XCircle } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 
 interface CalendarDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   leads: ProcessedLead[];
+  onUpdateLead: (lead: ProcessedLead) => void;
 }
 
-export function CalendarDialog({ isOpen, onOpenChange, leads }: CalendarDialogProps) {
+export function CalendarDialog({ isOpen, onOpenChange, leads, onUpdateLead }: CalendarDialogProps) {
   const [date, setDate] = useState<Date | undefined>(new Date());
 
   const meetingsByDay = leads.reduce((acc, lead) => {
@@ -38,6 +40,34 @@ export function CalendarDialog({ isOpen, onOpenChange, leads }: CalendarDialogPr
   const selectedDayMeetings = date ? meetingsByDay[format(date, 'yyyy-MM-dd')] || [] : [];
   
   const meetingDays = Object.keys(meetingsByDay).map(day => new Date(day));
+
+  const handleStatusUpdate = (lead: ProcessedLead, status: LeadStatus) => {
+    onUpdateLead({ ...lead, leadStatus: status });
+  }
+
+  const PostMeetingActions = ({ lead }: { lead: ProcessedLead }) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-7 w-7">
+            <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => handleStatusUpdate(lead, 'sale-made')}>
+          <TrendingUp className="mr-2 h-4 w-4" />
+          Sale Made
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleStatusUpdate(lead, 'client')}>
+          <UserPlus className="mr-2 h-4 w-4" />
+          Became Client
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleStatusUpdate(lead, 'closed-lost')} className="text-destructive">
+          <XCircle className="mr-2 h-4 w-4" />
+          Closed (Lost)
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -76,15 +106,18 @@ export function CalendarDialog({ isOpen, onOpenChange, leads }: CalendarDialogPr
                     {selectedDayMeetings
                       .sort((a, b) => new Date(a.meetingTime!).getTime() - new Date(b.meetingTime!).getTime())
                       .map((lead) => (
-                      <li key={lead.id} className="p-4 bg-muted/50 rounded-lg">
-                        <p className="font-semibold">{lead.correctedBusinessName}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {format(new Date(lead.meetingTime!), 'p')}
-                        </p>
-                        <a href={`tel:${lead.correctedPhoneNumber}`} className="flex items-center gap-2 text-sm text-primary hover:underline mt-1">
-                          <Phone className="h-3 w-3" />
-                          {lead.correctedPhoneNumber}
-                        </a>
+                      <li key={lead.id} className="p-3 bg-muted/50 rounded-lg flex items-center justify-between">
+                        <div>
+                            <p className="font-semibold">{lead.correctedBusinessName}</p>
+                            <p className="text-sm text-muted-foreground">
+                            {format(new Date(lead.meetingTime!), 'p')}
+                            </p>
+                            <a href={`tel:${lead.correctedPhoneNumber}`} className="flex items-center gap-2 text-sm text-primary hover:underline mt-1">
+                            <Phone className="h-3 w-3" />
+                            {lead.correctedPhoneNumber}
+                            </a>
+                        </div>
+                        <PostMeetingActions lead={lead} />
                       </li>
                     ))}
                   </ul>

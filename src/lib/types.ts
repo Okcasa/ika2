@@ -6,7 +6,7 @@ export interface Lead {
   businessType?: string;
 }
 
-export type LeadStatus = 'new' | 'contacted' | 'no-answer' | 'not-interested' | 'call-back' | 'wrong-number' | 'meeting-scheduled' | 'interested';
+export type LeadStatus = 'new' | 'contacted' | 'no-answer' | 'not-interested' | 'call-back' | 'wrong-number' | 'meeting-scheduled' | 'interested' | 'sale-made' | 'client' | 'closed-lost';
 
 export interface ProcessedLead extends Lead {
   correctedBusinessName: string;
