@@ -258,8 +258,13 @@ export default function Dashboard() {
                       type="number"
                       value={numLeads > 0 ? numLeads : ''}
                       onChange={(e) => {
-                        const value = parseInt(e.target.value, 10);
-                        setNumLeads(isNaN(value) ? 0 : value);
+                        let value = parseInt(e.target.value, 10);
+                        if (isNaN(value)) {
+                            value = 0;
+                        } else if (value > 35) {
+                            value = 35;
+                        }
+                        setNumLeads(value);
                       }}
                       min="1"
                       max="35"
