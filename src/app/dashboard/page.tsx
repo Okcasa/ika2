@@ -253,7 +253,7 @@ export default function Dashboard() {
             <Card>
               <CardContent className="pt-6">
                 <div className="flex gap-4 items-center">
-                  <div className='flex items-center gap-2'>
+                  <div>
                     <Input
                       type="number"
                       value={numLeads > 0 ? numLeads : ''}
@@ -268,11 +268,17 @@ export default function Dashboard() {
                       }}
                       min="1"
                       max="35"
-                      className="w-24"
+                      className={cn(
+                        "w-24 transition-all",
+                        numLeads >= 35 && "ring-2 ring-destructive focus-visible:ring-destructive"
+                      )}
                       placeholder="20"
                     />
-                    <Button onClick={() => getLeads(false)} disabled={leadsRemaining <= 0}>Get New Leads</Button>
+                     {numLeads >= 35 && (
+                      <p className="text-xs text-destructive mt-1.5">Limit: 35 at a time.</p>
+                    )}
                   </div>
+                  <Button onClick={() => getLeads(false)} disabled={leadsRemaining <= 0}>Get New Leads</Button>
                   <Button variant="outline" onClick={resetProgress}>
                     <RotateCcw className="mr-2 h-4 w-4"/>
                     Reset Session
