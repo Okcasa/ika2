@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, TrendingUp, XCircle, RotateCcw } from 'lucide-react';
+import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, TrendingUp, XCircle, RotateCcw, ArrowRight, TrendingDown } from 'lucide-react';
 import type { ProcessedLead, LeadStatus } from '@/lib/types';
 import { CalendarDialog } from '@/components/calendar-dialog';
 import { Badge } from '@/components/ui/badge';
@@ -138,6 +138,18 @@ export default function Dashboard() {
 
   const leadsRemaining = allLeads.filter(l => l.leadStatus === 'new').length;
   
+  const sessionStats = useMemo(() => {
+    const totalInteractions = allLeads.filter(l => l.leadStatus !== 'new').length;
+    const meetings = allLeads.filter(l => l.leadStatus === 'meeting-scheduled').length;
+    const sales = allLeads.filter(l => l.leadStatus === 'sale-made').length;
+    const notInterested = allLeads.filter(l => l.leadStatus === 'not-interested').length;
+    const contacted = allLeads.filter(l => l.leadStatus && !['new', 'no-answer', 'wrong-number'].includes(l.leadStatus)).length;
+    
+    const contactRate = totalInteractions > 0 ? (contacted / totalInteractions) * 100 : 0;
+    
+    return { meetings, sales, notInterested, contactRate };
+  }, [allLeads]);
+
   const scheduledMeetings = useMemo(() => {
     return allLeads.filter(l => l.leadStatus === 'meeting-scheduled' && l.meetingTime);
   }, [allLeads]);
@@ -231,11 +243,11 @@ export default function Dashboard() {
             </div>
         </div>
         <main className="flex-grow p-4 md:p-8">
-            <div className="flex items-center justify-between space-y-2 mb-8">
+            <div className="flex items-center justify-between space-y-2 mb-4">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Your Lead Dispenser</h2>
+                    <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
                     <p className="text-muted-foreground">
-                        You have {leadsRemaining > 0 ? leadsRemaining : 0} new leads remaining to be dispensed.
+                        Welcome back! Here's your workspace.
                     </p>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -246,8 +258,65 @@ export default function Dashboard() {
                 </div>
             </div>
 
+            <div className="mb-8">
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-semibold tracking-tight">Session Stats</h3>
+                    <Button variant="outline" size="sm" onClick={() => router.push('/sum')}>
+                        View Full Summary <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Meetings Scheduled</CardTitle>
+                            <CalendarClock className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{sessionStats.meetings}</div>
+                            <p className="text-xs text-muted-foreground">Total meetings booked this session</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Contact Rate</CardTitle>
+                            <UserCheck className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{sessionStats.contactRate.toFixed(1)}%</div>
+                            <p className="text-xs text-muted-foreground">Of leads with an outcome</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Positive Outcomes</CardTitle>
+                            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">+{sessionStats.sales}</div>
+                             <p className="text-xs text-muted-foreground">Total sales made</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Not Interested</CardTitle>
+                            <TrendingDown className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{sessionStats.notInterested}</div>
+                             <p className="text-xs text-muted-foreground">Leads who were not interested</p>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+
             <Card>
-              <CardContent className="pt-6">
+              <CardHeader>
+                 <CardTitle>Your Lead Dispenser</CardTitle>
+                 <CardDescription>
+                    You have {leadsRemaining > 0 ? leadsRemaining : 0} new leads remaining to be dispensed.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
                 <div className="flex gap-4 items-center">
                   <div>
                     <Input
@@ -393,3 +462,5 @@ export default function Dashboard() {
     </>
   );
 }
+
+    
