@@ -243,10 +243,6 @@ export default function Dashboard() {
                         <CalendarDays className="mr-2 h-4 w-4" />
                         View Calendar
                     </Button>
-                    <Button variant="outline" onClick={() => router.push('/ls')}>
-                        <FileText className="mr-2 h-4 w-4" />
-                        New List
-                    </Button>
                 </div>
             </div>
 
