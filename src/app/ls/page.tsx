@@ -135,11 +135,9 @@ export default function Home() {
       <main className="flex-grow container mx-auto px-4 py-8">
         <Header />
         <div className="mt-8 max-w-7xl mx-auto">
-          {allLeads.length === 0 && (
+          {allLeads.length === 0 ? (
             <LeadUploader onLeadsUpload={handleLeadsUpload} />
-          )}
-          
-          {allLeads.length > 0 && (
+          ) : (
             <LeadsTable
               leads={visibleLeads}
               totalLeads={allLeads.length}
@@ -162,7 +160,7 @@ export default function Home() {
         )}
       </main>
       <footer className="text-center py-4">
-        <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} LeadSorter Pro. All rights reserved.</p>
+        <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} LeadSorter. All rights reserved.</p>
       </footer>
     </div>
   );

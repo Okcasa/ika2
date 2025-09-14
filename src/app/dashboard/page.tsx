@@ -1,14 +1,12 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Header } from '@/components/header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, ArrowRightLeft, ArrowLeft, TrendingUp, UserPlus, XCircle, FileText, Activity } from 'lucide-react';
+import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, TrendingUp, UserPlus, XCircle, FileText, Activity, RotateCcw } from 'lucide-react';
 import type { ProcessedLead, LeadStatus } from '@/lib/types';
 import { CalendarDialog } from '@/components/calendar-dialog';
 import { Badge } from '@/components/ui/badge';
@@ -33,6 +31,8 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { LeadInteractionForm } from '@/components/lead-interaction-form';
+import { Logo } from '@/components/logo';
+import { UserNav } from '@/components/user-nav';
 
 const LEADS_KEY = 'leadsorter_leads';
 const DISPENSED_LEADS_KEY = 'leadsorter_dispensed_leads';
@@ -100,13 +100,17 @@ export default function Dashboard() {
   };
   
   const resetProgress = () => {
-    setDispensedLeads([]);
-    localStorage.removeItem(DISPENSED_LEADS_KEY);
-    const storedLeads = localStorage.getItem(LEADS_KEY);
-    if (storedLeads) {
-      const parsedLeads: ProcessedLead[] = JSON.parse(storedLeads);
-      const resetLeads = parsedLeads.map(l => ({ ...l, leadStatus: 'new' as const, notes: undefined, meetingTime: undefined }));
-      setAllLeads(resetLeads);
+    const isConfirmed = window.confirm("Are you sure you want to reset your session? This will clear your current dispenser and reset all lead statuses to 'new'. This action cannot be undone.");
+    if (isConfirmed) {
+      setDispensedLeads([]);
+      localStorage.removeItem(DISPENSED_LEADS_KEY);
+      const storedLeads = localStorage.getItem(LEADS_KEY);
+      if (storedLeads) {
+        const parsedLeads: ProcessedLead[] = JSON.parse(storedLeads);
+        const resetLeads = parsedLeads.map(l => ({ ...l, leadStatus: 'new' as const, notes: undefined, meetingTime: undefined }));
+        setAllLeads(resetLeads);
+        localStorage.setItem(LEADS_KEY, JSON.stringify(resetLeads));
+      }
     }
   }
 
@@ -177,7 +181,7 @@ export default function Dashboard() {
         statusComponent = <Badge variant="outline" className="text-gray-800 bg-gray-50 border-gray-200"><PhoneOff className="h-3 w-3 mr-1" /> No Answer</Badge>;
         break;
       case 'call-back':
-        statusComponent = <Badge variant="outline" className="text-blue-800 bg-blue-50 border-blue-200"><ArrowRightLeft className="h-3 w-3 mr-1" /> Call Back</Badge>;
+        statusComponent = <Badge variant="outline" className="text-blue-800 bg-blue-50 border-blue-200"><CalendarClock className="h-3 w-3 mr-1" /> Call Back</Badge>;
         break;
       case 'wrong-number':
         statusComponent = <Badge variant="outline" className="text-orange-800 bg-orange-50 border-orange-200"><PhoneOff className="h-3 w-3 mr-1" /> Wrong Number</Badge>;
@@ -218,111 +222,118 @@ export default function Dashboard() {
 
   return (
     <>
-      <main className="flex-grow container mx-auto px-4 py-8">
-        <Header />
-        <div className="mt-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Your Lead Dispenser</CardTitle>
-                <CardDescription>
-                  You have {leadsRemaining > 0 ? leadsRemaining : 0} new leads remaining.
-                </CardDescription>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => router.push('/ls')}>
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    New List
-                </Button>
-                <Button variant="outline" onClick={() => setIsCalendarOpen(true)}>
-                    <CalendarDays className="h-4 w-4 mr-2" />
-                    View Calendar
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-4 items-center">
-                <div className='flex items-center gap-2'>
-                  <Input
-                    type="number"
-                    value={numLeads}
-                    onChange={(e) => setNumLeads(parseInt(e.target.value, 10))}
-                    min="1"
-                    max="35"
-                    className="w-24"
-                    placeholder="20"
-                  />
-                  <Button onClick={() => getLeads(false)} disabled={leadsRemaining <= 0}>Get New Leads</Button>
+      <div className="flex-col md:flex">
+        <div className="border-b">
+            <div className="flex h-16 items-center px-4">
+                <Logo className="h-6 w-6" />
+                <h1 className="text-xl font-bold ml-2">LeadSorter</h1>
+                <div className="ml-auto flex items-center space-x-4">
+                    <UserNav />
                 </div>
-                <Button variant="outline" onClick={resetProgress}>Reset Session</Button>
-              </div>
-
-              {dispensedLeads.length > 0 && (
-                 <div className="mt-8">
-                    <div className="border rounded-lg overflow-x-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Business</TableHead>
-                                    <TableHead>Contact</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {dispensedLeads.map(lead => (
-                                    <TableRow 
-                                        key={lead.id}
-                                        className={cn(
-                                            "transition-colors duration-500",
-                                            recentlyUpdatedId === lead.id ? getGlowColor(lead.leadStatus) : 'bg-transparent'
-                                        )}
-                                    >
-                                        <TableCell>
-                                            <div className="font-medium">{lead.correctedBusinessName}</div>
-                                            <div className="text-sm text-muted-foreground flex items-center gap-2">
-                                                <Building className="h-4 w-4" />
-                                                {lead.businessType}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-col">
-                                                <a href={`tel:${lead.correctedPhoneNumber}`} onClick={e => e.stopPropagation()} className="flex items-center gap-2 hover:text-primary whitespace-nowrap">
-                                                    <Phone className="h-4 w-4" />
-                                                    {lead.correctedPhoneNumber}
-                                                </a>
-                                                {lead.correctedWebsite ? (
-                                                    <a href={lead.correctedWebsite.startsWith('http') ? lead.correctedWebsite : `https://${lead.correctedWebsite}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="flex items-center gap-2 underline hover:text-primary mt-1">
-                                                        <Globe className="h-4 w-4" />
-                                                        Visit Website
-                                                    </a>
-                                                ) : <div className="text-muted-foreground mt-1 flex items-center gap-2"><Globe className="h-4 w-4" />N/A</div>}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <StatusDisplay lead={lead} />
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <Button variant="outline" size="sm" onClick={() => handleSelectLead(lead)}>
-                                                <Edit className="h-4 w-4 mr-2" />
-                                                Log Interaction
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </div>
-              )}
-
-            </CardContent>
-          </Card>
+            </div>
         </div>
-      </main>
+        <main className="flex-grow p-4 md:p-8">
+            <div className="flex items-center justify-between space-y-2 mb-8">
+                <div>
+                    <h2 className="text-3xl font-bold tracking-tight">Your Lead Dispenser</h2>
+                    <p className="text-muted-foreground">
+                        You have {leadsRemaining > 0 ? leadsRemaining : 0} new leads remaining to be dispensed.
+                    </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <Button variant="outline" onClick={() => setIsCalendarOpen(true)}>
+                        <CalendarDays className="mr-2 h-4 w-4" />
+                        View Calendar
+                    </Button>
+                </div>
+            </div>
+
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex gap-4 items-center">
+                  <div className='flex items-center gap-2'>
+                    <Input
+                      type="number"
+                      value={numLeads}
+                      onChange={(e) => setNumLeads(parseInt(e.target.value, 10))}
+                      min="1"
+                      max="35"
+                      className="w-24"
+                      placeholder="20"
+                    />
+                    <Button onClick={() => getLeads(false)} disabled={leadsRemaining <= 0}>Get New Leads</Button>
+                  </div>
+                  <Button variant="outline" onClick={resetProgress}>
+                    <RotateCcw className="mr-2 h-4 w-4"/>
+                    Reset Session
+                  </Button>
+                </div>
+
+                {dispensedLeads.length > 0 && (
+                   <div className="mt-8">
+                      <div className="border rounded-lg overflow-x-auto">
+                          <Table>
+                              <TableHeader>
+                                  <TableRow>
+                                      <TableHead>Business</TableHead>
+                                      <TableHead>Contact</TableHead>
+                                      <TableHead>Status</TableHead>
+                                      <TableHead className="text-right">Actions</TableHead>
+                                  </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                  {dispensedLeads.map(lead => (
+                                      <TableRow 
+                                          key={lead.id}
+                                          className={cn(
+                                              "transition-colors duration-500",
+                                              recentlyUpdatedId === lead.id ? getGlowColor(lead.leadStatus) : 'bg-transparent'
+                                          )}
+                                      >
+                                          <TableCell>
+                                              <div className="font-medium">{lead.correctedBusinessName}</div>
+                                              <div className="text-sm text-muted-foreground flex items-center gap-2">
+                                                  <Building className="h-4 w-4" />
+                                                  {lead.businessType}
+                                              </div>
+                                          </TableCell>
+                                          <TableCell>
+                                              <div className="flex flex-col">
+                                                  <a href={`tel:${lead.correctedPhoneNumber}`} onClick={e => e.stopPropagation()} className="flex items-center gap-2 hover:text-primary whitespace-nowrap">
+                                                      <Phone className="h-4 w-4" />
+                                                      {lead.correctedPhoneNumber}
+                                                  </a>
+                                                  {lead.correctedWebsite ? (
+                                                      <a href={lead.correctedWebsite.startsWith('http') ? lead.correctedWebsite : `https://${lead.correctedWebsite}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="flex items-center gap-2 underline hover:text-primary mt-1">
+                                                          <Globe className="h-4 w-4" />
+                                                          Visit Website
+                                                      </a>
+                                                  ) : <div className="text-muted-foreground mt-1 flex items-center gap-2"><Globe className="h-4 w-4" />N/A</div>}
+                                              </div>
+                                          </TableCell>
+                                          <TableCell>
+                                              <StatusDisplay lead={lead} />
+                                          </TableCell>
+                                          <TableCell className="text-right">
+                                              <Button variant="outline" size="sm" onClick={() => handleSelectLead(lead)}>
+                                                  <Edit className="h-4 w-4 mr-2" />
+                                                  Log Interaction
+                                              </Button>
+                                          </TableCell>
+                                      </TableRow>
+                                  ))}
+                              </TableBody>
+                          </Table>
+                      </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+        </main>
+      </div>
       
       <footer className="text-center py-4">
-        <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} LeadSorter Pro. All rights reserved.</p>
+        <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} LeadSorter. All rights reserved.</p>
       </footer>
 
       <CalendarDialog 
