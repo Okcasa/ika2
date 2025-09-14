@@ -270,12 +270,12 @@ export default function Dashboard() {
                       max="35"
                       className={cn(
                         "w-24 transition-all",
-                        numLeads >= 35 && "ring-2 ring-destructive focus-visible:ring-destructive"
+                        numLeads >= 35 && "ring-2 ring-destructive focus-visible:ring-destructive animate-shake"
                       )}
                       placeholder="20"
                     />
                      {numLeads >= 35 && (
-                      <p className="text-xs text-destructive mt-1.5">Limit: 35 at a time.</p>
+                      <p className="text-xs text-destructive mt-1.5 animate-in fade-in">Limit: 35 at a time.</p>
                     )}
                   </div>
                   <Button onClick={() => getLeads(false)} disabled={leadsRemaining <= 0}>Get New Leads</Button>
