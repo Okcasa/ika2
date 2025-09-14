@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, TrendingUp, XCircle, RotateCcw, ArrowRight, TrendingDown, MoreHorizontal } from 'lucide-react';
+import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, TrendingUp, XCircle, RotateCcw, ArrowRight, TrendingDown, MoreHorizontal, BarChart } from 'lucide-react';
 import type { ProcessedLead, LeadStatus } from '@/lib/types';
 import { CalendarDialog } from '@/components/calendar-dialog';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +29,13 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { LeadInteractionForm } from '@/components/lead-interaction-form';
@@ -46,6 +53,7 @@ export default function Dashboard() {
   const [numLeads, setNumLeads] = useState(20);
   const [showAlert, setShowAlert] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [recentlyUpdatedId, setRecentlyUpdatedId] = useState<string | null>(null);
   const router = useRouter();
 
@@ -144,11 +152,13 @@ export default function Dashboard() {
     const meetings = allLeads.filter(l => l.leadStatus === 'meeting-scheduled').length;
     const sales = allLeads.filter(l => l.leadStatus === 'sale-made').length;
     const notInterested = allLeads.filter(l => l.leadStatus === 'not-interested').length;
+    const callBacks = allLeads.filter(l => l.leadStatus === 'call-back').length;
+    const wrongNumbers = allLeads.filter(l => l.leadStatus === 'wrong-number').length;
     const contacted = allLeads.filter(l => l.leadStatus && !['new', 'no-answer', 'wrong-number'].includes(l.leadStatus)).length;
     
     const contactRate = totalInteractions > 0 ? (contacted / totalInteractions) * 100 : 0;
     
-    return { meetings, sales, notInterested, contactRate };
+    return { meetings, sales, notInterested, contactRate, totalInteractions, callBacks, wrongNumbers };
   }, [allLeads]);
 
   const scheduledMeetings = useMemo(() => {
@@ -278,51 +288,14 @@ export default function Dashboard() {
                     </p>
                 </div>
                 <div className="flex items-center space-x-2">
+                    <Button variant="outline" onClick={() => setIsStatsOpen(true)}>
+                        <BarChart className="mr-2 h-4 w-4" />
+                        View Stats
+                    </Button>
                     <Button variant="outline" onClick={() => setIsCalendarOpen(true)}>
                         <CalendarDays className="mr-2 h-4 w-4" />
                         View Calendar
                     </Button>
-                </div>
-            </div>
-
-            <div className="mb-4">
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3">
-                            <CardTitle className="text-xs font-medium">Meetings</CardTitle>
-                            <CalendarClock className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent className="p-3 pt-0">
-                            <div className="text-xl font-bold">{sessionStats.meetings}</div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3">
-                            <CardTitle className="text-xs font-medium">Contact Rate</CardTitle>
-                            <UserCheck className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent className="p-3 pt-0">
-                            <div className="text-xl font-bold">{sessionStats.contactRate.toFixed(1)}%</div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3">
-                            <CardTitle className="text-xs font-medium">Sales</CardTitle>
-                            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent className="p-3 pt-0">
-                            <div className="text-xl font-bold">+{sessionStats.sales}</div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3">
-                            <CardTitle className="text-xs font-medium">Not Interested</CardTitle>
-                            <TrendingDown className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent className="p-3 pt-0">
-                            <div className="text-xl font-bold">{sessionStats.notInterested}</div>
-                        </CardContent>
-                    </Card>
                 </div>
             </div>
 
@@ -443,6 +416,51 @@ export default function Dashboard() {
         onUpdateLead={handleUpdateLeadStatus}
       />
 
+      <Sheet open={isStatsOpen} onOpenChange={setIsStatsOpen}>
+        <SheetContent>
+            <SheetHeader>
+                <SheetTitle>Session Statistics</SheetTitle>
+                <SheetDescription>
+                    Here's a summary of your activity in this session.
+                </SheetDescription>
+            </SheetHeader>
+            <div className="grid gap-4 py-4">
+                <div className="flex items-center justify-between border-b pb-2">
+                    <span className="text-sm text-muted-foreground">Total Leads Remaining</span>
+                    <span className="font-semibold">{leadsRemaining}</span>
+                </div>
+                <div className="flex items-center justify-between border-b pb-2">
+                    <span className="text-sm text-muted-foreground">Total Interactions</span>
+                    <span className="font-semibold">{sessionStats.totalInteractions}</span>
+                </div>
+                <div className="flex items-center justify-between border-b pb-2">
+                    <span className="text-sm text-muted-foreground">Contact Rate</span>
+                    <span className="font-semibold">{sessionStats.contactRate.toFixed(1)}%</span>
+                </div>
+                <div className="flex items-center justify-between border-b pb-2">
+                    <span className="text-sm text-muted-foreground">Meetings Scheduled</span>
+                    <span className="font-semibold">{sessionStats.meetings}</span>
+                </div>
+                <div className="flex items-center justify-between border-b pb-2">
+                    <span className="text-sm text-muted-foreground">Sales Made</span>
+                    <span className="font-semibold">{sessionStats.sales}</span>
+                </div>
+                <div className="flex items-center justify-between border-b pb-2">
+                    <span className="text-sm text-muted-foreground">Not Interested</span>
+                    <span className="font-semibold">{sessionStats.notInterested}</span>
+                </div>
+                <div className="flex items-center justify-between border-b pb-2">
+                    <span className="text-sm text-muted-foreground">Needs Call Back</span>
+                    <span className="font-semibold">{sessionStats.callBacks}</span>
+                </div>
+                <div className="flex items-center justify-between border-b pb-2">
+                    <span className="text-sm text-muted-foreground">Wrong Numbers</span>
+                    <span className="font-semibold">{sessionStats.wrongNumbers}</span>
+                </div>
+            </div>
+        </SheetContent>
+      </Sheet>
+
       {interactingLead && (
         <Dialog open={!!interactingLead} onOpenChange={(isOpen) => !isOpen && setInteractingLead(null)}>
             <DialogContent>
@@ -479,5 +497,3 @@ export default function Dashboard() {
     </>
   );
 }
-
-    
