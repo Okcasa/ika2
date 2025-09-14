@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, TrendingUp, XCircle, RotateCcw, ArrowRight, TrendingDown, MoreHorizontal, BarChart } from 'lucide-react';
+import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, TrendingUp, XCircle, RotateCcw, ArrowRight, TrendingDown, MoreHorizontal, BarChart, Users, Percent, ListTodo, Handshake } from 'lucide-react';
 import type { ProcessedLead, LeadStatus } from '@/lib/types';
 import { CalendarDialog } from '@/components/calendar-dialog';
 import { Badge } from '@/components/ui/badge';
@@ -424,37 +424,61 @@ export default function Dashboard() {
                     Here's a summary of your activity in this session.
                 </SheetDescription>
             </SheetHeader>
-            <div className="grid gap-4 py-4">
-                <div className="flex items-center justify-between border-b pb-2">
-                    <span className="text-sm text-muted-foreground">Total Leads Remaining</span>
+            <div className="grid gap-4 py-4 text-sm">
+                <div className="flex items-center justify-between border-b pb-3">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                        <ListTodo className="h-4 w-4" />
+                        <span>Total Leads Remaining</span>
+                    </div>
                     <span className="font-semibold">{leadsRemaining}</span>
                 </div>
-                <div className="flex items-center justify-between border-b pb-2">
-                    <span className="text-sm text-muted-foreground">Total Interactions</span>
+                <div className="flex items-center justify-between border-b pb-3">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                        <Handshake className="h-4 w-4" />
+                        <span>Total Interactions</span>
+                    </div>
                     <span className="font-semibold">{sessionStats.totalInteractions}</span>
                 </div>
-                <div className="flex items-center justify-between border-b pb-2">
-                    <span className="text-sm text-muted-foreground">Contact Rate</span>
+                <div className="flex items-center justify-between border-b pb-3">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                        <Percent className="h-4 w-4 text-blue-500" />
+                        <span>Contact Rate</span>
+                    </div>
                     <span className="font-semibold">{sessionStats.contactRate.toFixed(1)}%</span>
                 </div>
-                <div className="flex items-center justify-between border-b pb-2">
-                    <span className="text-sm text-muted-foreground">Meetings Scheduled</span>
+                <div className="flex items-center justify-between border-b pb-3">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                        <CalendarClock className="h-4 w-4 text-green-500" />
+                        <span>Meetings Scheduled</span>
+                    </div>
                     <span className="font-semibold">{sessionStats.meetings}</span>
                 </div>
-                <div className="flex items-center justify-between border-b pb-2">
-                    <span className="text-sm text-muted-foreground">Sales Made</span>
+                <div className="flex items-center justify-between border-b pb-3">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                        <TrendingUp className="h-4 w-4 text-yellow-500" />
+                        <span>Sales Made</span>
+                    </div>
                     <span className="font-semibold">{sessionStats.sales}</span>
                 </div>
-                <div className="flex items-center justify-between border-b pb-2">
-                    <span className="text-sm text-muted-foreground">Not Interested</span>
+                <div className="flex items-center justify-between border-b pb-3">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                        <UserX className="h-4 w-4 text-red-500" />
+                        <span>Not Interested</span>
+                    </div>
                     <span className="font-semibold">{sessionStats.notInterested}</span>
                 </div>
-                <div className="flex items-center justify-between border-b pb-2">
-                    <span className="text-sm text-muted-foreground">Needs Call Back</span>
+                <div className="flex items-center justify-between border-b pb-3">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                        <CalendarDays className="h-4 w-4 text-blue-500" />
+                        <span>Needs Call Back</span>
+                    </div>
                     <span className="font-semibold">{sessionStats.callBacks}</span>
                 </div>
-                <div className="flex items-center justify-between border-b pb-2">
-                    <span className="text-sm text-muted-foreground">Wrong Numbers</span>
+                <div className="flex items-center justify-between pb-2">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                        <PhoneOff className="h-4 w-4 text-orange-500" />
+                        <span>Wrong Numbers</span>
+                    </div>
                     <span className="font-semibold">{sessionStats.wrongNumbers}</span>
                 </div>
             </div>
