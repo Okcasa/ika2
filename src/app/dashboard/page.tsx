@@ -32,6 +32,7 @@ import {
 import { cn } from '@/lib/utils';
 import { LeadInteractionForm } from '@/components/lead-interaction-form';
 import { Logo } from '@/components/logo';
+import { SessionTimer } from '@/components/session-timer';
 
 const LEADS_KEY = 'leadsorter_leads';
 const DISPENSED_LEADS_KEY = 'leadsorter_dispensed_leads';
@@ -103,6 +104,7 @@ export default function Dashboard() {
     if (isConfirmed) {
       setDispensedLeads([]);
       localStorage.removeItem(DISPENSED_LEADS_KEY);
+      localStorage.removeItem('leadsorter_session_start');
       const storedLeads = localStorage.getItem(LEADS_KEY);
       if (storedLeads) {
         const parsedLeads: ProcessedLead[] = JSON.parse(storedLeads);
@@ -110,6 +112,7 @@ export default function Dashboard() {
         setAllLeads(resetLeads);
         localStorage.setItem(LEADS_KEY, JSON.stringify(resetLeads));
       }
+      window.location.reload();
     }
   }
 
@@ -235,6 +238,7 @@ export default function Dashboard() {
                     </p>
                 </div>
                 <div className="flex items-center space-x-2">
+                    <SessionTimer />
                     <Button variant="outline" onClick={() => setIsCalendarOpen(true)}>
                         <CalendarDays className="mr-2 h-4 w-4" />
                         View Calendar
