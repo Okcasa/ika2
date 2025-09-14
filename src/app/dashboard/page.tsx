@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, ArrowRightLeft, ArrowLeft, TrendingUp, UserPlus, XCircle, FileText } from 'lucide-react';
+import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, ArrowRightLeft, ArrowLeft, TrendingUp, UserPlus, XCircle, FileText, Activity } from 'lucide-react';
 import type { ProcessedLead, LeadStatus } from '@/lib/types';
 import { CalendarDialog } from '@/components/calendar-dialog';
 import { Badge } from '@/components/ui/badge';
@@ -230,7 +230,7 @@ export default function Dashboard() {
                 </CardDescription>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => router.push('/')}>
+                <Button variant="outline" onClick={() => router.push('/ls')}>
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     New List
                 </Button>
@@ -368,5 +368,3 @@ export default function Dashboard() {
     </>
   );
 }
-
-    
