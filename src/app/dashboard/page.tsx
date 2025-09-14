@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, TrendingUp, XCircle, RotateCcw, ArrowRight, TrendingDown } from 'lucide-react';
+import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, TrendingUp, XCircle, RotateCcw, ArrowRight, TrendingDown, MoreHorizontal } from 'lucide-react';
 import type { ProcessedLead, LeadStatus } from '@/lib/types';
 import { CalendarDialog } from '@/components/calendar-dialog';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +29,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { LeadInteractionForm } from '@/components/lead-interaction-form';
 import { Logo } from '@/components/logo';
@@ -167,22 +168,45 @@ export default function Dashboard() {
     }
   };
   
+  const PostMeetingActions = ({ lead }: { lead: ProcessedLead }) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-7 w-7">
+            <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => handleUpdateLeadStatus({ ...lead, leadStatus: 'sale-made' })}>
+          <TrendingUp className="mr-2 h-4 w-4" />
+          Sale Made
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleUpdateLeadStatus({ ...lead, leadStatus: 'closed-lost' })} className="text-destructive focus:bg-destructive/90 focus:text-destructive-foreground">
+          <XCircle className="mr-2 h-4 w-4" />
+          Closed (Lost)
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   const StatusDisplay = ({ lead }: { lead: ProcessedLead }) => {
     let statusComponent;
     switch (lead.leadStatus) {
       case 'meeting-scheduled':
         statusComponent = (
-          <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200 h-auto rounded-md">
-            <div className="flex flex-col items-start">
-              <div className="flex items-center">
-                <CalendarClock className="h-3 w-3 mr-1" />
-                Meeting Scheduled
-              </div>
-              {lead.meetingTime && 
-                <span className="text-xs font-normal mt-1">{format(new Date(lead.meetingTime), "PPp")}</span>
-              }
-            </div>
-          </Badge>
+          <div className="flex items-center gap-1">
+            <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200 h-auto rounded-md">
+                <div className="flex flex-col items-start">
+                <div className="flex items-center">
+                    <CalendarClock className="h-3 w-3 mr-1" />
+                    Meeting Scheduled
+                </div>
+                {lead.meetingTime && 
+                    <span className="text-xs font-normal mt-1">{format(new Date(lead.meetingTime), "PPp")}</span>
+                }
+                </div>
+            </Badge>
+            <PostMeetingActions lead={lead} />
+          </div>
         );
         break;
       case 'not-interested':
@@ -210,7 +234,7 @@ export default function Dashboard() {
         statusComponent = <Badge variant="outline">New</Badge>;
     }
 
-    if (lead.notes) {
+    if (lead.notes && lead.leadStatus !== 'meeting-scheduled') {
       return (
         <TooltipProvider>
           <Tooltip>
