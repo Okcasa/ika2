@@ -75,6 +75,16 @@ export function LeadInteractionForm({ lead, onSave }: LeadInteractionFormProps) 
       ownerName: values.ownerName,
     });
   }
+
+  const handleClearInteraction = () => {
+    onSave({
+      ...lead,
+      leadStatus: 'new',
+      notes: undefined,
+      meetingTime: undefined,
+      ownerName: undefined,
+    });
+  };
   
   // When lead changes, reset form
   React.useEffect(() => {
@@ -207,7 +217,8 @@ export function LeadInteractionForm({ lead, onSave }: LeadInteractionFormProps) 
             </FormItem>
           )}
         />
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={handleClearInteraction}>Clear Interaction</Button>
             <Button type="submit">Save Interaction</Button>
         </div>
       </form>
