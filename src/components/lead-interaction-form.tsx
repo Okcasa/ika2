@@ -42,7 +42,6 @@ const statusOptions: { value: LeadStatus; label: string }[] = [
     { value: 'not-interested', label: 'Not interested' },
     { value: 'call-back', label: 'Needs a call back' },
     { value: 'wrong-number', label: 'Wrong number' },
-    { value: 'contacted', label: 'Contacted (no outcome)' },
 ];
 
 export function LeadInteractionForm({ lead, onSave }: LeadInteractionFormProps) {
