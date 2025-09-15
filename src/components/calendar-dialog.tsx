@@ -106,12 +106,12 @@ export function CalendarDialog({ isOpen, onOpenChange, leads, onUpdateLead }: Ca
                         <div>
                             <p className="font-semibold">{lead.correctedBusinessName}</p>
                             {lead.ownerName && (
-                                <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-1">
-                                    <User className="h-3 w-3" />
+                                <div className="mt-1.5 inline-flex items-center gap-2 text-sm text-muted-foreground bg-muted px-2 py-1 rounded-md">
+                                    <User className="h-3.5 w-3.5" />
                                     {lead.ownerName}
-                                </p>
+                                </div>
                             )}
-                            <p className="text-sm text-muted-foreground mt-1">
+                            <p className="text-sm text-muted-foreground mt-1.5">
                             {format(new Date(lead.meetingTime!), 'p')}
                             </p>
                             <a href={`tel:${lead.correctedPhoneNumber}`} className="flex items-center gap-2 text-sm text-primary hover:underline mt-1">
@@ -134,3 +134,5 @@ export function CalendarDialog({ isOpen, onOpenChange, leads, onUpdateLead }: Ca
     </Dialog>
   );
 }
+
+    

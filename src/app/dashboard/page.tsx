@@ -306,6 +306,10 @@ export default function Dashboard() {
                     </p>
                 </div>
                 <div className="flex items-center space-x-2">
+                    <Button variant="outline" onClick={() => router.push('/sum')}>
+                        <TrendingUp className="mr-2 h-4 w-4" />
+                        View Full Summary
+                    </Button>
                     <Button variant="outline" onClick={() => setIsStatsOpen(true)}>
                         <BarChart className="mr-2 h-4 w-4" />
                         View Stats
@@ -384,12 +388,12 @@ export default function Dashboard() {
                                           <TableCell>
                                               <div className="font-medium">{lead.correctedBusinessName}</div>
                                                 {lead.ownerName && (
-                                                    <div className="text-sm text-muted-foreground flex items-center gap-2">
-                                                        <User className="h-4 w-4" />
+                                                    <div className="mt-1.5 inline-flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 px-2 py-1 rounded-md">
+                                                        <User className="h-3.5 w-3.5" />
                                                         {lead.ownerName}
                                                     </div>
                                                 )}
-                                              <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
+                                              <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1.5">
                                                   <Building className="h-4 w-4" />
                                                   {lead.businessType}
                                               </div>
@@ -545,3 +549,5 @@ export default function Dashboard() {
     </>
   );
 }
+
+    

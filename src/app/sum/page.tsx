@@ -105,10 +105,10 @@ export default function SummaryPage() {
                                 <div>
                                     <p className="font-semibold text-base">{lead.correctedBusinessName}</p>
                                     {lead.ownerName && (
-                                        <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-1">
+                                        <div className="mt-1.5 inline-flex items-center gap-2 text-sm text-muted-foreground bg-muted px-2 py-1 rounded-md">
                                             <User className="h-3.5 w-3.5" />
                                             {lead.ownerName}
-                                        </p>
+                                        </div>
                                     )}
                                 </div>
                                 <p className="text-sm text-muted-foreground mt-1">
@@ -251,3 +251,5 @@ export default function SummaryPage() {
     </div>
   );
 }
+
+    
