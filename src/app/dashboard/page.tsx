@@ -287,6 +287,26 @@ export default function Dashboard() {
     return statusComponent;
   };
 
+  const CallBackQueueActions = ({ lead }: { lead: ProcessedLead }) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-7 w-7">
+            <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => handleSelectLead(lead)}>
+          <Edit className="mr-2 h-4 w-4" />
+          Log Interaction
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleUpdateLeadStatus({ ...lead, leadStatus: 'not-interested' })} className="text-destructive focus:bg-destructive/90 focus:text-destructive-foreground">
+          <UserX className="mr-2 h-4 w-4" />
+          Not Interested
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   return (
     <>
       <div className="flex-col md:flex">
@@ -536,6 +556,7 @@ export default function Dashboard() {
                                                   {lead.correctedPhoneNumber}
                                               </a>
                                           </div>
+                                          <CallBackQueueActions lead={lead} />
                                       </div>
                                   </li>
                                   ))}
