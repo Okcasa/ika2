@@ -306,10 +306,6 @@ export default function Dashboard() {
                     </p>
                 </div>
                 <div className="flex items-center space-x-2">
-                    <Button variant="outline" onClick={() => router.push('/sum')}>
-                        <TrendingUp className="mr-2 h-4 w-4" />
-                        View Full Summary
-                    </Button>
                     <Button variant="outline" onClick={() => setIsStatsOpen(true)}>
                         <BarChart className="mr-2 h-4 w-4" />
                         View Stats
