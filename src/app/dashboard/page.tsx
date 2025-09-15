@@ -40,6 +40,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { cn } from '@/lib/utils';
 import { LeadInteractionForm } from '@/components/lead-interaction-form';
 import { Logo } from '@/components/logo';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const LEADS_KEY = 'leadsorter_leads';
 const DISPENSED_LEADS_KEY = 'leadsorter_dispensed_leads';
@@ -175,6 +176,10 @@ export default function Dashboard() {
     const contactRate = totalInteractions > 0 ? (contacted / totalInteractions) * 100 : 0;
     
     return { meetings, sales, notInterested, contactRate, totalInteractions, callBacks, wrongNumbers };
+  }, [allLeads]);
+  
+  const callBackLeads = useMemo(() => {
+    return allLeads.filter(l => l.leadStatus === 'call-back');
   }, [allLeads]);
 
   const scheduledMeetings = useMemo(() => {
@@ -441,70 +446,104 @@ export default function Dashboard() {
       />
 
       <Sheet open={isStatsOpen} onOpenChange={setIsStatsOpen}>
-        <SheetContent>
+        <SheetContent className="sm:max-w-md">
             <SheetHeader>
                 <SheetTitle>Session Statistics</SheetTitle>
                 <SheetDescription>
                     Here's a summary of your activity in this session.
                 </SheetDescription>
             </SheetHeader>
-            <div className="grid gap-4 py-4 text-sm">
-                <div className="flex items-center justify-between border-b pb-3">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                        <ListTodo className="h-4 w-4" />
-                        <span>Total Leads Remaining</span>
+            <div className="py-4 space-y-4">
+                <div className="grid gap-4 text-sm">
+                    <div className="flex items-center justify-between border-b pb-3">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <ListTodo className="h-4 w-4" />
+                            <span>Total Leads Remaining</span>
+                        </div>
+                        <span className="font-semibold">{leadsRemaining}</span>
                     </div>
-                    <span className="font-semibold">{leadsRemaining}</span>
-                </div>
-                <div className="flex items-center justify-between border-b pb-3">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                        <Handshake className="h-4 w-4" />
-                        <span>Total Interactions</span>
+                    <div className="flex items-center justify-between border-b pb-3">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <Handshake className="h-4 w-4" />
+                            <span>Total Interactions</span>
+                        </div>
+                        <span className="font-semibold">{sessionStats.totalInteractions}</span>
                     </div>
-                    <span className="font-semibold">{sessionStats.totalInteractions}</span>
-                </div>
-                <div className="flex items-center justify-between border-b pb-3">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                        <Percent className="h-4 w-4 text-blue-500" />
-                        <span>Contact Rate</span>
+                    <div className="flex items-center justify-between border-b pb-3">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <Percent className="h-4 w-4 text-blue-500" />
+                            <span>Contact Rate</span>
+                        </div>
+                        <span className="font-semibold">{sessionStats.contactRate.toFixed(1)}%</span>
                     </div>
-                    <span className="font-semibold">{sessionStats.contactRate.toFixed(1)}%</span>
-                </div>
-                <div className="flex items-center justify-between border-b pb-3">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                        <CalendarClock className="h-4 w-4 text-green-500" />
-                        <span>Meetings Scheduled</span>
+                    <div className="flex items-center justify-between border-b pb-3">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <CalendarClock className="h-4 w-4 text-green-500" />
+                            <span>Meetings Scheduled</span>
+                        </div>
+                        <span className="font-semibold">{sessionStats.meetings}</span>
                     </div>
-                    <span className="font-semibold">{sessionStats.meetings}</span>
-                </div>
-                <div className="flex items-center justify-between border-b pb-3">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                        <TrendingUp className="h-4 w-4 text-yellow-500" />
-                        <span>Sales Made</span>
+                    <div className="flex items-center justify-between border-b pb-3">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <TrendingUp className="h-4 w-4 text-yellow-500" />
+                            <span>Sales Made</span>
+                        </div>
+                        <span className="font-semibold">{sessionStats.sales}</span>
                     </div>
-                    <span className="font-semibold">{sessionStats.sales}</span>
-                </div>
-                <div className="flex items-center justify-between border-b pb-3">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                        <UserX className="h-4 w-4 text-red-500" />
-                        <span>Not Interested</span>
+                    <div className="flex items-center justify-between border-b pb-3">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <UserX className="h-4 w-4 text-red-500" />
+                            <span>Not Interested</span>
+                        </div>
+                        <span className="font-semibold">{sessionStats.notInterested}</span>
                     </div>
-                    <span className="font-semibold">{sessionStats.notInterested}</span>
-                </div>
-                <div className="flex items-center justify-between border-b pb-3">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                        <CalendarDays className="h-4 w-4 text-blue-500" />
-                        <span>Needs Call Back</span>
+                    <div className="flex items-center justify-between border-b pb-3">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <CalendarDays className="h-4 w-4 text-blue-500" />
+                            <span>Needs Call Back</span>
+                        </div>
+                        <span className="font-semibold">{sessionStats.callBacks}</span>
                     </div>
-                    <span className="font-semibold">{sessionStats.callBacks}</span>
-                </div>
-                <div className="flex items-center justify-between pb-2">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                        <PhoneOff className="h-4 w-4 text-orange-500" />
-                        <span>Wrong Numbers</span>
+                    <div className="flex items-center justify-between pb-2">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <PhoneOff className="h-4 w-4 text-orange-500" />
+                            <span>Wrong Numbers</span>
+                        </div>
+                        <span className="font-semibold">{sessionStats.wrongNumbers}</span>
                     </div>
-                    <span className="font-semibold">{sessionStats.wrongNumbers}</span>
                 </div>
+
+                <Accordion type="single" collapsible className="w-full">
+                    <AccordionItem value="call-backs">
+                        <AccordionTrigger>
+                            <div className="flex items-center gap-2">
+                                <Users className="h-4 w-4 text-blue-500" />
+                                <span className="font-semibold">Call Back Queue ({callBackLeads.length})</span>
+                            </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                        {callBackLeads.length > 0 ? (
+                            <ul className="space-y-3 pt-2">
+                                {callBackLeads.map(lead => (
+                                <li key={lead.id} className="p-3 bg-muted/50 rounded-lg border">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <p className="font-semibold">{lead.correctedBusinessName}</p>
+                                            <a href={`tel:${lead.correctedPhoneNumber}`} className="flex items-center gap-2 text-sm text-primary hover:underline mt-1">
+                                                <Phone className="h-3 w-3" />
+                                                {lead.correctedPhoneNumber}
+                                            </a>
+                                        </div>
+                                    </div>
+                                </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p className="text-muted-foreground text-center py-4 text-sm">No leads in the call back queue.</p>
+                        )}
+                        </AccordionContent>
+                    </AccordionItem>
+                </Accordion>
             </div>
         </SheetContent>
       </Sheet>
@@ -545,5 +584,3 @@ export default function Dashboard() {
     </>
   );
 }
-
-    
