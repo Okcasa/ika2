@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, TrendingUp, XCircle, RotateCcw, ArrowRight, TrendingDown, MoreHorizontal, BarChart, Users, Percent, ListTodo, Handshake, Sun, Moon } from 'lucide-react';
+import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, TrendingUp, XCircle, RotateCcw, ArrowRight, TrendingDown, MoreHorizontal, BarChart, Users, Percent, ListTodo, Handshake, Sun, Moon, User } from 'lucide-react';
 import type { ProcessedLead, LeadStatus } from '@/lib/types';
 import { CalendarDialog } from '@/components/calendar-dialog';
 import { Badge } from '@/components/ui/badge';
@@ -383,7 +383,13 @@ export default function Dashboard() {
                                           <TableCell className="text-muted-foreground">{index + 1}</TableCell>
                                           <TableCell>
                                               <div className="font-medium">{lead.correctedBusinessName}</div>
-                                              <div className="text-sm text-muted-foreground flex items-center gap-2">
+                                                {lead.ownerName && (
+                                                    <div className="text-sm text-muted-foreground flex items-center gap-2">
+                                                        <User className="h-4 w-4" />
+                                                        {lead.ownerName}
+                                                    </div>
+                                                )}
+                                              <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
                                                   <Building className="h-4 w-4" />
                                                   {lead.businessType}
                                               </div>

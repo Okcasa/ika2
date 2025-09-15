@@ -19,4 +19,5 @@ export interface ProcessedLead extends Lead {
   leadStatus?: LeadStatus;
   notes?: string;
   meetingTime?: string;
+  ownerName?: string;
 }

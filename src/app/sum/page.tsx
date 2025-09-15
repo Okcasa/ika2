@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Header } from '@/components/header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ArrowLeft, Calendar, TrendingUp, XCircle, FileText, PhoneOff } from 'lucide-react';
+import { ArrowLeft, Calendar, TrendingUp, XCircle, FileText, PhoneOff, User } from 'lucide-react';
 import type { ProcessedLead } from '@/lib/types';
 import { format } from 'date-fns';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -101,10 +101,20 @@ export default function SummaryPage() {
                       <ul className="space-y-3 pt-2">
                         {scheduledMeetings.map(lead => (
                           <li key={lead.id} className="p-4 bg-muted/50 rounded-lg border">
-                            <p className="font-semibold text-base">{lead.correctedBusinessName}</p>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {format(new Date(lead.meetingTime!), 'PPP p')}
-                            </p>
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <p className="font-semibold text-base">{lead.correctedBusinessName}</p>
+                                    {lead.ownerName && (
+                                        <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-1">
+                                            <User className="h-3.5 w-3.5" />
+                                            {lead.ownerName}
+                                        </p>
+                                    )}
+                                </div>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                {format(new Date(lead.meetingTime!), 'PPP p')}
+                                </p>
+                            </div>
                             {lead.notes && (
                                 <p className="text-sm text-foreground/80 italic mt-2 border-l-2 border-primary/20 pl-3">"{lead.notes}"</p>
                             )}
@@ -190,8 +200,7 @@ export default function SummaryPage() {
                         ))}
                       </ul>
                     ) : (
-                      <p className="text-muted-foreground text-center py-4">No wrong numbers logged.</p>
-                    )}
+                      <p className="text-muted-foreground text-center py-4">No wrong numbers logged.</p>                    )}
                   </AccordionContent>
                 </AccordionItem>
 

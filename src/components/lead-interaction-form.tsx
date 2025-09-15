@@ -28,6 +28,7 @@ const formSchema = z.object({
   notes: z.string().optional(),
   meetingDate: z.date().optional(),
   meetingTime: z.string().optional(),
+  ownerName: z.string().optional(),
 });
 
 interface LeadInteractionFormProps {
@@ -52,6 +53,7 @@ export function LeadInteractionForm({ lead, onSave }: LeadInteractionFormProps) 
       notes: lead.notes || '',
       meetingDate: lead.meetingTime ? new Date(lead.meetingTime) : new Date(),
       meetingTime: lead.meetingTime ? format(new Date(lead.meetingTime), 'HH:mm') : '09:00',
+      ownerName: lead.ownerName || '',
     },
   });
 
@@ -71,6 +73,7 @@ export function LeadInteractionForm({ lead, onSave }: LeadInteractionFormProps) 
       leadStatus: values.leadStatus, 
       notes: values.notes,
       meetingTime,
+      ownerName: values.ownerName,
     });
   }
   
@@ -81,6 +84,7 @@ export function LeadInteractionForm({ lead, onSave }: LeadInteractionFormProps) 
       notes: lead.notes || '',
       meetingDate: lead.meetingTime ? new Date(lead.meetingTime) : new Date(),
       meetingTime: lead.meetingTime ? format(new Date(lead.meetingTime), 'HH:mm') : '09:00',
+      ownerName: lead.ownerName || '',
     })
   }, [lead, form]);
 
@@ -118,6 +122,19 @@ export function LeadInteractionForm({ lead, onSave }: LeadInteractionFormProps) 
         
         {watchStatus === 'meeting-scheduled' && (
             <div className='space-y-4 p-4 border rounded-md bg-muted/50'>
+                <FormField
+                    control={form.control}
+                    name="ownerName"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Owner Name</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Enter owner's name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
                 <FormField
                 control={form.control}
                 name="meetingDate"

@@ -12,7 +12,7 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProcessedLead, LeadStatus } from '@/lib/types';
-import { Phone, MoreHorizontal, TrendingUp, XCircle } from 'lucide-react';
+import { Phone, MoreHorizontal, TrendingUp, XCircle, User } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 
@@ -102,10 +102,16 @@ export function CalendarDialog({ isOpen, onOpenChange, leads, onUpdateLead }: Ca
                     {selectedDayMeetings
                       .sort((a, b) => new Date(a.meetingTime!).getTime() - new Date(b.meetingTime!).getTime())
                       .map((lead) => (
-                      <li key={lead.id} className="p-3 bg-muted/50 rounded-lg flex items-center justify-between">
+                      <li key={lead.id} className="p-3 bg-muted/50 rounded-lg flex items-start justify-between">
                         <div>
                             <p className="font-semibold">{lead.correctedBusinessName}</p>
-                            <p className="text-sm text-muted-foreground">
+                            {lead.ownerName && (
+                                <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-1">
+                                    <User className="h-3 w-3" />
+                                    {lead.ownerName}
+                                </p>
+                            )}
+                            <p className="text-sm text-muted-foreground mt-1">
                             {format(new Date(lead.meetingTime!), 'p')}
                             </p>
                             <a href={`tel:${lead.correctedPhoneNumber}`} className="flex items-center gap-2 text-sm text-primary hover:underline mt-1">
