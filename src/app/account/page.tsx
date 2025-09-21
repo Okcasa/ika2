@@ -1,17 +1,20 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ArrowLeft, User, List, Handshake, Percent, CalendarClock, TrendingUp, UserX, PhoneOff, CalendarDays } from 'lucide-react';
+import { ArrowLeft, User, ChevronLeft, ChevronRight, Phone } from 'lucide-react';
 import type { ProcessedLead } from '@/lib/types';
+import { format, startOfWeek, addDays, subWeeks, addWeeks, isSameDay, isPast } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 const LEADS_KEY = 'leadsorter_leads';
 
 export default function AccountPage() {
   const [allLeads, setAllLeads] = useState<ProcessedLead[]>([]);
+  const [currentDate, setCurrentDate] = useState(new Date());
   const router = useRouter();
 
   useEffect(() => {
@@ -21,35 +24,32 @@ export default function AccountPage() {
     }
   }, []);
 
-  const accountStats = useMemo(() => {
-    const totalLeads = allLeads.length;
-    const totalInteractions = allLeads.filter(l => l.leadStatus !== 'new').length;
-    const meetings = allLeads.filter(l => l.leadStatus === 'meeting-scheduled').length;
-    const sales = allLeads.filter(l => l.leadStatus === 'sale-made').length;
-    const notInterested = allLeads.filter(l => l.leadStatus === 'not-interested').length;
-    const callBacks = allLeads.filter(l => l.leadStatus === 'call-back').length;
-    const wrongNumbers = allLeads.filter(l => l.leadStatus === 'wrong-number').length;
-    const contacted = allLeads.filter(l => l.leadStatus && !['new', 'no-answer', 'wrong-number'].includes(l.leadStatus)).length;
-    
-    const contactRate = totalInteractions > 0 ? (contacted / totalInteractions) * 100 : 0;
-    const meetingRate = contacted > 0 ? (meetings / contacted) * 100 : 0;
-    const closingRate = meetings > 0 ? (sales / meetings) * 100 : 0;
+  const startOfCurrentWeek = startOfWeek(currentDate, { weekStartsOn: 1 }); // Monday
 
-    return { totalLeads, meetings, sales, notInterested, contactRate, totalInteractions, callBacks, wrongNumbers, meetingRate, closingRate };
-  }, [allLeads]);
+  const daysInWeek = Array.from({ length: 7 }).map((_, i) => addDays(startOfCurrentWeek, i));
 
-  const StatCard = ({ title, value, icon, rate }: { title: string; value: string | number; icon: React.ReactNode; rate?: string | number | null }) => (
-    <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{title}</CardTitle>
-            {icon}
-        </CardHeader>
-        <CardContent>
-            <div className="text-2xl font-bold">{value}</div>
-            {rate && <p className="text-xs text-muted-foreground">{rate}</p>}
-        </CardContent>
-    </Card>
+  const scheduledMeetings = allLeads.filter(
+    (lead) => lead.leadStatus === 'meeting-scheduled' && lead.meetingTime
   );
+
+  const getMeetingsForDay = (day: Date) => {
+    return scheduledMeetings
+      .filter((lead) => isSameDay(new Date(lead.meetingTime!), day))
+      .sort((a, b) => new Date(a.meetingTime!).getTime() - new Date(b.meetingTime!).getTime());
+  };
+
+  const goToPreviousWeek = () => {
+    setCurrentDate(subWeeks(currentDate, 1));
+  };
+
+  const goToNextWeek = () => {
+    setCurrentDate(addWeeks(currentDate, 1));
+  };
+
+  const goToToday = () => {
+    setCurrentDate(new Date());
+  };
+
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -58,54 +58,54 @@ export default function AccountPage() {
             <div className="flex items-center gap-4">
                 <User className="h-10 w-10 text-primary" />
                 <div>
-                    <h1 className="text-3xl font-bold">Your Account</h1>
-                    <p className="text-muted-foreground">A summary of your performance.</p>
+                    <h1 className="text-3xl font-bold">Your Calendar</h1>
+                    <p className="text-muted-foreground">A weekly overview of your scheduled meetings.</p>
                 </div>
             </div>
-            <Button variant="outline" onClick={() => router.push('/dashboard')}>
+             <Button variant="outline" onClick={() => router.push('/dashboard')}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Dashboard
             </Button>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <StatCard title="Total Leads" value={accountStats.totalLeads} icon={<List className="h-4 w-4 text-muted-foreground" />} />
-            <StatCard title="Interactions" value={accountStats.totalInteractions} icon={<Handshake className="h-4 w-4 text-muted-foreground" />} rate={`${accountStats.contactRate.toFixed(1)}% contact rate`} />
-            <StatCard title="Meetings Scheduled" value={accountStats.meetings} icon={<CalendarClock className="h-4 w-4 text-muted-foreground" />} rate={`${accountStats.meetingRate.toFixed(1)}% of contacted`} />
-            <StatCard title="Sales Made" value={accountStats.sales} icon={<TrendingUp className="h-4 w-4 text-muted-foreground" />} rate={`${accountStats.closingRate.toFixed(1)}% of meetings`} />
-        </div>
-
-         <div className="mt-8">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Detailed Breakdown</CardTitle>
-                    <CardDescription>A closer look at your lead statuses.</CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-6 text-sm">
-                    <div className="flex items-center justify-between border-b pb-3">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                            <UserX className="h-4 w-4 text-red-500" />
-                            <span>Not Interested</span>
+        <Card>
+            <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" size="icon" onClick={goToPreviousWeek}>
+                        <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="icon" onClick={goToNextWeek}>
+                        <ChevronRight className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" onClick={goToToday}>Today</Button>
+                </div>
+                <h2 className="text-xl font-semibold text-center">
+                    {format(startOfCurrentWeek, 'MMMM d')} - {format(addDays(startOfCurrentWeek, 6), 'MMMM d, yyyy')}
+                </h2>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-7 gap-1 bg-muted/50 p-1 rounded-lg border">
+                {daysInWeek.map(day => (
+                    <div key={day.toString()} className={cn("rounded-md p-2 bg-background h-full min-h-[200px]", { 'bg-muted/60': isPast(day) && !isSameDay(day, new Date()) })}>
+                        <h3 className={cn("font-semibold text-center mb-2", { 'text-primary': isSameDay(day, new Date())})}>
+                            {format(day, 'EEE')}
+                        </h3>
+                        <p className={cn("text-center text-sm text-muted-foreground mb-4", { 'text-primary font-bold': isSameDay(day, new Date())})}>{format(day, 'd')}</p>
+                        <div className="space-y-2">
+                            {getMeetingsForDay(day).map(meeting => (
+                                <div key={meeting.id} className="bg-primary/10 border-l-4 border-primary text-primary-foreground p-2 rounded-md">
+                                    <p className="font-bold text-sm text-primary">{meeting.correctedBusinessName}</p>
+                                    <p className="text-xs text-primary/80 mt-1">{format(new Date(meeting.meetingTime!), 'p')}</p>
+                                     <a href={`tel:${meeting.correctedPhoneNumber}`} className="flex items-center gap-1.5 text-xs text-primary/80 hover:underline mt-1">
+                                        <Phone className="h-3 w-3" />
+                                        {meeting.correctedPhoneNumber}
+                                    </a>
+                                </div>
+                            ))}
                         </div>
-                        <span className="font-semibold">{accountStats.notInterested}</span>
                     </div>
-                    <div className="flex items-center justify-between border-b pb-3">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                            <CalendarDays className="h-4 w-4 text-blue-500" />
-                            <span>Needs Call Back</span>
-                        </div>
-                        <span className="font-semibold">{accountStats.callBacks}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                            <PhoneOff className="h-4 w-4 text-orange-500" />
-                            <span>Wrong Numbers</span>
-                        </div>
-                        <span className="font-semibold">{accountStats.wrongNumbers}</span>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
+                ))}
+            </CardContent>
+        </Card>
 
       </main>
       <footer className="text-center py-4">
@@ -113,3 +113,4 @@ export default function AccountPage() {
       </footer>
     </div>
   );
+}
