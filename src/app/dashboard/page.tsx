@@ -44,7 +44,6 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { signOut } from '@/app/auth/actions';
-import { supabase } from '@/lib/supabase/client';
 
 const LEADS_KEY = 'leadsorter_leads';
 const DISPENSED_LEADS_KEY = 'leadsorter_dispensed_leads';
@@ -310,7 +309,6 @@ export default function Dashboard() {
 
   const handleSignOut = async () => {
     await signOut();
-    router.push('/login');
   };
 
   return (
@@ -325,6 +323,10 @@ export default function Dashboard() {
                         <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
                         <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                         <span className="sr-only">Toggle theme</span>
+                    </Button>
+                     <Button variant="ghost" size="icon" onClick={() => router.push('/account')}>
+                        <User className="h-5 w-5" />
+                        <span className="sr-only">Account</span>
                     </Button>
                     <Button variant="outline" size="sm" onClick={handleSignOut}>
                         <LogOut className="mr-2 h-4 w-4" />
@@ -617,4 +619,3 @@ export default function Dashboard() {
       </AlertDialog>
     </>
   );
-}
