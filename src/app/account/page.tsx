@@ -57,7 +57,7 @@ export default function AccountPage() {
 
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-background text-foreground">
       <main className="flex-grow container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
@@ -73,70 +73,67 @@ export default function AccountPage() {
             </Button>
         </div>
 
-        <Card>
-            <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="bg-card border rounded-lg">
+            <header className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <Button variant="outline" size="icon" onClick={goToPreviousMonth}>
                         <ChevronLeft className="h-4 w-4" />
                     </Button>
+                    <h2 className="text-xl font-semibold text-center">
+                        {format(currentDate, 'MMMM yyyy')}
+                    </h2>
                     <Button variant="outline" size="icon" onClick={goToNextMonth}>
                         <ChevronRight className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" onClick={goToToday}>Today</Button>
                 </div>
-                <h2 className="text-xl font-semibold text-center">
-                    {format(currentDate, 'MMMM yyyy')}
-                </h2>
-            </CardHeader>
-            <CardContent>
-              <TooltipProvider>
-                <div className="grid grid-cols-7 border-t border-l">
-                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                        <div key={day} className="text-center font-semibold text-muted-foreground p-2 border-b border-r text-sm">
-                            {day}
-                        </div>
-                    ))}
-                    {daysInMonth.map(day => (
-                        <div 
-                            key={day.toString()} 
-                            className={cn(
-                                "relative border-b border-r h-40 p-2 flex flex-col",
-                                !isSameMonth(day, currentDate) && "bg-muted/30 text-muted-foreground/50",
-                                isPast(day) && !isSameDay(day, new Date()) && "bg-muted/60",
-                            )}
-                        >
-                            <span className={cn(
-                                "font-semibold text-sm",
-                                isSameDay(day, new Date()) && "flex items-center justify-center h-6 w-6 rounded-full bg-primary text-primary-foreground"
-                            )}>
-                                {format(day, 'd')}
-                            </span>
-                            <div className="space-y-1.5 mt-2 overflow-y-auto pr-1">
-                                {getMeetingsForDay(day).map(meeting => (
-                                    <div key={meeting.id} className="bg-primary/10 border-l-4 border-primary p-2 rounded-r-md">
-                                        <p className="font-bold text-xs text-primary truncate">{meeting.correctedBusinessName}</p>
-                                        <div className="flex items-center justify-between text-xs text-primary/80 mt-1">
-                                          <span>{format(new Date(meeting.meetingTime!), 'p')}</span>
-                                           <Tooltip>
-                                              <TooltipTrigger asChild>
-                                                <a href={`tel:${meeting.correctedPhoneNumber}`} className="hover:text-primary transition-colors">
-                                                    <Phone className="h-3.5 w-3.5" />
-                                                </a>
-                                              </TooltipTrigger>
-                                              <TooltipContent>
-                                                <p>{meeting.correctedPhoneNumber}</p>
-                                              </TooltipContent>
-                                            </Tooltip>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    ))}
-                </div>
-              </TooltipProvider>
-            </CardContent>
-        </Card>
+                <Button variant="outline" onClick={goToToday}>Today</Button>
+            </header>
+            <div className="grid grid-cols-7">
+                {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => (
+                    <div key={day} className="text-center font-semibold text-muted-foreground p-2 border-r border-b text-xs">
+                        {day}
+                    </div>
+                ))}
+            </div>
+            <TooltipProvider>
+              <div className="grid grid-cols-7 grid-rows-5">
+                  {daysInMonth.map(day => (
+                      <div 
+                          key={day.toString()} 
+                          className={cn(
+                              "relative border-r border-b h-36 p-2 flex flex-col group",
+                              !isSameMonth(day, currentDate) && "text-muted-foreground/40",
+                          )}
+                      >
+                          <span className={cn(
+                              "font-medium text-sm",
+                                isSameDay(day, new Date()) && "flex items-center justify-center h-6 w-6 rounded-full border-2 border-primary"
+                          )}>
+                              {format(day, 'd')}
+                          </span>
+                          <div className="space-y-1 mt-2 overflow-y-auto pr-1 text-xs">
+                              {getMeetingsForDay(day).map(meeting => (
+                                  <div key={meeting.id} className="bg-primary/80 text-primary-foreground p-1.5 rounded-md text-xs truncate">
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <div className="flex items-center">
+                                            <div className="h-2 w-2 rounded-full bg-primary-foreground/80 mr-2 shrink-0"></div>
+                                            <span className="truncate">{format(new Date(meeting.meetingTime!), 'p')} {meeting.correctedBusinessName}</span>
+                                          </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p className="font-semibold">{meeting.correctedBusinessName}</p>
+                                          <p>{meeting.correctedPhoneNumber}</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                  </div>
+                              ))}
+                          </div>
+                      </div>
+                  ))}
+              </div>
+            </TooltipProvider>
+        </div>
 
       </main>
       <footer className="text-center py-4">
