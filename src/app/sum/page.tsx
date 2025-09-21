@@ -11,6 +11,7 @@ import type { ProcessedLead } from '@/lib/types';
 import { format } from 'date-fns';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { SessionTimer } from '@/components/session-timer';
+import { createClient } from '@/lib/supabase/client';
 
 const LEADS_KEY = 'leadsorter_leads';
 const VISIBLE_INTERACTIONS_LIMIT = 7;
@@ -21,11 +22,20 @@ export default function SummaryPage() {
   const router = useRouter();
 
   useEffect(() => {
+    const checkUser = async () => {
+      const supabase = createClient();
+      const { data } = await supabase.auth.getUser();
+      if (!data.user) {
+        router.push('/login');
+      }
+    };
+    checkUser();
+
     const storedLeads = localStorage.getItem(LEADS_KEY);
     if (storedLeads) {
       setAllLeads(JSON.parse(storedLeads));
     }
-  }, []);
+  }, [router]);
 
   const scheduledMeetings = allLeads
     .filter(lead => lead.leadStatus === 'meeting-scheduled' && lead.meetingTime)

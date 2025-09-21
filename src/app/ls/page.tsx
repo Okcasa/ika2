@@ -9,6 +9,7 @@ import { EditLeadDialog } from '@/components/edit-lead-dialog';
 import type { Lead, ProcessedLead } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 const PAGE_SIZE = 50;
 const LEADS_KEY = 'leadsorter_leads';
@@ -22,13 +23,22 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
+    const checkUser = async () => {
+      const supabase = createClient();
+      const { data } = await supabase.auth.getUser();
+      if (!data.user) {
+        router.push('/login');
+      }
+    };
+    checkUser();
+
     const storedLeads = localStorage.getItem(LEADS_KEY);
     if (storedLeads) {
         const parsedLeads = JSON.parse(storedLeads);
         setAllLeads(parsedLeads);
         setVisibleLeads(parsedLeads.slice(0, PAGE_SIZE));
     }
-  }, []);
+  }, [router]);
 
 
   const handleLeadsUpload = async (rawLeads: Lead[]) => {

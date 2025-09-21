@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, TrendingUp, XCircle, RotateCcw, ArrowRight, TrendingDown, MoreHorizontal, BarChart, Users, Percent, ListTodo, Handshake, Sun, Moon, User } from 'lucide-react';
+import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, TrendingUp, XCircle, RotateCcw, ArrowRight, TrendingDown, MoreHorizontal, BarChart, Users, Percent, ListTodo, Handshake, Sun, Moon, User, LogOut } from 'lucide-react';
 import type { ProcessedLead, LeadStatus } from '@/lib/types';
 import { CalendarDialog } from '@/components/calendar-dialog';
 import { Badge } from '@/components/ui/badge';
@@ -42,6 +42,10 @@ import { LeadInteractionForm } from '@/components/lead-interaction-form';
 import { Logo } from '@/components/logo';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { InvoiceDialog } from '@/components/invoice-dialog';
+import { createInvoice } from '@/app/square/actions';
+import { useToast } from '@/hooks/use-toast';
+import { signOut } from '@/app/auth/actions';
 
 const LEADS_KEY = 'leadsorter_leads';
 const DISPENSED_LEADS_KEY = 'leadsorter_dispensed_leads';
@@ -53,6 +57,7 @@ export default function Dashboard() {
   const [allLeads, setAllLeads] = useState<ProcessedLead[]>([]);
   const [dispensedLeads, setDispensedLeads] = useState<ProcessedLead[]>([]);
   const [interactingLead, setInteractingLead] = useState<ProcessedLead | null>(null);
+  const [invoicingLead, setInvoicingLead] = useState<ProcessedLead | null>(null);
   const [numLeads, setNumLeads] = useState(20);
   const [showAlert, setShowAlert] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -60,6 +65,7 @@ export default function Dashboard() {
   const [recentlyUpdatedId, setRecentlyUpdatedId] = useState<string | null>(null);
   const [theme, setTheme] = useState('light');
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     const storedLeads = localStorage.getItem(LEADS_KEY);
@@ -149,15 +155,54 @@ export default function Dashboard() {
   }
 
   const handleUpdateLeadStatus = (updatedLead: ProcessedLead) => {
-    const newAllLeads = allLeads.map(l => l.id === updatedLead.id ? updatedLead : l);
-    setAllLeads(newAllLeads);
+    if (updatedLead.leadStatus === 'sale-made' && !updatedLead.invoiceSent) {
+      setInvoicingLead(updatedLead);
+    } else {
+        const newAllLeads = allLeads.map(l => l.id === updatedLead.id ? updatedLead : l);
+        setAllLeads(newAllLeads);
+        
+        setDispensedLeads(dispensedLeads.map(l => l.id === updatedLead.id ? updatedLead : l));
     
-    setDispensedLeads(dispensedLeads.map(l => l.id === updatedLead.id ? updatedLead : l));
-
-    setRecentlyUpdatedId(updatedLead.id);
-    setTimeout(() => setRecentlyUpdatedId(null), 3000);
-    setInteractingLead(null); // Close dialog
+        setRecentlyUpdatedId(updatedLead.id);
+        setTimeout(() => setRecentlyUpdatedId(null), 3000);
+    }
+    setInteractingLead(null); // Close interaction dialog
   }
+
+  const handleSendInvoice = async (invoiceData: { email: string, serviceDescription: string, amount: number }) => {
+    if (!invoicingLead) return;
+
+    try {
+        await createInvoice({
+            leadId: invoicingLead.id,
+            customerEmail: invoiceData.email,
+            serviceDescription: invoiceData.serviceDescription,
+            amount: invoiceData.amount
+        });
+
+        toast({
+            title: "Invoice Sent!",
+            description: `An invoice has been sent to ${invoiceData.email}.`,
+            className: 'bg-accent text-accent-foreground border-accent'
+        });
+
+        const updatedLead = { ...invoicingLead, invoiceSent: true, leadStatus: 'sale-made' as const };
+        const newAllLeads = allLeads.map(l => l.id === updatedLead.id ? updatedLead : l);
+        setAllLeads(newAllLeads);
+        setDispensedLeads(dispensedLeads.map(l => l.id === updatedLead.id ? updatedLead : l));
+
+    } catch (error) {
+        console.error(error);
+        toast({
+            variant: "destructive",
+            title: "Failed to send invoice",
+            description: error instanceof Error ? error.message : "An unknown error occurred.",
+        });
+    } finally {
+        setInvoicingLead(null);
+    }
+  };
+
   
   const handleSelectLead = (lead: ProcessedLead) => {
     setInteractingLead(lead);
@@ -244,9 +289,6 @@ export default function Dashboard() {
       case 'not-interested':
         statusComponent = <Badge variant="destructive"><UserX className="h-3 w-3 mr-1" /> Not Interested</Badge>;
         break;
-      case 'contacted':
-        statusComponent = <Badge variant="outline"><UserCheck className="h-3 w-3 mr-1" /> Contacted</Badge>;
-        break;
       case 'no-answer':
         statusComponent = <Badge variant="outline" className="text-gray-800 bg-gray-50 border-gray-200 dark:text-gray-300 dark:bg-gray-800 dark:border-gray-700"><PhoneOff className="h-3 w-3 mr-1" /> No Answer</Badge>;
         break;
@@ -307,6 +349,11 @@ export default function Dashboard() {
     </DropdownMenu>
   );
 
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/login');
+  };
+
   return (
     <>
       <div className="flex-col md:flex">
@@ -319,6 +366,10 @@ export default function Dashboard() {
                         <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
                         <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                         <span className="sr-only">Toggle theme</span>
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleSignOut}>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Sign Out
                     </Button>
                 </div>
             </div>
@@ -586,6 +637,14 @@ export default function Dashboard() {
                 </div>
             </DialogContent>
         </Dialog>
+      )}
+
+      {invoicingLead && (
+          <InvoiceDialog
+              lead={invoicingLead}
+              onSend={handleSendInvoice}
+              onOpenChange={() => setInvoicingLead(null)}
+          />
       )}
 
       <AlertDialog open={showAlert} onOpenChange={setShowAlert}>
