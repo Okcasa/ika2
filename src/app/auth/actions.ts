@@ -62,30 +62,30 @@ export async function signUp(prevState: any, formData: FormData) {
     }
   }
   
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
-  })
+    options: {
+        emailRedirectTo: '/dashboard',
+    }
+  });
 
   if (error) {
     return {
         message: error.message,
     }
   }
-  
-  // Supabase sends a confirmation email. For this app, we'll just sign them in.
-  const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-  });
 
-  if (signInError) {
-      return {
-          message: signInError.message,
-      }
+  // If signUp is successful and we have a user, Supabase handles the session.
+  // We can redirect to the dashboard.
+  if (data.user) {
+    redirect('/dashboard')
   }
 
-  redirect('/dashboard')
+  // Fallback in case user data is not returned for some reason
+  return {
+    message: 'Sign up successful, but could not log you in. Please try signing in.'
+  }
 }
 
 export async function signOut() {
@@ -93,4 +93,3 @@ export async function signOut() {
     await supabase.auth.signOut();
     redirect('/login');
 }
-
