@@ -66,14 +66,6 @@ export default function Dashboard() {
   const { toast } = useToast();
 
   useEffect(() => {
-    const checkUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (!data.user) {
-        router.push('/login');
-      }
-    };
-    checkUser();
-
     const storedLeads = localStorage.getItem(LEADS_KEY);
     if (storedLeads) {
         setAllLeads(JSON.parse(storedLeads));
@@ -93,7 +85,7 @@ export default function Dashboard() {
       setTheme(storedTheme);
       document.documentElement.classList.toggle('dark', storedTheme === 'dark');
     }
-  }, [router]);
+  }, []);
 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';

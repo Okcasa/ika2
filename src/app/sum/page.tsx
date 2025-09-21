@@ -22,19 +22,11 @@ export default function SummaryPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const checkUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (!data.user) {
-        router.push('/login');
-      }
-    };
-    checkUser();
-
     const storedLeads = localStorage.getItem(LEADS_KEY);
     if (storedLeads) {
       setAllLeads(JSON.parse(storedLeads));
     }
-  }, [router]);
+  }, []);
 
   const scheduledMeetings = allLeads
     .filter(lead => lead.leadStatus === 'meeting-scheduled' && lead.meetingTime)

@@ -23,21 +23,13 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    const checkUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (!data.user) {
-        router.push('/login');
-      }
-    };
-    checkUser();
-
     const storedLeads = localStorage.getItem(LEADS_KEY);
     if (storedLeads) {
         const parsedLeads = JSON.parse(storedLeads);
         setAllLeads(parsedLeads);
         setVisibleLeads(parsedLeads.slice(0, PAGE_SIZE));
     }
-  }, [router]);
+  }, []);
 
 
   const handleLeadsUpload = async (rawLeads: Lead[]) => {
