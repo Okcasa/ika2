@@ -39,7 +39,7 @@ export async function signIn(prevState: any, formData: FormData) {
      }
   }
 
-  redirect('/dashboard')
+  redirect('/ls')
 }
 
 export async function signUp(prevState: any, formData: FormData) {
@@ -66,7 +66,7 @@ export async function signUp(prevState: any, formData: FormData) {
     email,
     password,
     options: {
-        emailRedirectTo: '/dashboard',
+        emailRedirectTo: '/ls',
     }
   });
 
@@ -77,9 +77,9 @@ export async function signUp(prevState: any, formData: FormData) {
   }
 
   // If signUp is successful and we have a user, Supabase handles the session.
-  // We can redirect to the dashboard.
+  // We can redirect to the ls page.
   if (data.user) {
-    redirect('/dashboard')
+    redirect('/ls')
   }
 
   // Fallback in case user data is not returned for some reason
