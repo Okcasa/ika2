@@ -1,13 +1,13 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ArrowLeft, User, ChevronLeft, ChevronRight, Phone } from 'lucide-react';
 import type { ProcessedLead } from '@/lib/types';
-import { format, startOfWeek, addDays, subWeeks, addWeeks, isSameDay, isPast } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek, isSameMonth, isSameDay, isPast, addMonths, subMonths } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 const LEADS_KEY = 'leadsorter_leads';
@@ -23,14 +23,18 @@ export default function AccountPage() {
       setAllLeads(JSON.parse(storedLeads));
     }
   }, []);
+  
+  const firstDayOfMonth = startOfMonth(currentDate);
+  const lastDayOfMonth = endOfMonth(currentDate);
 
-  const startOfCurrentWeek = startOfWeek(currentDate, { weekStartsOn: 1 }); // Monday
+  const daysInMonth = eachDayOfInterval({
+    start: startOfWeek(firstDayOfMonth),
+    end: endOfWeek(lastDayOfMonth),
+  });
 
-  const daysInWeek = Array.from({ length: 7 }).map((_, i) => addDays(startOfCurrentWeek, i));
-
-  const scheduledMeetings = allLeads.filter(
+  const scheduledMeetings = useMemo(() => allLeads.filter(
     (lead) => lead.leadStatus === 'meeting-scheduled' && lead.meetingTime
-  );
+  ), [allLeads]);
 
   const getMeetingsForDay = (day: Date) => {
     return scheduledMeetings
@@ -38,12 +42,12 @@ export default function AccountPage() {
       .sort((a, b) => new Date(a.meetingTime!).getTime() - new Date(b.meetingTime!).getTime());
   };
 
-  const goToPreviousWeek = () => {
-    setCurrentDate(subWeeks(currentDate, 1));
+  const goToPreviousMonth = () => {
+    setCurrentDate(subMonths(currentDate, 1));
   };
 
-  const goToNextWeek = () => {
-    setCurrentDate(addWeeks(currentDate, 1));
+  const goToNextMonth = () => {
+    setCurrentDate(addMonths(currentDate, 1));
   };
 
   const goToToday = () => {
@@ -59,7 +63,7 @@ export default function AccountPage() {
                 <User className="h-10 w-10 text-primary" />
                 <div>
                     <h1 className="text-3xl font-bold">Your Calendar</h1>
-                    <p className="text-muted-foreground">A weekly overview of your scheduled meetings.</p>
+                    <p className="text-muted-foreground">A monthly overview of your scheduled meetings.</p>
                 </div>
             </div>
              <Button variant="outline" onClick={() => router.push('/dashboard')}>
@@ -71,39 +75,54 @@ export default function AccountPage() {
         <Card>
             <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" size="icon" onClick={goToPreviousWeek}>
+                    <Button variant="outline" size="icon" onClick={goToPreviousMonth}>
                         <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="icon" onClick={goToNextWeek}>
+                    <Button variant="outline" size="icon" onClick={goToNextMonth}>
                         <ChevronRight className="h-4 w-4" />
                     </Button>
                     <Button variant="outline" onClick={goToToday}>Today</Button>
                 </div>
                 <h2 className="text-xl font-semibold text-center">
-                    {format(startOfCurrentWeek, 'MMMM d')} - {format(addDays(startOfCurrentWeek, 6), 'MMMM d, yyyy')}
+                    {format(currentDate, 'MMMM yyyy')}
                 </h2>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-7 gap-1 bg-muted/50 p-1 rounded-lg border">
-                {daysInWeek.map(day => (
-                    <div key={day.toString()} className={cn("rounded-md p-2 bg-background h-full min-h-[200px]", { 'bg-muted/60': isPast(day) && !isSameDay(day, new Date()) })}>
-                        <h3 className={cn("font-semibold text-center mb-2", { 'text-primary': isSameDay(day, new Date())})}>
-                            {format(day, 'EEE')}
-                        </h3>
-                        <p className={cn("text-center text-sm text-muted-foreground mb-4", { 'text-primary font-bold': isSameDay(day, new Date())})}>{format(day, 'd')}</p>
-                        <div className="space-y-2">
-                            {getMeetingsForDay(day).map(meeting => (
-                                <div key={meeting.id} className="bg-primary/10 border-l-4 border-primary text-primary-foreground p-2 rounded-md">
-                                    <p className="font-bold text-sm text-primary">{meeting.correctedBusinessName}</p>
-                                    <p className="text-xs text-primary/80 mt-1">{format(new Date(meeting.meetingTime!), 'p')}</p>
-                                     <a href={`tel:${meeting.correctedPhoneNumber}`} className="flex items-center gap-1.5 text-xs text-primary/80 hover:underline mt-1">
-                                        <Phone className="h-3 w-3" />
-                                        {meeting.correctedPhoneNumber}
-                                    </a>
-                                </div>
-                            ))}
+            <CardContent>
+                <div className="grid grid-cols-7 border-t border-l">
+                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                        <div key={day} className="text-center font-semibold text-muted-foreground p-2 border-b border-r text-sm">
+                            {day}
                         </div>
-                    </div>
-                ))}
+                    ))}
+                    {daysInMonth.map(day => (
+                        <div 
+                            key={day.toString()} 
+                            className={cn(
+                                "relative border-b border-r h-36 p-2 flex flex-col",
+                                !isSameMonth(day, currentDate) && "bg-muted/30 text-muted-foreground/50",
+                                isPast(day) && !isSameDay(day, new Date()) && "bg-muted/60",
+                            )}
+                        >
+                            <span className={cn(
+                                "font-semibold text-sm",
+                                isSameDay(day, new Date()) && "flex items-center justify-center h-6 w-6 rounded-full bg-primary text-primary-foreground"
+                            )}>
+                                {format(day, 'd')}
+                            </span>
+                            <div className="space-y-1 mt-2 overflow-y-auto">
+                                {getMeetingsForDay(day).map(meeting => (
+                                    <div key={meeting.id} className="bg-primary/10 border-l-4 border-primary text-primary-foreground p-1.5 rounded-md">
+                                        <p className="font-bold text-xs text-primary truncate">{meeting.correctedBusinessName}</p>
+                                        <p className="text-xs text-primary/80 mt-0.5">{format(new Date(meeting.meetingTime!), 'p')}</p>
+                                        <a href={`tel:${meeting.correctedPhoneNumber}`} className="flex items-center gap-1 text-xs text-primary/80 hover:underline mt-1">
+                                            <Phone className="h-3 w-3" />
+                                        </a>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </CardContent>
         </Card>
 
