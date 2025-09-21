@@ -42,10 +42,9 @@ import { LeadInteractionForm } from '@/components/lead-interaction-form';
 import { Logo } from '@/components/logo';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { InvoiceDialog } from '@/components/invoice-dialog';
-import { createInvoice } from '@/app/square/actions';
 import { useToast } from '@/hooks/use-toast';
 import { signOut } from '@/app/auth/actions';
+import { supabase } from '@/lib/supabase/client';
 
 const LEADS_KEY = 'leadsorter_leads';
 const DISPENSED_LEADS_KEY = 'leadsorter_dispensed_leads';
@@ -57,7 +56,6 @@ export default function Dashboard() {
   const [allLeads, setAllLeads] = useState<ProcessedLead[]>([]);
   const [dispensedLeads, setDispensedLeads] = useState<ProcessedLead[]>([]);
   const [interactingLead, setInteractingLead] = useState<ProcessedLead | null>(null);
-  const [invoicingLead, setInvoicingLead] = useState<ProcessedLead | null>(null);
   const [numLeads, setNumLeads] = useState(20);
   const [showAlert, setShowAlert] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -68,6 +66,14 @@ export default function Dashboard() {
   const { toast } = useToast();
 
   useEffect(() => {
+    const checkUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (!data.user) {
+        router.push('/login');
+      }
+    };
+    checkUser();
+
     const storedLeads = localStorage.getItem(LEADS_KEY);
     if (storedLeads) {
         setAllLeads(JSON.parse(storedLeads));
@@ -87,7 +93,7 @@ export default function Dashboard() {
       setTheme(storedTheme);
       document.documentElement.classList.toggle('dark', storedTheme === 'dark');
     }
-  }, []);
+  }, [router]);
 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
@@ -155,54 +161,15 @@ export default function Dashboard() {
   }
 
   const handleUpdateLeadStatus = (updatedLead: ProcessedLead) => {
-    if (updatedLead.leadStatus === 'sale-made' && !updatedLead.invoiceSent) {
-      setInvoicingLead(updatedLead);
-    } else {
-        const newAllLeads = allLeads.map(l => l.id === updatedLead.id ? updatedLead : l);
-        setAllLeads(newAllLeads);
-        
-        setDispensedLeads(dispensedLeads.map(l => l.id === updatedLead.id ? updatedLead : l));
+    const newAllLeads = allLeads.map(l => l.id === updatedLead.id ? updatedLead : l);
+    setAllLeads(newAllLeads);
     
-        setRecentlyUpdatedId(updatedLead.id);
-        setTimeout(() => setRecentlyUpdatedId(null), 3000);
-    }
+    setDispensedLeads(dispensedLeads.map(l => l.id === updatedLead.id ? updatedLead : l));
+
+    setRecentlyUpdatedId(updatedLead.id);
+    setTimeout(() => setRecentlyUpdatedId(null), 3000);
     setInteractingLead(null); // Close interaction dialog
   }
-
-  const handleSendInvoice = async (invoiceData: { email: string, serviceDescription: string, amount: number }) => {
-    if (!invoicingLead) return;
-
-    try {
-        await createInvoice({
-            leadId: invoicingLead.id,
-            customerEmail: invoiceData.email,
-            serviceDescription: invoiceData.serviceDescription,
-            amount: invoiceData.amount
-        });
-
-        toast({
-            title: "Invoice Sent!",
-            description: `An invoice has been sent to ${invoiceData.email}.`,
-            className: 'bg-accent text-accent-foreground border-accent'
-        });
-
-        const updatedLead = { ...invoicingLead, invoiceSent: true, leadStatus: 'sale-made' as const };
-        const newAllLeads = allLeads.map(l => l.id === updatedLead.id ? updatedLead : l);
-        setAllLeads(newAllLeads);
-        setDispensedLeads(dispensedLeads.map(l => l.id === updatedLead.id ? updatedLead : l));
-
-    } catch (error) {
-        console.error(error);
-        toast({
-            variant: "destructive",
-            title: "Failed to send invoice",
-            description: error instanceof Error ? error.message : "An unknown error occurred.",
-        });
-    } finally {
-        setInvoicingLead(null);
-    }
-  };
-
   
   const handleSelectLead = (lead: ProcessedLead) => {
     setInteractingLead(lead);
@@ -637,14 +604,6 @@ export default function Dashboard() {
                 </div>
             </DialogContent>
         </Dialog>
-      )}
-
-      {invoicingLead && (
-          <InvoiceDialog
-              lead={invoicingLead}
-              onSend={handleSendInvoice}
-              onOpenChange={() => setInvoicingLead(null)}
-          />
       )}
 
       <AlertDialog open={showAlert} onOpenChange={setShowAlert}>
