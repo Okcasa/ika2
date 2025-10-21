@@ -246,7 +246,7 @@ export default function SummaryPage() {
         </div>
       </main>
       <footer className="text-center py-4">
-        <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} LeadSorter Pro. All rights reserved.</p>
+        <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} Workspace. All rights reserved.</p>
       </footer>
     </div>
   );

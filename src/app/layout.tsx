@@ -3,8 +3,8 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'LeadSorter Pro',
-  description: 'Sort, correct, and classify your business leads with AI.',
+  title: 'Team Workspace',
+  description: 'A workspace for your team to manage leads.',
 };
 
 export default function RootLayout({

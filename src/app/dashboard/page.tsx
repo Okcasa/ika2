@@ -312,7 +312,7 @@ export default function Dashboard() {
         <div className="border-b">
             <div className="flex h-16 items-center px-4">
                 <Logo className="h-6 w-6" />
-                <h1 className="text-xl font-bold ml-2">LeadSorter</h1>
+                <h1 className="text-xl font-bold ml-2">Workspace</h1>
                 <div className="ml-auto flex items-center space-x-4">
                     <Button variant="ghost" size="icon" onClick={toggleTheme}>
                         <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
@@ -459,7 +459,7 @@ export default function Dashboard() {
       </div>
       
       <footer className="text-center py-4">
-        <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} LeadSorter. All rights reserved.</p>
+        <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} Workspace. All rights reserved.</p>
       </footer>
 
       <CalendarDialog 
