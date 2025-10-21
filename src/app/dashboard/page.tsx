@@ -319,7 +319,7 @@ export default function Dashboard() {
                         <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                         <span className="sr-only">Toggle theme</span>
                     </Button>
-                     <Button variant="ghost" size="icon" onClick={() => router.push('/account')}>
+                     <Button variant="ghost" size="icon" onClick={() => router.push('/sum')}>
                         <User className="h-5 w-5" />
                         <span className="sr-only">Account</span>
                     </Button>

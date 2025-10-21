@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { format } from 'date-fns';
+import { useState, useMemo } from 'react';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 import {
   Dialog,
   DialogContent,
@@ -9,12 +9,12 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProcessedLead, LeadStatus } from '@/lib/types';
-import { Phone, MoreHorizontal, TrendingUp, XCircle, User } from 'lucide-react';
+import { Phone, MoreHorizontal, TrendingUp, XCircle, User, ChevronLeft, ChevronRight } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface CalendarDialogProps {
   isOpen: boolean;
@@ -24,22 +24,8 @@ interface CalendarDialogProps {
 }
 
 export function CalendarDialog({ isOpen, onOpenChange, leads, onUpdateLead }: CalendarDialogProps) {
-  const [date, setDate] = useState<Date | undefined>(new Date());
-
-  const meetingsByDay = leads.reduce((acc, lead) => {
-    if (lead.meetingTime) {
-      const day = format(new Date(lead.meetingTime), 'yyyy-MM-dd');
-      if (!acc[day]) {
-        acc[day] = [];
-      }
-      acc[day].push(lead);
-    }
-    return acc;
-  }, {} as Record<string, ProcessedLead[]>);
-
-  const selectedDayMeetings = date ? meetingsByDay[format(date, 'yyyy-MM-dd')] || [] : [];
-  
-  const meetingDays = Object.keys(meetingsByDay).map(day => new Date(day));
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
   const handleStatusUpdate = (lead: ProcessedLead, status: LeadStatus) => {
     onUpdateLead({ ...lead, leadStatus: status });
@@ -57,7 +43,7 @@ export function CalendarDialog({ isOpen, onOpenChange, leads, onUpdateLead }: Ca
           <TrendingUp className="mr-2 h-4 w-4" />
           Sale Made
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleStatusUpdate(lead, 'closed-lost')} className="text-destructive focus:bg-destructive">
+        <DropdownMenuItem onClick={() => handleStatusUpdate(lead, 'closed-lost')} className="text-destructive focus:bg-destructive/90 focus:text-destructive-foreground">
           <XCircle className="mr-2 h-4 w-4" />
           Closed (Lost)
         </DropdownMenuItem>
@@ -65,9 +51,37 @@ export function CalendarDialog({ isOpen, onOpenChange, leads, onUpdateLead }: Ca
     </DropdownMenu>
   );
 
+  const firstDayOfMonth = startOfMonth(currentDate);
+  const lastDayOfMonth = endOfMonth(currentDate);
+
+  const daysInMonth = eachDayOfInterval({
+    start: startOfWeek(firstDayOfMonth),
+    end: endOfWeek(lastDayOfMonth),
+  });
+
+  const scheduledMeetings = useMemo(() => leads.filter(
+    (lead) => lead.leadStatus === 'meeting-scheduled' && lead.meetingTime
+  ), [leads]);
+
+  const getMeetingsForDay = (day: Date) => {
+    return scheduledMeetings
+      .filter((lead) => isSameDay(new Date(lead.meetingTime!), day))
+      .sort((a, b) => new Date(a.meetingTime!).getTime() - new Date(b.meetingTime!).getTime());
+  };
+
+  const selectedDayMeetings = getMeetingsForDay(selectedDate);
+  
+  const goToPreviousMonth = () => {
+    setCurrentDate(subMonths(currentDate, 1));
+  };
+
+  const goToNextMonth = () => {
+    setCurrentDate(addMonths(currentDate, 1));
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
+      <DialogContent className="max-w-4xl h-[90vh] md:h-auto flex flex-col">
         <DialogHeader>
           <DialogTitle>Meeting Calendar</DialogTitle>
           <DialogDescription>
@@ -75,34 +89,68 @@ export function CalendarDialog({ isOpen, onOpenChange, leads, onUpdateLead }: Ca
           </DialogDescription>
         </DialogHeader>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-grow overflow-hidden">
-          <div className="flex justify-center items-center">
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={setDate}
-              className="rounded-md border"
-              modifiers={{
-                meeting: meetingDays,
-              }}
-              modifiersClassNames={{
-                meeting: 'bg-primary/20 text-primary-foreground',
-              }}
-            />
-          </div>
+            <div className="p-1">
+                <header className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" size="icon" onClick={goToPreviousMonth}>
+                            <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <h2 className="text-lg font-semibold text-center w-36">
+                            {format(currentDate, 'MMMM yyyy')}
+                        </h2>
+                        <Button variant="outline" size="icon" onClick={goToNextMonth}>
+                            <ChevronRight className="h-4 w-4" />
+                        </Button>
+                    </div>
+                </header>
+                <div className="grid grid-cols-7">
+                    {['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'].map(day => (
+                        <div key={day} className="text-center font-semibold text-muted-foreground p-2 text-xs">
+                            {day}
+                        </div>
+                    ))}
+                </div>
+                <div className="grid grid-cols-7">
+                    {daysInMonth.map(day => {
+                        const meetingsOnDay = getMeetingsForDay(day);
+                        return (
+                        <div 
+                            key={day.toString()} 
+                            className={cn(
+                                "relative h-16 p-2 flex flex-col group border border-transparent rounded-md cursor-pointer hover:bg-muted/50",
+                                !isSameMonth(day, currentDate) && "text-muted-foreground/40",
+                                isSameDay(day, selectedDate) && "border-primary/50",
+                            )}
+                            onClick={() => setSelectedDate(day)}
+                        >
+                            <span className={cn(
+                                "font-medium text-sm h-6 w-6 flex items-center justify-center rounded-full",
+                                isSameDay(day, new Date()) && "border-2 border-primary"
+                            )}>
+                                {format(day, 'd')}
+                            </span>
+                            {meetingsOnDay.length > 0 && (
+                                <div className="flex items-center justify-center mt-1">
+                                    <div className="h-1.5 w-1.5 rounded-full bg-primary"></div>
+                                </div>
+                            )}
+                        </div>
+                    )})}
+                </div>
+            </div>
           <div className="overflow-y-auto pr-2">
-            <Card>
+            <Card className="bg-muted/30 border-0 shadow-none">
               <CardHeader>
-                <CardTitle>
-                  Meetings for {date ? format(date, 'PPP') : '...'}
+                <CardTitle className="text-lg">
+                  Meetings for {format(selectedDate, 'MMMM do, yyyy')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {selectedDayMeetings.length > 0 ? (
                   <ul className="space-y-4">
                     {selectedDayMeetings
-                      .sort((a, b) => new Date(a.meetingTime!).getTime() - new Date(b.meetingTime!).getTime())
                       .map((lead) => (
-                      <li key={lead.id} className="p-3 bg-muted/50 rounded-lg flex items-start justify-between">
+                      <li key={lead.id} className="p-3 bg-card/80 rounded-lg flex items-start justify-between">
                         <div>
                             <p className="font-semibold">{lead.correctedBusinessName}</p>
                             {lead.ownerName && (
@@ -134,5 +182,3 @@ export function CalendarDialog({ isOpen, onOpenChange, leads, onUpdateLead }: Ca
     </Dialog>
   );
 }
-
-    
