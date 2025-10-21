@@ -111,7 +111,7 @@ export function LeadsTable({ leads, totalLeads, onEdit, onDelete, onReset, onSca
         <Download className="mr-2 h-4 w-4" />
         Download CSV
       </Button>
-      <Button size="sm" onClick={onNext} className="flex-1 sm:flex-none bg-accent hover:bg-accent/90">
+      <Button size="sm" onClick={onNext} className="flex-1 sm:flex-none">
         Next
         <ArrowRight className="ml-2 h-4 w-4" />
       </Button>
