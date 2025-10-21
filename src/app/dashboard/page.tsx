@@ -319,10 +319,6 @@ export default function Dashboard() {
                         <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                         <span className="sr-only">Toggle theme</span>
                     </Button>
-                     <Button variant="outline" size="sm" onClick={() => router.push('/sum')}>
-                        <User className="h-4 w-4 mr-2" />
-                        Summary
-                    </Button>
                 </div>
             </div>
         </div>
@@ -342,6 +338,10 @@ export default function Dashboard() {
                     <Button variant="outline" onClick={() => setIsCalendarOpen(true)}>
                         <CalendarDays className="mr-2 h-4 w-4" />
                         View Calendar
+                    </Button>
+                     <Button variant="outline" size="sm" onClick={() => router.push('/sum')}>
+                        <User className="h-4 w-4 mr-2" />
+                        Summary
                     </Button>
                 </div>
             </div>
