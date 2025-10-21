@@ -321,7 +321,7 @@ export default function Dashboard() {
                     </Button>
                      <Button variant="ghost" size="icon" onClick={() => router.push('/sum')}>
                         <User className="h-5 w-5" />
-                        <span className="sr-only">Account</span>
+                        <span className="sr-only">Summary</span>
                     </Button>
                 </div>
             </div>
@@ -610,3 +610,5 @@ export default function Dashboard() {
       </AlertDialog>
     </>
   );
+
+    
