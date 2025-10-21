@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, TrendingUp, XCircle, RotateCcw, ArrowRight, TrendingDown, MoreHorizontal, BarChart, Users, Percent, ListTodo, Handshake, Sun, Moon, User, LogOut } from 'lucide-react';
+import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, TrendingUp, XCircle, RotateCcw, ArrowRight, TrendingDown, MoreHorizontal, BarChart, Users, Percent, ListTodo, Handshake, Sun, Moon, User } from 'lucide-react';
 import type { ProcessedLead, LeadStatus } from '@/lib/types';
 import { CalendarDialog } from '@/components/calendar-dialog';
 import { Badge } from '@/components/ui/badge';
@@ -43,7 +43,6 @@ import { Logo } from '@/components/logo';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { signOut } from '@/app/auth/actions';
 
 const LEADS_KEY = 'leadsorter_leads';
 const DISPENSED_LEADS_KEY = 'leadsorter_dispensed_leads';
@@ -307,10 +306,6 @@ export default function Dashboard() {
     </DropdownMenu>
   );
 
-  const handleSignOut = async () => {
-    await signOut();
-  };
-
   return (
     <>
       <div className="flex-col md:flex">
@@ -327,10 +322,6 @@ export default function Dashboard() {
                      <Button variant="ghost" size="icon" onClick={() => router.push('/account')}>
                         <User className="h-5 w-5" />
                         <span className="sr-only">Account</span>
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={handleSignOut}>
-                        <LogOut className="mr-2 h-4 w-4" />
-                        Sign Out
                     </Button>
                 </div>
             </div>

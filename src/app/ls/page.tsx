@@ -9,7 +9,6 @@ import { EditLeadDialog } from '@/components/edit-lead-dialog';
 import type { Lead, ProcessedLead } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from 'lucide-react';
-import { supabase } from '@/lib/supabase/client';
 
 const PAGE_SIZE = 50;
 const LEADS_KEY = 'leadsorter_leads';
