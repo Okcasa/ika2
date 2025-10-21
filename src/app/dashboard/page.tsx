@@ -339,10 +339,6 @@ export default function Dashboard() {
                         <CalendarDays className="mr-2 h-4 w-4" />
                         View Calendar
                     </Button>
-                     <Button variant="outline" size="sm" onClick={() => router.push('/sum')}>
-                        <User className="h-4 w-4 mr-2" />
-                        Summary
-                    </Button>
                 </div>
             </div>
 
