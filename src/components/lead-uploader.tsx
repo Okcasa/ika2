@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import { UploadCloud } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import type { Lead } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast";
 
@@ -120,19 +120,15 @@ export function LeadUploader({ onLeadsUpload }: LeadUploaderProps) {
   };
 
   return (
-    <Card className="w-full animate-in fade-in duration-500 shadow-lg">
-      <CardHeader>
-        <CardTitle>1. Upload Your Leads</CardTitle>
-        <CardDescription>Drag & drop your CSV file here or click to browse. The data will be loaded instantly.</CardDescription>
-      </CardHeader>
-      <CardContent>
+    <Card className="w-full max-w-lg mx-auto animate-in fade-in duration-500 shadow-lg mt-8 border-dashed border-2 bg-transparent hover:border-primary/50 transition-colors">
+      <CardContent className="p-6">
         <div
           onDragEnter={() => setIsDragging(true)}
           onDragLeave={() => setIsDragging(false)}
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
-          className={`flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${isDragging ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'}`}
+          className={`flex flex-col items-center justify-center p-12 rounded-lg cursor-pointer transition-colors ${isDragging ? 'bg-primary/10' : ''}`}
         >
           <UploadCloud className={`h-12 w-12 mb-4 transition-colors ${isDragging ? 'text-primary' : 'text-muted-foreground'}`} />
           <p className="text-center text-muted-foreground">
@@ -145,12 +141,10 @@ export function LeadUploader({ onLeadsUpload }: LeadUploaderProps) {
             onChange={handleFileChange}
             className="hidden"
           />
-        </div>
-        <div className="mt-6 text-center">
-            <Button onClick={() => fileInputRef.current?.click()}>
+           <Button variant="link" className="mt-2">
                 Browse Files
             </Button>
-            <p className="text-xs text-muted-foreground mt-2">Required CSV columns: <span className="font-semibold font-code">name</span>, <span className="font-semibold font-code">phone</span>. Optional: <span className="font-semibold font-code">website</span>, <span className="font-semibold font-code">business type</span>.</p>
+            <p className="text-xs text-muted-foreground mt-4">Required CSV columns: <span className="font-semibold font-code">name</span>, <span className="font-semibold font-code">phone</span>. Optional: <span className="font-semibold font-code">website</span>, <span className="font-semibold font-code">business type</span>.</p>
         </div>
       </CardContent>
     </Card>

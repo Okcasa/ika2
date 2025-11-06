@@ -1,18 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Header } from '@/components/header';
+import Image from 'next/image';
 import { LeadUploader } from '@/components/lead-uploader';
 import { LeadsTable } from '@/components/leads-table';
 import { EditLeadDialog } from '@/components/edit-lead-dialog';
 import type { Lead, ProcessedLead } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from 'lucide-react';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { Logo } from '@/components/logo';
 
 const PAGE_SIZE = 50;
 const LEADS_KEY = 'leadsorter_leads';
-
 
 export default function Home() {
   const [allLeads, setAllLeads] = useState<ProcessedLead[]>([]);
@@ -20,15 +20,7 @@ export default function Home() {
   const [editingLead, setEditingLead] = useState<ProcessedLead | null>(null);
   const { toast } = useToast();
   const router = useRouter();
-
-  useEffect(() => {
-    const storedLeads = localStorage.getItem(LEADS_KEY);
-    if (storedLeads) {
-        const parsedLeads = JSON.parse(storedLeads);
-        setAllLeads(parsedLeads);
-        setVisibleLeads(parsedLeads.slice(0, PAGE_SIZE));
-    }
-  }, []);
+  const heroImage = PlaceHolderImages.find(p => p.id === 'hero-background');
 
 
   const handleLeadsUpload = async (rawLeads: Lead[]) => {
@@ -128,12 +120,36 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <main className="flex-grow container mx-auto px-4 py-8">
-        <Header />
-        <div className="mt-8 max-w-7xl mx-auto">
-          {allLeads.length === 0 ? (
-            <LeadUploader onLeadsUpload={handleLeadsUpload} />
-          ) : (
+      <main className="flex-grow">
+         {allLeads.length === 0 ? (
+          <>
+            {heroImage && (
+              <div className="relative h-64 w-full">
+                  <Image 
+                      src={heroImage.imageUrl}
+                      alt={heroImage.description}
+                      data-ai-hint={heroImage.imageHint}
+                      fill
+                      style={{objectFit: "cover"}}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
+              </div>
+            )}
+            <div className="container mx-auto px-4 -mt-24">
+                <div className="flex flex-col items-center justify-center gap-4 text-center">
+                    <Logo className="h-12 w-12 text-primary" />
+                    <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl font-headline">
+                      Team Workspace
+                    </h1>
+                    <p className="mt-2 text-lg text-muted-foreground max-w-2xl mx-auto">
+                      Upload your CSV to sort, review, and clean your business leads instantly.
+                    </p>
+                </div>
+                <LeadUploader onLeadsUpload={handleLeadsUpload} />
+            </div>
+          </>
+        ) : (
+          <div className="container mx-auto px-4 py-8">
             <LeadsTable
               leads={visibleLeads}
               totalLeads={allLeads.length}
@@ -144,8 +160,8 @@ export default function Home() {
               onLoadMore={loadMoreLeads}
               onNext={handleNext}
             />
-          )}
-        </div>
+          </div>
+        )}
         
         {editingLead && (
           <EditLeadDialog
