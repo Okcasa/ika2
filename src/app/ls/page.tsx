@@ -135,7 +135,7 @@ export default function Home() {
                   <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
               </div>
             )}
-            <div className="container mx-auto px-4 -mt-24">
+            <div className="container mx-auto px-4 -mt-32">
                 <div className="flex flex-col items-center justify-center gap-4 text-center">
                     <Logo className="h-12 w-12 text-primary" />
                     <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl font-headline">
