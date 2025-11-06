@@ -3,21 +3,23 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Header } from '@/components/header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ArrowLeft, Calendar, TrendingUp, XCircle, FileText, PhoneOff, User } from 'lucide-react';
+import { ArrowLeft, Calendar, TrendingUp, XCircle, FileText, PhoneOff, User, Sun, Moon } from 'lucide-react';
 import type { ProcessedLead } from '@/lib/types';
 import { format } from 'date-fns';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { SessionTimer } from '@/components/session-timer';
+import { Logo } from '@/components/logo';
 
 const LEADS_KEY = 'leadsorter_leads';
+const THEME_KEY = 'leadsorter_theme';
 const VISIBLE_INTERACTIONS_LIMIT = 7;
 
 export default function SummaryPage() {
   const [allLeads, setAllLeads] = useState<ProcessedLead[]>([]);
   const [visibleInteractionsCount, setVisibleInteractionsCount] = useState(VISIBLE_INTERACTIONS_LIMIT);
+  const [theme, setTheme] = useState('dark');
   const router = useRouter();
 
   useEffect(() => {
@@ -25,7 +27,17 @@ export default function SummaryPage() {
     if (storedLeads) {
       setAllLeads(JSON.parse(storedLeads));
     }
+    const storedTheme = localStorage.getItem(THEME_KEY) || 'dark';
+    setTheme(storedTheme);
+    document.documentElement.classList.toggle('dark', storedTheme === 'dark');
   }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    localStorage.setItem(THEME_KEY, newTheme);
+    document.documentElement.classList.toggle('dark', newTheme === 'dark');
+  };
 
   const scheduledMeetings = allLeads
     .filter(lead => lead.leadStatus === 'meeting-scheduled' && lead.meetingTime)
@@ -69,9 +81,22 @@ export default function SummaryPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-background">
+       <div className="border-b border-border/50">
+            <div className="flex h-16 items-center px-4 container mx-auto">
+                <Logo className="h-6 w-6" />
+                <h1 className="text-xl font-bold ml-3 font-headline tracking-tight">Workspace</h1>
+                <div className="ml-auto flex items-center space-x-4">
+                    <SessionTimer />
+                    <Button variant="ghost" size="icon" onClick={toggleTheme}>
+                        <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                        <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                        <span className="sr-only">Toggle theme</span>
+                    </Button>
+                </div>
+            </div>
+        </div>
       <main className="flex-grow container mx-auto px-4 py-8">
-        <Header />
         <div className="mt-8">
           <Card className="shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between">
@@ -80,7 +105,6 @@ export default function SummaryPage() {
                 <CardDescription>A complete overview of all your lead interactions.</CardDescription>
               </div>
               <div className="flex items-center gap-4">
-                <SessionTimer />
                 <Button variant="outline" onClick={() => router.push('/dashboard')}>
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Back to Dashboard
