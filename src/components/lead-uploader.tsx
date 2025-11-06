@@ -120,7 +120,7 @@ export function LeadUploader({ onLeadsUpload }: LeadUploaderProps) {
   };
 
   return (
-    <Card className="w-full animate-in fade-in duration-500">
+    <Card className="w-full animate-in fade-in duration-500 shadow-lg">
       <CardHeader>
         <CardTitle>1. Upload Your Leads</CardTitle>
         <CardDescription>Drag & drop your CSV file here or click to browse. The data will be loaded instantly.</CardDescription>
@@ -150,7 +150,7 @@ export function LeadUploader({ onLeadsUpload }: LeadUploaderProps) {
             <Button onClick={() => fileInputRef.current?.click()}>
                 Browse Files
             </Button>
-            <p className="text-xs text-muted-foreground mt-2">Required CSV columns: <span className="font-semibold">name</span>, <span className="font-semibold">phone</span>. Optional: <span className="font-semibold">website</span>, <span className="font-semibold">business type</span>.</p>
+            <p className="text-xs text-muted-foreground mt-2">Required CSV columns: <span className="font-semibold font-code">name</span>, <span className="font-semibold font-code">phone</span>. Optional: <span className="font-semibold font-code">website</span>, <span className="font-semibold font-code">business type</span>.</p>
         </div>
       </CardContent>
     </Card>

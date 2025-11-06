@@ -52,7 +52,6 @@ export default function Home() {
     toast({
       title: "Upload complete!",
       description: `${totalLeads} leads have been loaded.`,
-      className: 'bg-accent text-accent-foreground border-accent'
     });
   };
   
@@ -74,7 +73,6 @@ export default function Home() {
     toast({
         title: "Lead Updated",
         description: `${updatedLead.correctedBusinessName} has been saved.`,
-        className: 'bg-accent text-accent-foreground border-accent'
     })
   };
 
@@ -108,7 +106,6 @@ export default function Home() {
     toast({
       title: 'Scan complete!',
       description: `Removed ${removedCount} leads with websites.`,
-      className: 'bg-accent text-accent-foreground border-accent'
     });
   };
 
@@ -118,7 +115,6 @@ export default function Home() {
         toast({
             title: "Leads Saved!",
             description: "Your leads have been saved. You're being redirected to the dashboard.",
-            className: 'bg-accent text-accent-foreground border-accent'
         });
         router.push('/dashboard');
     } catch (error) {
@@ -159,7 +155,7 @@ export default function Home() {
           />
         )}
       </main>
-      <footer className="text-center py-4">
+      <footer className="text-center py-4 border-t border-border/50">
         <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} Workspace. All rights reserved.</p>
       </footer>
     </div>

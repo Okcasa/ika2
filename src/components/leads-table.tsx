@@ -86,7 +86,7 @@ export function LeadsTable({ leads, totalLeads, onEdit, onDelete, onReset, onSca
   const getStatusBadge = (status: ProcessedLead['status']) => {
     switch (status) {
       case 'completed':
-        return <Badge variant="secondary" className="bg-accent/20 border border-accent/30 text-green-800 dark:text-green-300">Completed</Badge>;
+        return <Badge variant="secondary" className="bg-green-500/10 border-green-500/20 text-green-400">Completed</Badge>;
       case 'error':
         return <Badge variant="destructive">Error</Badge>;
       default:
@@ -121,7 +121,7 @@ export function LeadsTable({ leads, totalLeads, onEdit, onDelete, onReset, onSca
   const hasMoreLeads = leads.length < totalLeads;
 
   return (
-    <Card className="animate-in fade-in duration-500">
+    <Card className="animate-in fade-in duration-500 shadow-lg">
       <CardHeader ref={cardHeaderRef} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
             <CardTitle>2. Review & Download</CardTitle>
@@ -134,7 +134,7 @@ export function LeadsTable({ leads, totalLeads, onEdit, onDelete, onReset, onSca
 
       <CardContent>
         <TooltipProvider>
-          <div className="overflow-x-auto border rounded-lg">
+          <div className="overflow-x-auto border rounded-lg shadow-inner">
             <Table>
               <TableHeader>
                 <TableRow>

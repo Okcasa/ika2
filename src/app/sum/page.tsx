@@ -73,7 +73,7 @@ export default function SummaryPage() {
       <main className="flex-grow container mx-auto px-4 py-8">
         <Header />
         <div className="mt-8">
-          <Card>
+          <Card className="shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Activity Summary</CardTitle>
@@ -103,7 +103,7 @@ export default function SummaryPage() {
                           <li key={lead.id} className="p-4 bg-muted/50 rounded-lg border">
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <p className="font-semibold text-base">{lead.correctedBusinessName}</p>
+                                    <p className="font-semibold text-base font-code">{lead.correctedBusinessName}</p>
                                     {lead.ownerName && (
                                         <div className="mt-1.5 inline-flex items-center gap-2 text-sm text-muted-foreground bg-muted px-2 py-1 rounded-md">
                                             <User className="h-3.5 w-3.5" />
@@ -130,7 +130,7 @@ export default function SummaryPage() {
                 <AccordionItem value="sales-made">
                   <AccordionTrigger>
                     <div className="flex items-center gap-2">
-                        <TrendingUp className="h-5 w-5 text-green-500" />
+                        <TrendingUp className="h-5 w-5 text-green-400" />
                         <span className="font-semibold">Sales Made ({salesMade.length})</span>
                     </div>
                   </AccordionTrigger>
@@ -139,8 +139,8 @@ export default function SummaryPage() {
                       <ul className="space-y-3 pt-2">
                         {salesMade.map(lead => (
                           <li key={lead.id} className="p-4 bg-green-500/10 rounded-lg border border-green-500/20">
-                            <p className="font-semibold text-base">{lead.correctedBusinessName}</p>
-                            <p className="text-sm capitalize text-green-600 font-medium mt-1">
+                            <p className="font-semibold text-base font-code">{lead.correctedBusinessName}</p>
+                            <p className="text-sm capitalize text-green-400 font-medium mt-1">
                               {getStatusLabel(lead.leadStatus)}
                             </p>
                              {lead.notes && (
@@ -158,7 +158,7 @@ export default function SummaryPage() {
                 <AccordionItem value="closed-lost">
                   <AccordionTrigger>
                     <div className="flex items-center gap-2">
-                        <XCircle className="h-5 w-5 text-red-500" />
+                        <XCircle className="h-5 w-5 text-red-400" />
                         <span className="font-semibold">Closed (Lost) ({closedLost.length})</span>
                     </div>
                   </AccordionTrigger>
@@ -167,7 +167,7 @@ export default function SummaryPage() {
                       <ul className="space-y-3 pt-2">
                         {closedLost.map(lead => (
                           <li key={lead.id} className="p-4 bg-red-500/10 rounded-lg border border-red-500/20">
-                            <p className="font-semibold text-base">{lead.correctedBusinessName}</p>
+                            <p className="font-semibold text-base font-code">{lead.correctedBusinessName}</p>
                              {lead.notes && (
                                 <p className="text-sm text-foreground/80 italic mt-2 border-l-2 border-red-500/20 pl-3">"{lead.notes}"</p>
                             )}
@@ -183,7 +183,7 @@ export default function SummaryPage() {
                 <AccordionItem value="wrong-numbers">
                   <AccordionTrigger>
                     <div className="flex items-center gap-2">
-                        <PhoneOff className="h-5 w-5 text-orange-500" />
+                        <PhoneOff className="h-5 w-5 text-orange-400" />
                         <span className="font-semibold">Wrong Numbers ({wrongNumbers.length})</span>
                     </div>
                   </AccordionTrigger>
@@ -192,7 +192,7 @@ export default function SummaryPage() {
                       <ul className="space-y-3 pt-2">
                         {wrongNumbers.map(lead => (
                           <li key={lead.id} className="p-4 bg-orange-500/10 rounded-lg border border-orange-500/20">
-                            <p className="font-semibold text-base">{lead.correctedBusinessName}</p>
+                            <p className="font-semibold text-base font-code">{lead.correctedBusinessName}</p>
                             {lead.notes && (
                                 <p className="text-sm text-foreground/80 italic mt-2 border-l-2 border-orange-500/20 pl-3">"{lead.notes}"</p>
                             )}
@@ -207,7 +207,7 @@ export default function SummaryPage() {
                 <AccordionItem value="interactions">
                   <AccordionTrigger>
                     <div className="flex items-center gap-2">
-                        <FileText className="h-5 w-5 text-blue-500" />
+                        <FileText className="h-5 w-5 text-blue-400" />
                         <span className="font-semibold">Other Interactions ({otherInteractions.length})</span>
                     </div>
                   </AccordionTrigger>
@@ -218,7 +218,7 @@ export default function SummaryPage() {
                           {otherInteractions.slice(0, visibleInteractionsCount).map(lead => (
                             <li key={lead.id} className="p-4 bg-muted/50 rounded-lg border">
                               <div className="flex justify-between items-center">
-                                  <p className="font-semibold text-base">{lead.correctedBusinessName}</p>
+                                  <p className="font-semibold text-base font-code">{lead.correctedBusinessName}</p>
                                   <p className="text-sm text-muted-foreground capitalize">{getStatusLabel(lead.leadStatus)}</p>
                               </div>
                               {lead.notes && (
@@ -245,7 +245,7 @@ export default function SummaryPage() {
           </Card>
         </div>
       </main>
-      <footer className="text-center py-4">
+      <footer className="text-center py-4 border-t border-border/50">
         <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} Workspace. All rights reserved.</p>
       </footer>
     </div>
