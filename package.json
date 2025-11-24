@@ -3,12 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack -p 9002",
+    "dev": "next dev --turbopack --port 9002 --hostname 0.0.0.0",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "deploy": "npx wrangler pages deploy .next"
+    "deploy": "npx wrangler pages deploy .next --project-name=ika"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.3",
