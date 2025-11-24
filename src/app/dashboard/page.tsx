@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, TrendingUp, XCircle, RotateCcw, ArrowRight, TrendingDown, MoreHorizontal, BarChart, Users, Percent, ListTodo, Handshake, Sun, Moon, User } from 'lucide-react';
+import { Phone, Building, Globe, Edit, CalendarClock, PhoneOff, UserX, UserCheck, StickyNote, AlertTriangle, CalendarDays, TrendingUp, XCircle, RotateCcw, ArrowRight, TrendingDown, MoreHorizontal, BarChart, Users, Percent, ListTodo, Handshake, Sun, Moon, User, Briefcase } from 'lucide-react';
 import type { ProcessedLead, LeadStatus } from '@/lib/types';
 import { CalendarDialog } from '@/components/calendar-dialog';
 import { Badge } from '@/components/ui/badge';
@@ -39,7 +39,6 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { LeadInteractionForm } from '@/components/lead-interaction-form';
-import { Logo } from '@/components/logo';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
@@ -310,7 +309,7 @@ export default function Dashboard() {
       <div className="flex-col md:flex bg-background min-h-screen">
         <div className="border-b border-border/50">
             <div className="flex h-16 items-center px-4 container mx-auto">
-                <Logo className="h-6 w-6" />
+                <Briefcase className="h-6 w-6" />
                 <h1 className="text-xl font-bold ml-3 font-headline tracking-tight">Workspace</h1>
                 <div className="ml-auto flex items-center space-x-2">
                     <Button variant="ghost" size="icon" onClick={toggleTheme}>
@@ -604,3 +603,5 @@ export default function Dashboard() {
     </>
   );
 }
+
+    

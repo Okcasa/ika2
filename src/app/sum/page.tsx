@@ -1,16 +1,14 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ArrowLeft, Calendar, TrendingUp, XCircle, FileText, PhoneOff, User, Sun, Moon } from 'lucide-react';
+import { ArrowLeft, Calendar, TrendingUp, XCircle, FileText, PhoneOff, User, Sun, Moon, Briefcase } from 'lucide-react';
 import type { ProcessedLead } from '@/lib/types';
 import { format } from 'date-fns';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { SessionTimer } from '@/components/session-timer';
-import { Logo } from '@/components/logo';
 
 const LEADS_KEY = 'leadsorter_leads';
 const THEME_KEY = 'leadsorter_theme';
@@ -84,7 +82,7 @@ export default function SummaryPage() {
     <div className="flex flex-col min-h-screen bg-background">
        <div className="border-b border-border/50">
             <div className="flex h-16 items-center px-4 container mx-auto">
-                <Logo className="h-6 w-6" />
+                <Briefcase className="h-6 w-6" />
                 <h1 className="text-xl font-bold ml-3 font-headline tracking-tight">Workspace</h1>
                 <div className="ml-auto flex items-center space-x-4">
                     <SessionTimer />
@@ -275,5 +273,7 @@ export default function SummaryPage() {
     </div>
   );
 }
+
+    
 
     

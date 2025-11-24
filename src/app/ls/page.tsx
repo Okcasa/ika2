@@ -9,7 +9,7 @@ import { EditLeadDialog } from '@/components/edit-lead-dialog';
 import type { Lead, ProcessedLead } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Logo } from '@/components/logo';
+import { Briefcase } from 'lucide-react';
 
 const PAGE_SIZE = 50;
 const LEADS_KEY = 'leadsorter_leads';
@@ -59,7 +59,7 @@ export default function Home() {
 
     setAllLeads(newAllLeads);
     setVisibleLeads(newVisibleLeads);
-    localStorage.setItem(LEADS_KEY, JSON.stringify(newAllLeads));
+localStorage.setItem(LEADS_KEY, JSON.stringify(newAllLeads));
     
     setEditingLead(null);
     toast({
@@ -137,7 +137,7 @@ export default function Home() {
             )}
             <div className="container mx-auto px-4 -mt-32">
                 <div className="flex flex-col items-center justify-center gap-4 text-center">
-                    <Logo className="h-12 w-12 text-primary" />
+                    <Briefcase className="h-12 w-12 text-primary" />
                     <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl font-headline">
                       Team Workspace
                     </h1>
@@ -177,3 +177,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
