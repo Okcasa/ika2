@@ -268,12 +268,7 @@ export default function SummaryPage() {
         </div>
       </main>
       <footer className="text-center py-4 border-t border-border/50">
-        <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} Workspace. All rights reserved.</p>
-      </footer>
+        <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} Workspace. All rights reserved.</p>      </footer>
     </div>
   );
 }
-
-    
-
-    

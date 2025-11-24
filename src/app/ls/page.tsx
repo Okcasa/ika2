@@ -177,5 +177,3 @@ localStorage.setItem(LEADS_KEY, JSON.stringify(newAllLeads));
     </div>
   );
 }
-
-    
