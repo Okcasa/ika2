@@ -1,12 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Briefcase, Users, Store, BadgeDollarSign, Megaphone, Moon, Sun } from 'lucide-react';
+import { Briefcase, Users, Store, BadgeDollarSign, Megaphone, Moon, Sun, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
 
 const sidebarItems = [
   { icon: Store, label: 'Shop', href: '/shop' },
@@ -18,13 +20,25 @@ const sidebarItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { toast } = useToast();
   const [theme, setTheme] = useState('light');
+  const [userEmail, setUserEmail] = useState<string>('User');
 
   useEffect(() => {
     // Check initial theme
     if (document.documentElement.classList.contains('dark')) {
       setTheme('dark');
     }
+
+    // Get user
+    const getUser = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user?.email) {
+            setUserEmail(session.user.email);
+        }
+    }
+    getUser();
   }, []);
 
   const toggleTheme = () => {
@@ -32,6 +46,15 @@ export function Sidebar() {
     setTheme(newTheme);
     document.documentElement.classList.toggle('dark', newTheme === 'dark');
     localStorage.setItem('leadsorter_theme', newTheme);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast({
+        title: "Logged out",
+        description: "You have been successfully logged out."
+    });
+    router.push('/');
   };
 
   return (
@@ -74,16 +97,19 @@ export function Sidebar() {
              <Button variant="ghost" size="icon" className="rounded-full" onClick={toggleTheme}>
                 {theme === 'dark' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
              </Button>
+             <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive" onClick={handleLogout}>
+                <LogOut className="h-5 w-5" />
+             </Button>
         </div>
 
         <div className="flex items-center gap-3 px-3 py-2">
           <Avatar className="h-10 w-10">
-            <AvatarImage src="https://github.com/shadcn.png" />
-            <AvatarFallback>CN</AvatarFallback>
+            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${userEmail}`} />
+            <AvatarFallback>U</AvatarFallback>
           </Avatar>
-          <div className="flex flex-col">
-            <span className="text-sm font-medium">Joyce</span>
-            <span className="text-xs text-muted-foreground">Pro Member</span>
+          <div className="flex flex-col overflow-hidden">
+            <span className="text-sm font-medium truncate w-32" title={userEmail}>{userEmail.split('@')[0]}</span>
+            <span className="text-xs text-muted-foreground">Member</span>
           </div>
         </div>
       </div>

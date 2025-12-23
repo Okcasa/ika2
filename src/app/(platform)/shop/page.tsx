@@ -10,6 +10,7 @@ import { ProcessedLead } from '@/lib/types';
 import { Search, ShoppingCart, Star, TrendingUp, CheckCircle, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 
 const PACKAGES = [
   {
@@ -55,19 +56,35 @@ export default function ShopPage() {
   const handleBuy = async (pkg: typeof PACKAGES[0]) => {
     setLoading(pkg.id);
 
+    // Check auth
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to make a purchase.",
+        variant: "destructive"
+      });
+      router.push('/');
+      setLoading(null);
+      return;
+    }
+
+    const userId = session.user.id;
+
     // Simulate API call / Payment
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     // Get leads
     const newLeads = generateMockLeads(pkg.count);
 
-    // Store in localStorage (simulating adding to account)
-    const existingLeadsJson = localStorage.getItem('leadsorter_leads');
+    // Store in localStorage (keyed by user)
+    const storageKey = `leadsorter_leads_${userId}`;
+    const existingLeadsJson = localStorage.getItem(storageKey);
     let existingLeads: ProcessedLead[] = existingLeadsJson ? JSON.parse(existingLeadsJson) : [];
 
     // Add new leads to existing
     const allLeads = [...existingLeads, ...newLeads];
-    localStorage.setItem('leadsorter_leads', JSON.stringify(allLeads));
+    localStorage.setItem(storageKey, JSON.stringify(allLeads));
 
     toast({
       title: "Purchase Successful!",

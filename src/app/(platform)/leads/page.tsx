@@ -32,11 +32,12 @@ import { cn } from '@/lib/utils';
 import { LeadInteractionForm } from '@/components/lead-interaction-form';
 import { useToast } from '@/hooks/use-toast';
 import { CalendarDialog } from '@/components/calendar-dialog';
-
-const LEADS_KEY = 'leadsorter_leads';
-const DISPENSED_LEADS_KEY = 'leadsorter_dispensed_leads';
+import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 
 export default function LeadsPage() {
+  const router = useRouter();
+  const [userId, setUserId] = useState<string | null>(null);
   const [allLeads, setAllLeads] = useState<ProcessedLead[]>([]);
   const [dispensedLeads, setDispensedLeads] = useState<ProcessedLead[]>([]);
   const [interactingLead, setInteractingLead] = useState<ProcessedLead | null>(null);
@@ -47,27 +48,40 @@ export default function LeadsPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    const storedLeads = localStorage.getItem(LEADS_KEY);
-    if (storedLeads) {
-        setAllLeads(JSON.parse(storedLeads));
-    }
-    const storedDispensedLeads = localStorage.getItem(DISPENSED_LEADS_KEY);
-    if (storedDispensedLeads) {
-        setDispensedLeads(JSON.parse(storedDispensedLeads));
-    }
-  }, []);
+    const init = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push('/');
+        return;
+      }
+      setUserId(session.user.id);
+
+      const leadsKey = `leadsorter_leads_${session.user.id}`;
+      const dispensedKey = `leadsorter_dispensed_leads_${session.user.id}`;
+
+      const storedLeads = localStorage.getItem(leadsKey);
+      if (storedLeads) {
+          setAllLeads(JSON.parse(storedLeads));
+      }
+      const storedDispensedLeads = localStorage.getItem(dispensedKey);
+      if (storedDispensedLeads) {
+          setDispensedLeads(JSON.parse(storedDispensedLeads));
+      }
+    };
+    init();
+  }, [router]);
 
   useEffect(() => {
-    if (allLeads.length > 0) {
-      localStorage.setItem(LEADS_KEY, JSON.stringify(allLeads));
+    if (userId && allLeads.length > 0) {
+      localStorage.setItem(`leadsorter_leads_${userId}`, JSON.stringify(allLeads));
     }
-  }, [allLeads]);
+  }, [allLeads, userId]);
 
   useEffect(() => {
-    if (dispensedLeads.length > 0) {
-      localStorage.setItem(DISPENSED_LEADS_KEY, JSON.stringify(dispensedLeads));
+    if (userId && dispensedLeads.length > 0) {
+      localStorage.setItem(`leadsorter_dispensed_leads_${userId}`, JSON.stringify(dispensedLeads));
     }
-  }, [dispensedLeads]);
+  }, [dispensedLeads, userId]);
 
   const getLeads = (force = false) => {
     // Only verify we have leads to dispense from the purchased pool
@@ -91,22 +105,13 @@ export default function LeadsPage() {
 
     // Shuffle all new leads before slicing
     const shuffledNewLeads = [...newLeadsPool].sort(() => Math.random() - 0.5);
-    const otherLeads = allLeads.filter(lead => !newLeadsPool.some(nl => nl.id === lead.id)); // Leads that are processed/closed
 
     const leadsToGet = Math.min(Math.max(numLeads, 1), 35, shuffledNewLeads.length);
     const leadsToDispense = shuffledNewLeads.slice(0, leadsToGet);
 
-    // Set all dispensed leads to 'new' status (visually for session), but we keep their actual status if it was call-back
-    // Actually, let's just use them as is.
-    // The original logic reset them to 'new' if they were pulled again.
     const resetDispensed = leadsToDispense.map(l => ({ ...l }));
 
     setDispensedLeads(resetDispensed);
-    // Keep rest of the leads as they are
-    // Wait, we need to ensure allLeads is updated so we don't duplicate
-    // The original logic was complex because it was modifying state in place.
-    // Here we just want to update the displayed list.
-
     setShowAlert(false);
   };
 
@@ -226,6 +231,10 @@ export default function LeadsPage() {
 
     return statusComponent;
   };
+
+  if (!userId) {
+      return <div className="p-8 text-center text-muted-foreground">Loading workspace...</div>
+  }
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto p-4 md:p-0">
