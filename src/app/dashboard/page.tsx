@@ -307,17 +307,23 @@ export default function Dashboard() {
   return (
     <>
       <div className="flex-col md:flex bg-background min-h-screen">
-        <div className="border-b border-border/50">
-            <div className="flex h-16 items-center px-4 container mx-auto">
-                <Briefcase className="h-6 w-6" />
-                <h1 className="text-xl font-bold ml-3 font-headline tracking-tight">Workspace</h1>
-                <div className="ml-auto flex items-center space-x-2">
-                    <Button variant="ghost" size="icon" onClick={toggleTheme}>
-                        <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                        <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                        <span className="sr-only">Toggle theme</span>
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => setIsStatsOpen(true)}>
+        {/* Header removed as it is now in Sidebar or handled by layout, but keeping controls */}
+        <div className="flex justify-end p-4 md:hidden">
+             <Button variant="outline" size="sm" onClick={() => setIsStatsOpen(true)}>
+                <BarChart className="mr-2 h-4 w-4" />
+                Stats
+            </Button>
+        </div>
+
+        <div className="flex-grow p-4 md:p-0 container mx-auto max-w-6xl">
+            <div className="flex flex-col md:flex-row md:items-center justify-between space-y-2 mb-6 gap-4">
+
+                 <div className="flex items-center gap-2 md:hidden">
+                     <h1 className="text-xl font-bold">Workspace</h1>
+                 </div>
+
+                 <div className="hidden md:flex ml-auto items-center space-x-2">
+                     <Button variant="outline" size="sm" onClick={() => setIsStatsOpen(true)}>
                         <BarChart className="mr-2 h-4 w-4" />
                         Stats
                     </Button>
@@ -325,10 +331,9 @@ export default function Dashboard() {
                         <CalendarDays className="mr-2 h-4 w-4" />
                         Calendar
                     </Button>
-                </div>
+                 </div>
             </div>
-        </div>
-        <main className="flex-grow p-4 md:p-8 container mx-auto">
+
             <div className="flex items-center justify-between space-y-2 mb-6">
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight font-headline">Dashboard</h2>
@@ -447,7 +452,7 @@ export default function Dashboard() {
                 )}
               </CardContent>
             </Card>
-        </main>
+        </div>
       </div>
       
       <footer className="text-center py-4 border-t border-border/50">
