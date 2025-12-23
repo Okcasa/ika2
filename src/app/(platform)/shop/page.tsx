@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { generateMockLeads } from '@/lib/mock-leads';
 import { ProcessedLead } from '@/lib/types';
-import { Search, ShoppingCart, Star, TrendingUp, CheckCircle, Zap } from 'lucide-react';
+import { Search, ShoppingCart, Bell, MessageSquare, Plus, ArrowRight, User, TrendingUp, ChevronDown, Package } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -19,9 +20,10 @@ const PACKAGES = [
     count: 50,
     price: 9,
     originalPrice: 29,
-    description: 'Perfect for testing the waters. 50 high-quality leads.',
-    color: 'bg-blue-500',
+    description: '50 Leads',
+    color: 'bg-blue-100 text-blue-600',
     popular: false,
+    status: 'Active'
   },
   {
     id: 'growth',
@@ -29,9 +31,10 @@ const PACKAGES = [
     count: 100,
     price: 16,
     originalPrice: 49,
-    description: 'Scale your outreach with 100 verified leads.',
-    color: 'bg-purple-500',
+    description: '100 Leads',
+    color: 'bg-purple-100 text-purple-600',
     popular: true,
+    status: 'Active'
   },
   {
     id: 'pro',
@@ -39,14 +42,25 @@ const PACKAGES = [
     count: 250,
     price: 35,
     originalPrice: 99,
-    description: 'Serious volume for serious closers. 250 leads.',
-    color: 'bg-orange-500',
+    description: '250 Leads',
+    color: 'bg-orange-100 text-orange-600',
     popular: false,
+    status: 'Active'
+  },
+  {
+    id: 'enterprise',
+    name: 'Enterprise',
+    count: 1000,
+    price: 120,
+    originalPrice: 299,
+    description: '1000 Leads',
+    color: 'bg-green-100 text-green-600',
+    popular: false,
+    status: 'Offline'
   },
 ];
 
-// Generate a few leads for the preview
-const PREVIEW_LEADS = generateMockLeads(6).map(l => ({ ...l, website: '' })); // Ensure they have no website as requested
+const PREVIEW_LEADS = generateMockLeads(6).map(l => ({ ...l, website: '' }));
 
 export default function ShopPage() {
   const { toast } = useToast();
@@ -54,10 +68,11 @@ export default function ShopPage() {
   const [loading, setLoading] = useState<string | null>(null);
 
   const handleBuy = async (pkg: typeof PACKAGES[0]) => {
-    setLoading(pkg.id);
+    if (pkg.status === 'Offline') return;
 
-    // Check auth
+    setLoading(pkg.id);
     const { data: { session } } = await supabase.auth.getSession();
+
     if (!session) {
       toast({
         title: "Authentication Required",
@@ -70,19 +85,13 @@ export default function ShopPage() {
     }
 
     const userId = session.user.id;
-
-    // Simulate API call / Payment
     await new Promise(resolve => setTimeout(resolve, 1500));
 
-    // Get leads
     const newLeads = generateMockLeads(pkg.count);
-
-    // Store in localStorage (keyed by user)
     const storageKey = `leadsorter_leads_${userId}`;
     const existingLeadsJson = localStorage.getItem(storageKey);
     let existingLeads: ProcessedLead[] = existingLeadsJson ? JSON.parse(existingLeadsJson) : [];
 
-    // Add new leads to existing
     const allLeads = [...existingLeads, ...newLeads];
     localStorage.setItem(storageKey, JSON.stringify(allLeads));
 
@@ -96,174 +105,239 @@ export default function ShopPage() {
   };
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto">
+    <div className="flex flex-col gap-8 max-w-[1600px] mx-auto">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Lead Marketplace</h1>
-          <p className="text-muted-foreground mt-1">Buy high-quality, verified leads for your business.</p>
-        </div>
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <div className="relative flex-1 md:w-64">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+        <h1 className="text-3xl font-bold tracking-tight text-black">Dashboard</h1>
+
+        <div className="flex items-center gap-4 w-full md:w-auto">
+          <div className="relative flex-1 md:w-[400px]">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               type="search"
-              placeholder="Search industries..."
-              className="pl-8 bg-background"
+              placeholder="Search anything..."
+              className="pl-10 h-12 rounded-full border-none bg-white shadow-sm placeholder:text-gray-400"
             />
           </div>
-          <Button size="icon" variant="outline" className="rounded-full">
-            <ShoppingCart className="h-4 w-4" />
+
+          <Button className="h-12 px-6 rounded-full bg-black hover:bg-gray-800 text-white font-medium">
+            Create
           </Button>
-        </div>
-      </div>
 
-      {/* Hero / Banner */}
-      <div className="grid md:grid-cols-3 gap-6">
-        <Card className="md:col-span-2 bg-gradient-to-br from-indigo-900 to-purple-900 text-white border-none relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-12 opacity-10">
-            <TrendingUp className="h-64 w-64" />
+          <div className="flex items-center gap-2">
+            <Button size="icon" variant="ghost" className="rounded-full h-10 w-10 bg-white shadow-sm hover:bg-gray-50">
+              <Bell className="h-4 w-4 text-gray-600" />
+            </Button>
+            <Button size="icon" variant="ghost" className="rounded-full h-10 w-10 bg-white shadow-sm hover:bg-gray-50">
+              <MessageSquare className="h-4 w-4 text-gray-600" />
+            </Button>
+            <Avatar className="h-10 w-10 border-2 border-white shadow-sm cursor-pointer">
+              <AvatarImage src="https://github.com/shadcn.png" />
+              <AvatarFallback>CN</AvatarFallback>
+            </Avatar>
           </div>
-          <CardContent className="p-8 relative z-10 flex flex-col h-full justify-center">
-             <Badge className="w-fit mb-4 bg-white/20 hover:bg-white/30 text-white border-none">
-                <Zap className="h-3 w-3 mr-1" fill="currentColor" /> New Arrivals
-             </Badge>
-             <h2 className="text-4xl font-bold mb-2">Fresh Leads Drop</h2>
-             <p className="text-indigo-100 mb-6 max-w-md">
-               Over 3,000 new leads added today. Verified phone numbers, no websites (high potential), and ready for outreach.
-             </p>
-             <div className="flex gap-3">
-               <Button className="bg-white text-indigo-900 hover:bg-indigo-50 font-bold" size="lg">
-                 Browse All
-               </Button>
-               <Button variant="outline" className="border-white/30 text-white hover:bg-white/10 hover:text-white">
-                 Learn More
-               </Button>
-             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card/50 backdrop-blur border-dashed border-2 flex flex-col items-center justify-center p-6 text-center space-y-4">
-             <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                <Star className="h-8 w-8 text-primary" fill="currentColor" />
-             </div>
-             <div>
-               <h3 className="font-bold text-xl">Premium Quality</h3>
-               <p className="text-sm text-muted-foreground mt-2">
-                 All leads are verified for active phone numbers. We filter out the junk so you don't have to.
-               </p>
-             </div>
-        </Card>
-      </div>
-
-      {/* Packages */}
-      <div className="grid md:grid-cols-3 gap-6">
-        {PACKAGES.map((pkg) => (
-          <Card key={pkg.id} className={`flex flex-col relative transition-all duration-300 hover:shadow-xl ${pkg.popular ? 'border-primary/50 shadow-md scale-105 z-10' : ''}`}>
-             {pkg.popular && (
-               <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-bold">
-                 MOST POPULAR
-               </div>
-             )}
-             <CardHeader>
-               <CardTitle className="flex justify-between items-center">
-                 <span>{pkg.name}</span>
-                 {pkg.popular && <Star className="h-5 w-5 text-yellow-500" fill="currentColor" />}
-               </CardTitle>
-               <CardDescription>{pkg.description}</CardDescription>
-             </CardHeader>
-             <CardContent className="flex-1">
-               <div className="flex items-baseline gap-1 mb-6">
-                 <span className="text-3xl font-bold">${pkg.price}</span>
-                 <span className="text-sm text-muted-foreground line-through">${pkg.originalPrice}</span>
-                 <span className="text-sm text-green-500 font-medium ml-2">Save {Math.round((1 - pkg.price/pkg.originalPrice) * 100)}%</span>
-               </div>
-
-               <ul className="space-y-2 text-sm">
-                 <li className="flex items-center gap-2">
-                   <CheckCircle className="h-4 w-4 text-green-500" />
-                   <span>{pkg.count} Verified Leads</span>
-                 </li>
-                 <li className="flex items-center gap-2">
-                   <CheckCircle className="h-4 w-4 text-green-500" />
-                   <span>Random Industry Mix</span>
-                 </li>
-                 <li className="flex items-center gap-2">
-                   <CheckCircle className="h-4 w-4 text-green-500" />
-                   <span>Phone Numbers Included</span>
-                 </li>
-                 <li className="flex items-center gap-2">
-                   <CheckCircle className="h-4 w-4 text-green-500" />
-                   <span>No Website (High Potential)</span>
-                 </li>
-               </ul>
-             </CardContent>
-             <CardFooter>
-               <Button
-                 className="w-full"
-                 variant={pkg.popular ? 'default' : 'outline'}
-                 onClick={() => handleBuy(pkg)}
-                 disabled={!!loading}
-               >
-                 {loading === pkg.id ? 'Processing...' : 'Buy Now'}
-               </Button>
-             </CardFooter>
-          </Card>
-        ))}
-      </div>
-
-      {/* Preview Section */}
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold tracking-tight">Live Preview</h2>
-          <Button variant="ghost" className="text-primary">View All Products</Button>
         </div>
+      </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Leads (No Website)</CardTitle>
-            <CardDescription>
-              These are real examples of leads currently in our pool. Purchase a bundle to unlock full details.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {PREVIEW_LEADS.map((lead, i) => (
-                  <div key={i} className="group relative overflow-hidden rounded-lg border p-4 hover:border-primary/50 transition-colors">
-                     {/* Overlay for blur effect */}
+      <div className="grid grid-cols-12 gap-8">
+        {/* Left Column */}
+        <div className="col-span-12 lg:col-span-8 space-y-8">
 
-                     <div className="flex flex-col gap-2">
-                       <div className="flex justify-between items-start">
-                         <Badge variant="secondary">{lead.businessType}</Badge>
-                         <span className="text-xs text-muted-foreground">New</span>
+          {/* Overview Cards */}
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Customers / Leads Available */}
+            <Card className="rounded-[32px] border-none shadow-sm hover:shadow-md transition-shadow">
+              <CardContent className="p-8">
+                 <div className="flex justify-between items-start mb-4">
+                   <div className="flex items-center gap-3">
+                     <div className="p-2 bg-gray-100 rounded-full">
+                       <User className="h-5 w-5 text-gray-600" />
+                     </div>
+                     <span className="font-semibold text-gray-700">Leads Available</span>
+                   </div>
+                 </div>
+                 <div className="flex items-baseline gap-4">
+                   <span className="text-5xl font-bold tracking-tight">3,493</span>
+                   <Badge variant="secondary" className="bg-red-50 text-red-500 hover:bg-red-100 px-2 py-1">
+                     <TrendingUp className="h-3 w-3 mr-1" /> +36.8%
+                   </Badge>
+                 </div>
+                 <p className="text-sm text-gray-400 mt-2">vs last month</p>
+              </CardContent>
+            </Card>
+
+            {/* Balance / Credits */}
+            <Card className="rounded-[32px] border-none shadow-sm hover:shadow-md transition-shadow">
+              <CardContent className="p-8">
+                 <div className="flex justify-between items-start mb-4">
+                   <div className="flex items-center gap-3">
+                     <div className="p-2 bg-gray-100 rounded-full">
+                       <ShoppingCart className="h-5 w-5 text-gray-600" />
+                     </div>
+                     <span className="font-semibold text-gray-700">Bundle Price</span>
+                   </div>
+                   <Button variant="ghost" size="sm" className="h-8 text-xs text-gray-400">Last month <ChevronDown className="h-3 w-3 ml-1"/></Button>
+                 </div>
+                 <div className="flex items-baseline gap-4">
+                   <span className="text-5xl font-bold tracking-tight">$9.00</span>
+                   <Badge variant="secondary" className="bg-green-50 text-green-500 hover:bg-green-100 px-2 py-1">
+                     <TrendingUp className="h-3 w-3 mr-1" /> Low Price
+                   </Badge>
+                 </div>
+                 <p className="text-sm text-gray-400 mt-2">Starting at</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* New Customers / Leads Avatars */}
+          <div className="bg-transparent space-y-4">
+            <h3 className="font-semibold text-gray-700">857 new leads today!</h3>
+            <p className="text-sm text-gray-400">Send a welcome message to all new potential clients.</p>
+
+            <div className="flex items-center gap-4 flex-wrap">
+               {[1,2,3,4,5].map((i) => (
+                 <div key={i} className="flex flex-col items-center gap-2">
+                   <Avatar className="h-16 w-16 border-4 border-white shadow-sm">
+                     <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i}`} />
+                     <AvatarFallback>U{i}</AvatarFallback>
+                   </Avatar>
+                   <span className="text-xs font-medium text-gray-600">Lead {i}</span>
+                 </div>
+               ))}
+               <Button size="icon" className="h-16 w-16 rounded-full bg-white text-black shadow-sm hover:bg-gray-50 border ml-2">
+                 <ArrowRight className="h-6 w-6" />
+               </Button>
+               <span className="text-sm font-medium text-gray-500 ml-2">View all</span>
+            </div>
+          </div>
+
+          {/* Product View - Blurred Preview */}
+          <Card className="rounded-[32px] border-none shadow-sm min-h-[400px]">
+            <CardContent className="p-8">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold">Product view</h3>
+                <Button variant="ghost" size="sm" className="text-gray-400">Last 7 days <ChevronDown className="h-4 w-4 ml-2"/></Button>
+              </div>
+
+              {/* The "Blurry" Content */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative">
+                 {/* Overlay that forces login/buy */}
+
+                 {PREVIEW_LEADS.map((lead, i) => (
+                   <div key={i} className="relative group">
+                     <div className="bg-gray-50 rounded-2xl p-4 h-full border border-transparent hover:border-gray-200 transition-all">
+                       <div className="flex items-center gap-3 mb-3">
+                         <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold">
+                           {lead.businessName.charAt(0)}
+                         </div>
+                         <div>
+                           <div className="font-bold text-sm">{lead.businessName}</div>
+                           <div className="text-xs text-gray-400">Verified • Mobile</div>
+                         </div>
                        </div>
 
-                       <div className="space-y-1">
-                          {/* Visible part */}
-                          <div className="font-semibold text-lg">{lead.businessName.split(' ')[0]}...</div>
-
-                          {/* Blurred part */}
-                          <div className="relative">
-                            <div className="filter blur-sm select-none opacity-60">
-                               <p className="text-sm">📞 {lead.phoneNumber}</p>
-                               <p className="text-sm">📍 {lead.notes}</p>
-                               <p className="text-sm">👤 {lead.ownerName}</p>
-                            </div>
-
-                            {/* Lock icon overlay */}
-                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                               <div className="bg-background/80 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium shadow-sm border flex items-center gap-1">
-                                  🔒 Purchase to unlock
-                               </div>
-                            </div>
-                          </div>
+                       {/* Blurred details */}
+                       <div className="space-y-2 mt-4 select-none filter blur-sm opacity-50">
+                         <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                         <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                         <div className="h-4 bg-gray-200 rounded w-full"></div>
                        </div>
                      </div>
-                  </div>
-                ))}
+
+                     {/* Hover Action */}
+                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                        <div className="bg-black/80 backdrop-blur text-white px-4 py-2 rounded-full text-xs font-bold shadow-lg">
+                           Buy Bundle to Reveal
+                        </div>
+                     </div>
+                   </div>
+                 ))}
+
+                 {/* Visual indicator of the "Bar Chart" from screenshot represented as value pillars?
+                     Actually the screenshot had a bar chart. But the user asked for "preview of new leads... everything blurry".
+                     I'll stick to the leads grid above as it serves the function better than a fake chart.
+                 */}
+              </div>
+
+              <div className="mt-8 pt-8 border-t flex items-center justify-between">
+                 <div className="text-4xl font-bold text-gray-200">$10.2m</div>
+                 {/* Some fake bars to mimic the screenshot aesthetic at the bottom */}
+                 <div className="flex items-end gap-2 h-16 opacity-20">
+                    <div className="w-8 bg-gray-400 h-[40%] rounded-t-sm"></div>
+                    <div className="w-8 bg-gray-400 h-[70%] rounded-t-sm"></div>
+                    <div className="w-8 bg-green-500 h-[100%] rounded-t-sm relative">
+                       <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 rounded">2.2m</div>
+                    </div>
+                    <div className="w-8 bg-gray-400 h-[60%] rounded-t-sm"></div>
+                    <div className="w-8 bg-gray-400 h-[80%] rounded-t-sm"></div>
+                 </div>
+              </div>
+
+            </CardContent>
+          </Card>
+
+        </div>
+
+        {/* Right Column */}
+        <div className="col-span-12 lg:col-span-4 space-y-8">
+           {/* Popular Products */}
+           <Card className="rounded-[32px] border-none shadow-sm h-full">
+             <CardContent className="p-8">
+               <div className="flex justify-between items-center mb-6">
+                 <h3 className="text-xl font-bold">Popular products</h3>
+               </div>
+
+               <div className="space-y-6">
+                 {PACKAGES.map((pkg) => (
+                   <div key={pkg.id} className="flex items-center justify-between group cursor-pointer" onClick={() => handleBuy(pkg)}>
+                     <div className="flex items-center gap-4">
+                       <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${pkg.color}`}>
+                          <Package className="h-6 w-6" />
+                       </div>
+                       <div>
+                         <div className="font-bold text-sm">{pkg.name}</div>
+                         <div className="text-xs text-gray-400">{pkg.description}</div>
+                       </div>
+                     </div>
+                     <div className="text-right">
+                       <div className="font-bold">${pkg.price.toFixed(2)}</div>
+                       <Badge variant={pkg.status === 'Active' ? 'secondary' : 'outline'} className={`mt-1 text-[10px] ${pkg.status === 'Active' ? 'text-green-600 bg-green-50' : 'text-gray-400'}`}>
+                         {pkg.status}
+                       </Badge>
+                     </div>
+                   </div>
+                 ))}
+               </div>
+
+               <Button variant="outline" className="w-full mt-8 rounded-full h-12 border-gray-200 text-gray-600 hover:bg-gray-50">
+                 All products
+               </Button>
+             </CardContent>
+           </Card>
+
+           {/* Comments / Activity */}
+           <div className="px-4">
+             <h3 className="text-lg font-bold mb-4">Comments</h3>
+             <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+               <div className="flex gap-4">
+                 <Avatar className="h-10 w-10">
+                   <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" />
+                   <AvatarFallback>FL</AvatarFallback>
+                 </Avatar>
+                 <div>
+                   <div className="flex items-baseline gap-2">
+                     <span className="font-bold text-sm">Joyce</span>
+                     <span className="text-xs text-gray-400">on Starter Pack</span>
+                   </div>
+                   <div className="text-[10px] text-gray-300 mb-2">09:00 AM</div>
+                   <p className="text-sm text-gray-600 leading-relaxed">
+                     Great quality leads! When will the HTML industry pack be available? ⚡
+                   </p>
+                 </div>
+               </div>
              </div>
-          </CardContent>
-        </Card>
+           </div>
+        </div>
       </div>
     </div>
   );

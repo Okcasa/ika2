@@ -3,7 +3,19 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Briefcase, Users, Store, BadgeDollarSign, Megaphone, Moon, Sun, LogOut } from 'lucide-react';
+import {
+  LayoutGrid,
+  Package,
+  Users,
+  Store,
+  CheckSquare,
+  Megaphone,
+  Moon,
+  Sun,
+  LogOut,
+  Settings,
+  HelpCircle
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useState, useEffect } from 'react';
@@ -11,10 +23,11 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 
 const sidebarItems = [
-  { icon: Store, label: 'Shop', href: '/shop' },
-  { icon: Briefcase, label: 'My Leads', href: '/leads' },
+  { icon: LayoutGrid, label: 'Dashboard', href: '/shop' }, // Mapping Shop/Home to Dashboard
+  { icon: Package, label: 'Products', href: '/products' },
   { icon: Users, label: 'Customers', href: '/customers' },
-  { icon: BadgeDollarSign, label: 'Income', href: '/income' },
+  { icon: Store, label: 'Shop', href: '/shop-view' }, // Maybe separate shop view? For now keeping structure
+  { icon: CheckSquare, label: 'Income', href: '/income' },
   { icon: Megaphone, label: 'Promote', href: '/promote' },
 ];
 
@@ -26,12 +39,10 @@ export function Sidebar() {
   const [userEmail, setUserEmail] = useState<string>('User');
 
   useEffect(() => {
-    // Check initial theme
     if (document.documentElement.classList.contains('dark')) {
       setTheme('dark');
     }
 
-    // Get user
     const getUser = async () => {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user?.email) {
@@ -58,34 +69,40 @@ export function Sidebar() {
   };
 
   return (
-    <div className="w-64 border-r bg-card h-screen flex flex-col p-4 fixed left-0 top-0 hidden md:flex z-50">
-      <div className="flex items-center gap-2 mb-8 px-2">
-        <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center">
-            <div className="h-4 w-4 bg-primary-foreground rounded-sm" />
+    <div className="w-64 h-screen flex flex-col p-6 fixed left-0 top-0 hidden md:flex z-50 bg-[#F4F4F4]">
+      {/* Logo */}
+      <div className="flex items-center gap-2 mb-10 px-2">
+        <div className="h-10 w-10 bg-black text-white rounded-full flex items-center justify-center">
+            <LayoutGrid className="h-6 w-6" />
         </div>
-        <span className="text-xl font-bold">Workspace</span>
+      </div>
+
+      <div className="px-2 mb-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        Dashboard
       </div>
 
       <nav className="space-y-1 flex-1">
         {sidebarItems.map((item) => {
-          const isActive = pathname === item.href || (item.href === '/leads' && pathname === '/products'); // Fallback if user manually goes there
+          // Highlight Dashboard for /shop as it's the main view now
+          const isActive = (pathname === '/shop' && item.label === 'Dashboard') || pathname === item.href;
+
           return (
             <Link
-              key={item.href}
+              key={item.label}
               href={item.href}
               className={cn(
-                "flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                "flex items-center justify-between px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200",
                 isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  ? "bg-white text-black shadow-sm"
+                  : "text-gray-500 hover:bg-white/50 hover:text-black"
               )}
             >
               <div className="flex items-center gap-3">
-                <item.icon className="h-5 w-5" />
+                <item.icon className={cn("h-5 w-5", isActive ? "text-black" : "text-gray-400")} />
                 {item.label}
               </div>
-              {item.label === 'Shop' && (
-                 <span className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+              {isActive && (
+                 <div className="h-1.5 w-1.5 rounded-full bg-black" />
               )}
             </Link>
           );
@@ -93,24 +110,15 @@ export function Sidebar() {
       </nav>
 
       <div className="mt-auto space-y-4">
-        <div className="flex items-center justify-between px-3">
-             <Button variant="ghost" size="icon" className="rounded-full" onClick={toggleTheme}>
+        <div className="flex flex-col gap-2">
+            <Button variant="ghost" className="justify-start gap-3 text-gray-500 hover:bg-white/50 rounded-xl h-12" onClick={toggleTheme}>
                 {theme === 'dark' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-             </Button>
-             <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive" onClick={handleLogout}>
+                <span>{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
+            </Button>
+            <Button variant="ghost" className="justify-start gap-3 text-gray-500 hover:text-destructive hover:bg-red-50 rounded-xl h-12" onClick={handleLogout}>
                 <LogOut className="h-5 w-5" />
-             </Button>
-        </div>
-
-        <div className="flex items-center gap-3 px-3 py-2">
-          <Avatar className="h-10 w-10">
-            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${userEmail}`} />
-            <AvatarFallback>U</AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col overflow-hidden">
-            <span className="text-sm font-medium truncate w-32" title={userEmail}>{userEmail.split('@')[0]}</span>
-            <span className="text-xs text-muted-foreground">Member</span>
-          </div>
+                <span>Logout</span>
+            </Button>
         </div>
       </div>
     </div>
