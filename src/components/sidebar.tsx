@@ -3,16 +3,15 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, ShoppingBag, Users, Store, BadgeDollarSign, Megaphone, Settings, MessageSquare, Moon, Sun } from 'lucide-react';
+import { Briefcase, Users, Store, BadgeDollarSign, Megaphone, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useState, useEffect } from 'react';
 
 const sidebarItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
-  { icon: ShoppingBag, label: 'Products', href: '/products' }, // Maybe "My Leads"?
-  { icon: Users, label: 'Customers', href: '/customers' },
   { icon: Store, label: 'Shop', href: '/shop' },
+  { icon: Briefcase, label: 'My Leads', href: '/leads' },
+  { icon: Users, label: 'Customers', href: '/customers' },
   { icon: BadgeDollarSign, label: 'Income', href: '/income' },
   { icon: Megaphone, label: 'Promote', href: '/promote' },
 ];
@@ -46,7 +45,7 @@ export function Sidebar() {
 
       <nav className="space-y-1 flex-1">
         {sidebarItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = pathname === item.href || (item.href === '/leads' && pathname === '/products'); // Fallback if user manually goes there
           return (
             <Link
               key={item.href}
@@ -63,7 +62,7 @@ export function Sidebar() {
                 {item.label}
               </div>
               {item.label === 'Shop' && (
-                 <span className="h-2 w-2 rounded-full bg-blue-500" />
+                 <span className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
               )}
             </Link>
           );

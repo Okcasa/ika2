@@ -75,7 +75,7 @@ export default function ShopPage() {
     });
 
     setLoading(null);
-    router.push('/dashboard');
+    router.push('/leads');
   };
 
   return (
