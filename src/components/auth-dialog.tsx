@@ -63,10 +63,10 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] bg-[#FDFBF7]">
+      <DialogContent className="sm:max-w-[425px] bg-[#FDFBF7] text-[#1C1917]">
         <DialogHeader>
-          <DialogTitle>{isSignUp ? 'Create an account' : 'Welcome back'}</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-[#1C1917]">{isSignUp ? 'Create an account' : 'Welcome back'}</DialogTitle>
+          <DialogDescription className="text-stone-600">
             {isSignUp
               ? 'Enter your email below to create your account'
               : 'Enter your email below to login to your account'}
@@ -75,7 +75,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
         <div className="py-4">
           <form onSubmit={handleAuth} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-stone-700">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -84,10 +84,11 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={loading}
+                className="bg-white border-stone-200 text-[#1C1917] placeholder:text-stone-400"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-stone-700">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -95,6 +96,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={loading}
+                className="bg-white border-stone-200 text-[#1C1917]"
               />
             </div>
 

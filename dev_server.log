@@ -65,3 +65,4 @@
  GET /promote 200 in 586ms (compile: 549ms, proxy.ts: 4ms, render: 33ms)
  GET / 200 in 91ms (compile: 4ms, proxy.ts: 4ms, render: 84ms)
  GET /shop 200 in 138ms (compile: 13ms, proxy.ts: 10ms, render: 115ms)
+ GET / 200 in 2.5s (compile: 887ms, proxy.ts: 132ms, render: 1432ms)
