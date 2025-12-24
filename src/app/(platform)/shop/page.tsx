@@ -120,7 +120,7 @@ export default function ShopPage() {
             />
           </div>
 
-          <Button className="h-12 px-6 rounded-full bg-[#1C1917] hover:bg-stone-800 text-[#FDFBF7] font-medium">
+          <Button className="h-12 px-6 rounded-full bg-[#1C1917] hover:bg-stone-800 text-[#F2F2F2] font-medium">
             Create
           </Button>
 
@@ -158,7 +158,7 @@ export default function ShopPage() {
                  </div>
                  <div className="flex items-baseline gap-4">
                    <span className="text-5xl font-bold tracking-tight">3,493</span>
-                   <Badge variant="secondary" className="bg-[#FAFAF9] text-[#1C1917] hover:bg-white px-2 py-1">
+                   <Badge variant="secondary" className="bg-[#F2F2F2] text-[#1C1917] hover:bg-white px-2 py-1">
                      <TrendingUp className="h-3 w-3 mr-1" /> +36.8%
                    </Badge>
                  </div>
