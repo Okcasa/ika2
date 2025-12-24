@@ -5,16 +5,40 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Copy, Gift, Share2, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useUserId } from '@/hooks/use-user-id';
 
 export default function PromotePage() {
+  const { userId } = useUserId();
   const { toast } = useToast();
-  const referralLink = "https://leadsmarketplace.com/r/joyce123";
+
+  // Use generic or user-specific referral link
+  const referralLink = userId ? `https://leadsmarketplace.com/r/${userId}` : "https://leadsmarketplace.com/r/join-now";
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(referralLink);
     toast({
       title: "Copied!",
       description: "Referral link copied to clipboard.",
+    });
+  };
+
+  const handleShare = () => {
+    toast({
+      title: "Sharing not available",
+      description: "Social sharing integration is coming soon! Please copy your link manually.",
+    });
+  };
+
+  const handleEmail = () => {
+    const subject = encodeURIComponent("Join me on Leads Marketplace");
+    const body = encodeURIComponent(`Check out this platform for buying high quality leads: ${referralLink}`);
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  };
+
+  const handleApply = () => {
+    toast({
+      title: "Application Sent",
+      description: "We have received your affiliate application. We will contact you shortly.",
     });
   };
 
@@ -53,10 +77,10 @@ export default function PromotePage() {
              </div>
           </CardContent>
           <CardFooter className="flex gap-2">
-             <Button className="flex-1">
+             <Button className="flex-1" onClick={handleShare}>
                 <Share2 className="mr-2 h-4 w-4" /> Share on Social
              </Button>
-             <Button variant="outline" className="flex-1">
+             <Button variant="outline" className="flex-1" onClick={handleEmail}>
                 <Mail className="mr-2 h-4 w-4" /> Email Invite
              </Button>
           </CardFooter>
@@ -86,7 +110,7 @@ export default function PromotePage() {
               </ul>
            </CardContent>
            <CardFooter>
-              <Button variant="secondary" className="w-full font-bold">Apply Now</Button>
+              <Button variant="secondary" className="w-full font-bold" onClick={handleApply}>Apply Now</Button>
            </CardFooter>
         </Card>
       </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -71,6 +71,37 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
   const { toast } = useToast();
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
+  const [myLeads, setMyLeads] = useState<ProcessedLead[]>([]);
+  const [leadsCount, setLeadsCount] = useState<number>(0);
+  const [newLeadsToday, setNewLeadsToday] = useState<number>(0);
+
+  useEffect(() => {
+    if (isGuest) return;
+
+    const loadLeads = async () => {
+      let userId: string | null = null;
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (session) {
+        userId = session.user.id;
+      } else if (typeof window !== 'undefined' && localStorage.getItem('demo_mode')) {
+        userId = 'demo-user';
+      }
+
+      if (userId) {
+        const storageKey = `leadsorter_leads_${userId}`;
+        const storedLeads = localStorage.getItem(storageKey);
+        if (storedLeads) {
+          const parsedLeads: ProcessedLead[] = JSON.parse(storedLeads);
+          setMyLeads(parsedLeads);
+          setLeadsCount(parsedLeads.length);
+          // Just a simulation for "new today" - maybe random or last 24h if we had dates
+          setNewLeadsToday(Math.min(parsedLeads.length, Math.floor(Math.random() * 20) + 1));
+        }
+      }
+    };
+    loadLeads();
+  }, [isGuest]);
 
   const handleBuy = async (pkg: typeof PACKAGES[0]) => {
     if (pkg.status === 'Offline') return;
@@ -81,16 +112,23 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
     }
 
     setLoading(pkg.id);
+    let userId: string | null = null;
     const { data: { session } } = await supabase.auth.getSession();
 
-    if (!session) {
+    if (session) {
+      userId = session.user.id;
+    } else if (typeof window !== 'undefined' && localStorage.getItem('demo_mode')) {
+      userId = 'demo-user';
+    }
+
+    if (!userId) {
       // Should not happen if isGuest logic is used correctly, but safeguard
       onAuthRequest?.();
       setLoading(null);
       return;
     }
 
-    const userId = session.user.id;
+    // Simulate Network Request
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     const newLeads = generateMockLeads(pkg.count);
@@ -100,6 +138,10 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
 
     const allLeads = [...existingLeads, ...newLeads];
     localStorage.setItem(storageKey, JSON.stringify(allLeads));
+
+    // Update state to reflect immediate change
+    setMyLeads(allLeads);
+    setLeadsCount(allLeads.length);
 
     toast({
       title: "Purchase Successful!",
@@ -172,9 +214,11 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
                    </div>
                  </div>
                  <div className="flex items-baseline gap-4">
-                   <span className="text-5xl font-bold tracking-tight">3,493</span>
+                   <span className="text-5xl font-bold tracking-tight">
+                     {isGuest ? '3,493' : leadsCount.toLocaleString()}
+                   </span>
                    <Badge variant="secondary" className="bg-[#E5E4E2] text-[#1C1917] hover:bg-white px-2 py-1">
-                     <TrendingUp className="h-3 w-3 mr-1" /> +36.8%
+                     <TrendingUp className="h-3 w-3 mr-1" /> {isGuest ? '+36.8%' : 'Updated'}
                    </Badge>
                  </div>
                  <p className="text-sm text-stone-400 mt-2">vs last month</p>
@@ -206,23 +250,46 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
 
           {/* New Customers / Leads Avatars */}
           <div className="bg-transparent space-y-4">
-            <h3 className="font-semibold text-stone-700">857 new leads today!</h3>
+            <h3 className="font-semibold text-stone-700">
+              {isGuest ? '857' : newLeadsToday} new leads today!
+            </h3>
             <p className="text-sm text-stone-500">Send a welcome message to all new potential clients.</p>
 
             <div className="flex items-center gap-4 flex-wrap">
-               {[1,2,3,4,5].map((i) => (
-                 <div key={i} className="flex flex-col items-center gap-2">
-                   <Avatar className="h-16 w-16 border-4 border-white shadow-sm">
-                     <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i}`} />
-                     <AvatarFallback>U{i}</AvatarFallback>
-                   </Avatar>
-                   <span className="text-xs font-medium text-stone-600">Lead {i}</span>
-                 </div>
-               ))}
-               <Button size="icon" className="h-16 w-16 rounded-full bg-white text-[#1C1917] shadow-sm hover:bg-stone-50 border ml-2">
-                 <ArrowRight className="h-6 w-6" />
-               </Button>
-               <span className="text-sm font-medium text-stone-500 ml-2">View all</span>
+               {isGuest ? (
+                 [1,2,3,4,5].map((i) => (
+                   <div key={i} className="flex flex-col items-center gap-2">
+                     <Avatar className="h-16 w-16 border-4 border-white shadow-sm">
+                       <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i}`} />
+                       <AvatarFallback>U{i}</AvatarFallback>
+                     </Avatar>
+                     <span className="text-xs font-medium text-stone-600">Lead {i}</span>
+                   </div>
+                 ))
+               ) : (
+                 myLeads.slice(0, 5).map((lead, i) => (
+                   <div key={i} className="flex flex-col items-center gap-2">
+                     <Avatar className="h-16 w-16 border-4 border-white shadow-sm">
+                       {/* Using first letter as avatar seed to be consistent */}
+                       <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${lead.businessName}`} />
+                       <AvatarFallback>{lead.businessName.charAt(0)}</AvatarFallback>
+                     </Avatar>
+                     <span className="text-xs font-medium text-stone-600 w-16 truncate text-center" title={lead.businessName}>
+                        {lead.businessName}
+                     </span>
+                   </div>
+                 ))
+               )}
+               {((!isGuest && myLeads.length > 5) || isGuest) && (
+                 <Button
+                    size="icon"
+                    className="h-16 w-16 rounded-full bg-white text-[#1C1917] shadow-sm hover:bg-stone-50 border ml-2"
+                    onClick={() => !isGuest && router.push('/leads')}
+                 >
+                   <ArrowRight className="h-6 w-6" />
+                 </Button>
+               )}
+               <span className="text-sm font-medium text-stone-500 ml-2 cursor-pointer" onClick={() => !isGuest && router.push('/leads')}>View all</span>
             </div>
           </div>
 

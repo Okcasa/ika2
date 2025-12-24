@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ProcessedLead } from '@/lib/types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp, Users, DollarSign, Percent } from 'lucide-react';
-
-const LEADS_KEY = 'leadsorter_leads';
+import { useUserId } from '@/hooks/use-user-id';
 
 export default function IncomePage() {
+  const { userId, loading } = useUserId();
   const [stats, setStats] = useState({
     totalRevenue: 0,
     totalSales: 0,
@@ -19,7 +19,12 @@ export default function IncomePage() {
   const [chartData, setChartData] = useState<{name: string, sales: number}[]>([]);
 
   useEffect(() => {
+    if (!userId) return;
+
+    // Use the same key logic as DashboardView
+    const LEADS_KEY = `leadsorter_leads_${userId}`;
     const storedLeads = localStorage.getItem(LEADS_KEY);
+
     if (storedLeads) {
       const allLeads: ProcessedLead[] = JSON.parse(storedLeads);
       const sales = allLeads.filter(l => l.leadStatus === 'sale-made').length;
@@ -46,7 +51,9 @@ export default function IncomePage() {
         { name: 'Sun', sales: 0 },
       ]);
     }
-  }, []);
+  }, [userId]);
+
+  if (loading) return null;
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto p-4 md:p-0">

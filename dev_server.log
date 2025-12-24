@@ -1,0 +1,67 @@
+
+> nextn@0.1.0 dev
+> next dev --turbopack --port 9002 --hostname 0.0.0.0
+
+⚠ `eslint` configuration in next.config.ts is no longer supported. See more info here: https://nextjs.org/docs/app/api-reference/cli/next#next-lint-options
+⚠ Invalid next.config.ts options detected:
+⚠     Unrecognized key(s) in object: 'eslint'
+⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+▲ Next.js 16.1.1 (Turbopack)
+- Local:         http://localhost:9002
+- Network:       http://0.0.0.0:9002
+- Environments: .env.local
+
+✓ Starting...
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+✓ Ready in 4.6s
+ GET / 200 in 2.2s (compile: 1685ms, proxy.ts: 105ms, render: 430ms)
+✓ Compiled in 1103ms
+ GET / 200 in 310ms (compile: 71ms, proxy.ts: 9ms, render: 230ms)
+ GET /shop 200 in 300ms (compile: 28ms, proxy.ts: 8ms, render: 264ms)
+ GET / 200 in 140ms (compile: 4ms, proxy.ts: 6ms, render: 129ms)
+ GET / 200 in 99ms (compile: 14ms, proxy.ts: 26ms, render: 60ms)
+ GET / 200 in 102ms (compile: 5ms, proxy.ts: 6ms, render: 90ms)
+ GET /shop 200 in 65ms (compile: 4ms, proxy.ts: 5ms, render: 55ms)
+ GET / 200 in 70ms (compile: 5ms, proxy.ts: 6ms, render: 59ms)
+ GET / 200 in 47ms (compile: 8ms, proxy.ts: 6ms, render: 34ms)
+ GET / 200 in 102ms (compile: 5ms, proxy.ts: 5ms, render: 93ms)
+ GET /shop 200 in 61ms (compile: 4ms, proxy.ts: 4ms, render: 53ms)
+ GET / 200 in 61ms (compile: 4ms, proxy.ts: 5ms, render: 52ms)
+ GET / 200 in 38ms (compile: 6ms, proxy.ts: 4ms, render: 29ms)
+ GET /products 200 in 1020ms (compile: 986ms, proxy.ts: 4ms, render: 31ms)
+ GET / 200 in 57ms (compile: 3ms, proxy.ts: 4ms, render: 50ms)
+ GET / 200 in 52ms (compile: 4ms, proxy.ts: 3ms, render: 45ms)
+ GET / 200 in 32ms (compile: 4ms, proxy.ts: 3ms, render: 25ms)
+ GET / 200 in 108ms (compile: 10ms, proxy.ts: 5ms, render: 93ms)
+ GET /shop 200 in 449ms (compile: 109ms, proxy.ts: 3ms, render: 337ms)
+ GET /products 200 in 147ms (compile: 107ms, proxy.ts: 5ms, render: 36ms)
+ GET / 200 in 135ms (compile: 10ms, proxy.ts: 15ms, render: 110ms)
+ GET /shop 200 in 109ms (compile: 4ms, proxy.ts: 8ms, render: 96ms)
+ GET /products 200 in 39ms (compile: 5ms, proxy.ts: 5ms, render: 29ms)
+ GET /shop 200 in 37ms (compile: 4ms, proxy.ts: 3ms, render: 30ms)
+○ Compiling /leads ...
+ GET /leads 200 in 3.5s (compile: 3.4s, proxy.ts: 3ms, render: 32ms)
+ GET / 200 in 133ms (compile: 3ms, proxy.ts: 4ms, render: 126ms)
+ GET /shop 200 in 121ms (compile: 5ms, proxy.ts: 5ms, render: 112ms)
+ GET /products 200 in 90ms (compile: 8ms, proxy.ts: 5ms, render: 76ms)
+ GET /shop 200 in 59ms (compile: 4ms, proxy.ts: 4ms, render: 52ms)
+ GET /leads 200 in 52ms (compile: 7ms, proxy.ts: 6ms, render: 40ms)
+ GET / 200 in 100ms (compile: 11ms, proxy.ts: 6ms, render: 82ms)
+ GET / 200 in 53ms (compile: 12ms, proxy.ts: 6ms, render: 35ms)
+ GET / 200 in 97ms (compile: 4ms, proxy.ts: 4ms, render: 89ms)
+ GET /shop 200 in 59ms (compile: 4ms, proxy.ts: 3ms, render: 52ms)
+ GET /products 200 in 32ms (compile: 5ms, proxy.ts: 4ms, render: 22ms)
+ GET /shop 200 in 39ms (compile: 5ms, proxy.ts: 5ms, render: 29ms)
+ GET /leads 200 in 283ms (compile: 189ms, proxy.ts: 4ms, render: 90ms)
+ GET /shop 200 in 68ms (compile: 3ms, proxy.ts: 4ms, render: 60ms)
+ GET / 200 in 91ms (compile: 4ms, proxy.ts: 5ms, render: 82ms)
+ GET /shop 200 in 68ms (compile: 3ms, proxy.ts: 5ms, render: 60ms)
+ GET /products 200 in 30ms (compile: 3ms, proxy.ts: 4ms, render: 23ms)
+ GET /shop 200 in 30ms (compile: 3ms, proxy.ts: 3ms, render: 23ms)
+ GET /leads 200 in 25ms (compile: 3ms, proxy.ts: 3ms, render: 18ms)
+ GET /shop 200 in 60ms (compile: 3ms, proxy.ts: 3ms, render: 53ms)
+○ Compiling /income ...
+ GET /income 200 in 3.5s (compile: 3.5s, proxy.ts: 4ms, render: 47ms)
+ GET /promote 200 in 586ms (compile: 549ms, proxy.ts: 4ms, render: 33ms)
+ GET / 200 in 91ms (compile: 4ms, proxy.ts: 4ms, render: 84ms)
+ GET /shop 200 in 138ms (compile: 13ms, proxy.ts: 10ms, render: 115ms)

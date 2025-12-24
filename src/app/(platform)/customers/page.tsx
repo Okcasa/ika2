@@ -7,20 +7,25 @@ import { ProcessedLead } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { TrendingUp, Phone, Calendar, User } from 'lucide-react';
-
-const LEADS_KEY = 'leadsorter_leads';
+import { useUserId } from '@/hooks/use-user-id';
 
 export default function CustomersPage() {
+  const { userId, loading } = useUserId();
   const [customers, setCustomers] = useState<ProcessedLead[]>([]);
 
   useEffect(() => {
+    if (!userId) return;
+
+    const LEADS_KEY = `leadsorter_leads_${userId}`;
     const storedLeads = localStorage.getItem(LEADS_KEY);
     if (storedLeads) {
       const allLeads: ProcessedLead[] = JSON.parse(storedLeads);
       const sales = allLeads.filter(l => l.leadStatus === 'sale-made');
       setCustomers(sales);
     }
-  }, []);
+  }, [userId]);
+
+  if (loading) return null;
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto p-4 md:p-0">

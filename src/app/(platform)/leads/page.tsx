@@ -32,12 +32,12 @@ import { cn } from '@/lib/utils';
 import { LeadInteractionForm } from '@/components/lead-interaction-form';
 import { useToast } from '@/hooks/use-toast';
 import { CalendarDialog } from '@/components/calendar-dialog';
-import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import { useUserId } from '@/hooks/use-user-id';
 
 export default function LeadsPage() {
   const router = useRouter();
-  const [userId, setUserId] = useState<string | null>(null);
+  const { userId, loading } = useUserId();
   const [allLeads, setAllLeads] = useState<ProcessedLead[]>([]);
   const [dispensedLeads, setDispensedLeads] = useState<ProcessedLead[]>([]);
   const [interactingLead, setInteractingLead] = useState<ProcessedLead | null>(null);
@@ -48,28 +48,24 @@ export default function LeadsPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    const init = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        router.push('/');
-        return;
-      }
-      setUserId(session.user.id);
+    if (loading) return;
+    if (!userId) {
+      router.push('/');
+      return;
+    }
 
-      const leadsKey = `leadsorter_leads_${session.user.id}`;
-      const dispensedKey = `leadsorter_dispensed_leads_${session.user.id}`;
+    const leadsKey = `leadsorter_leads_${userId}`;
+    const dispensedKey = `leadsorter_dispensed_leads_${userId}`;
 
-      const storedLeads = localStorage.getItem(leadsKey);
-      if (storedLeads) {
-          setAllLeads(JSON.parse(storedLeads));
-      }
-      const storedDispensedLeads = localStorage.getItem(dispensedKey);
-      if (storedDispensedLeads) {
-          setDispensedLeads(JSON.parse(storedDispensedLeads));
-      }
-    };
-    init();
-  }, [router]);
+    const storedLeads = localStorage.getItem(leadsKey);
+    if (storedLeads) {
+        setAllLeads(JSON.parse(storedLeads));
+    }
+    const storedDispensedLeads = localStorage.getItem(dispensedKey);
+    if (storedDispensedLeads) {
+        setDispensedLeads(JSON.parse(storedDispensedLeads));
+    }
+  }, [userId, loading, router]);
 
   useEffect(() => {
     if (userId && allLeads.length > 0) {
@@ -232,7 +228,7 @@ export default function LeadsPage() {
     return statusComponent;
   };
 
-  if (!userId) {
+  if (loading || !userId) {
       return <div className="p-8 text-center text-muted-foreground">Loading workspace...</div>
   }
 

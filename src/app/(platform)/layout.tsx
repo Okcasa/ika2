@@ -18,21 +18,31 @@ export default function ShopLayout({
     const checkUser = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
-        if (error || !session) {
+
+        // Check for client-side demo mode override
+        const isDemo = typeof window !== 'undefined' && localStorage.getItem('demo_mode');
+
+        if (!isDemo && (error || !session)) {
           router.push('/');
         } else {
           setLoading(false);
         }
       } catch (e) {
         console.error("Auth check failed", e);
-        router.push('/');
+        // Allow demo mode on error too
+        if (typeof window !== 'undefined' && localStorage.getItem('demo_mode')) {
+          setLoading(false);
+        } else {
+          router.push('/');
+        }
       }
     };
 
     checkUser();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) {
+      const isDemo = typeof window !== 'undefined' && localStorage.getItem('demo_mode');
+      if (!session && !isDemo) {
         router.push('/');
       }
     });
