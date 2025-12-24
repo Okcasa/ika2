@@ -42,14 +42,14 @@ export default function ShopLayout({
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F4F4F4]">
-        <Loader2 className="h-8 w-8 animate-spin text-black" />
+      <div className="min-h-screen flex items-center justify-center bg-[#FDFBF7]">
+        <Loader2 className="h-8 w-8 animate-spin text-stone-800" />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-[#F4F4F4]">
+    <div className="flex min-h-screen bg-[#FDFBF7]">
       <Sidebar />
       <main className="flex-1 md:ml-64 p-8 overflow-y-auto h-screen">
         {children}

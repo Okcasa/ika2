@@ -69,15 +69,15 @@ export function Sidebar() {
   };
 
   return (
-    <div className="w-64 h-screen flex flex-col p-6 fixed left-0 top-0 hidden md:flex z-50 bg-[#F4F4F4]">
+    <div className="w-64 h-screen flex flex-col p-6 fixed left-0 top-0 hidden md:flex z-50 bg-[#FDFBF7]">
       {/* Logo */}
       <div className="flex items-center gap-2 mb-10 px-2">
-        <div className="h-10 w-10 bg-black text-white rounded-full flex items-center justify-center">
+        <div className="h-10 w-10 bg-[#1C1917] text-[#FDFBF7] rounded-full flex items-center justify-center">
             <LayoutGrid className="h-6 w-6" />
         </div>
       </div>
 
-      <div className="px-2 mb-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+      <div className="px-2 mb-4 text-xs font-semibold text-stone-400 uppercase tracking-wider">
         Dashboard
       </div>
 
@@ -93,16 +93,16 @@ export function Sidebar() {
               className={cn(
                 "flex items-center justify-between px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200",
                 isActive
-                  ? "bg-white text-black shadow-sm"
-                  : "text-gray-500 hover:bg-white/50 hover:text-black"
+                  ? "bg-white text-[#1C1917] shadow-sm"
+                  : "text-stone-500 hover:bg-white/50 hover:text-[#1C1917]"
               )}
             >
               <div className="flex items-center gap-3">
-                <item.icon className={cn("h-5 w-5", isActive ? "text-black" : "text-gray-400")} />
+                <item.icon className={cn("h-5 w-5", isActive ? "text-[#1C1917]" : "text-stone-400")} />
                 {item.label}
               </div>
               {isActive && (
-                 <div className="h-1.5 w-1.5 rounded-full bg-black" />
+                 <div className="h-1.5 w-1.5 rounded-full bg-[#1C1917]" />
               )}
             </Link>
           );
@@ -111,11 +111,11 @@ export function Sidebar() {
 
       <div className="mt-auto space-y-4">
         <div className="flex flex-col gap-2">
-            <Button variant="ghost" className="justify-start gap-3 text-gray-500 hover:bg-white/50 rounded-xl h-12" onClick={toggleTheme}>
+            <Button variant="ghost" className="justify-start gap-3 text-stone-500 hover:bg-white/50 rounded-xl h-12" onClick={toggleTheme}>
                 {theme === 'dark' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
                 <span>{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
             </Button>
-            <Button variant="ghost" className="justify-start gap-3 text-gray-500 hover:text-destructive hover:bg-red-50 rounded-xl h-12" onClick={handleLogout}>
+            <Button variant="ghost" className="justify-start gap-3 text-stone-500 hover:text-destructive hover:bg-red-50 rounded-xl h-12" onClick={handleLogout}>
                 <LogOut className="h-5 w-5" />
                 <span>Logout</span>
             </Button>

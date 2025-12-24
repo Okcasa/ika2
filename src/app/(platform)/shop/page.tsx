@@ -108,28 +108,28 @@ export default function ShopPage() {
     <div className="flex flex-col gap-8 max-w-[1600px] mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-        <h1 className="text-3xl font-bold tracking-tight text-black">Dashboard</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-[#1C1917]">Dashboard</h1>
 
         <div className="flex items-center gap-4 w-full md:w-auto">
           <div className="relative flex-1 md:w-[400px]">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
             <Input
               type="search"
               placeholder="Search anything..."
-              className="pl-10 h-12 rounded-full border-none bg-white shadow-sm placeholder:text-gray-400"
+              className="pl-10 h-12 rounded-full border-none bg-white shadow-sm placeholder:text-stone-400 text-stone-800"
             />
           </div>
 
-          <Button className="h-12 px-6 rounded-full bg-black hover:bg-gray-800 text-white font-medium">
+          <Button className="h-12 px-6 rounded-full bg-[#1C1917] hover:bg-stone-800 text-[#FDFBF7] font-medium">
             Create
           </Button>
 
           <div className="flex items-center gap-2">
-            <Button size="icon" variant="ghost" className="rounded-full h-10 w-10 bg-white shadow-sm hover:bg-gray-50">
-              <Bell className="h-4 w-4 text-gray-600" />
+            <Button size="icon" variant="ghost" className="rounded-full h-10 w-10 bg-white shadow-sm hover:bg-stone-50">
+              <Bell className="h-4 w-4 text-stone-600" />
             </Button>
-            <Button size="icon" variant="ghost" className="rounded-full h-10 w-10 bg-white shadow-sm hover:bg-gray-50">
-              <MessageSquare className="h-4 w-4 text-gray-600" />
+            <Button size="icon" variant="ghost" className="rounded-full h-10 w-10 bg-white shadow-sm hover:bg-stone-50">
+              <MessageSquare className="h-4 w-4 text-stone-600" />
             </Button>
             <Avatar className="h-10 w-10 border-2 border-white shadow-sm cursor-pointer">
               <AvatarImage src="https://github.com/shadcn.png" />
@@ -146,53 +146,53 @@ export default function ShopPage() {
           {/* Overview Cards */}
           <div className="grid md:grid-cols-2 gap-6">
             {/* Customers / Leads Available */}
-            <Card className="rounded-[32px] border-none shadow-sm hover:shadow-md transition-shadow">
+            <Card className="rounded-[32px] border-none shadow-sm hover:shadow-md transition-shadow bg-[#1C1917] text-[#FAFAF9]">
               <CardContent className="p-8">
                  <div className="flex justify-between items-start mb-4">
                    <div className="flex items-center gap-3">
-                     <div className="p-2 bg-gray-100 rounded-full">
-                       <User className="h-5 w-5 text-gray-600" />
+                     <div className="p-2 bg-stone-800/50 rounded-full">
+                       <User className="h-5 w-5 text-stone-300" />
                      </div>
-                     <span className="font-semibold text-gray-700">Leads Available</span>
+                     <span className="font-semibold text-stone-200">Leads Available</span>
                    </div>
                  </div>
                  <div className="flex items-baseline gap-4">
                    <span className="text-5xl font-bold tracking-tight">3,493</span>
-                   <Badge variant="secondary" className="bg-red-50 text-red-500 hover:bg-red-100 px-2 py-1">
+                   <Badge variant="secondary" className="bg-[#FAFAF9] text-[#1C1917] hover:bg-white px-2 py-1">
                      <TrendingUp className="h-3 w-3 mr-1" /> +36.8%
                    </Badge>
                  </div>
-                 <p className="text-sm text-gray-400 mt-2">vs last month</p>
+                 <p className="text-sm text-stone-400 mt-2">vs last month</p>
               </CardContent>
             </Card>
 
             {/* Balance / Credits */}
-            <Card className="rounded-[32px] border-none shadow-sm hover:shadow-md transition-shadow">
+            <Card className="rounded-[32px] border-none shadow-sm hover:shadow-md transition-shadow bg-[#1C1917] text-[#FAFAF9]">
               <CardContent className="p-8">
                  <div className="flex justify-between items-start mb-4">
                    <div className="flex items-center gap-3">
-                     <div className="p-2 bg-gray-100 rounded-full">
-                       <ShoppingCart className="h-5 w-5 text-gray-600" />
+                     <div className="p-2 bg-stone-800/50 rounded-full">
+                       <ShoppingCart className="h-5 w-5 text-stone-300" />
                      </div>
-                     <span className="font-semibold text-gray-700">Bundle Price</span>
+                     <span className="font-semibold text-stone-200">Bundle Price</span>
                    </div>
-                   <Button variant="ghost" size="sm" className="h-8 text-xs text-gray-400">Last month <ChevronDown className="h-3 w-3 ml-1"/></Button>
+                   <Button variant="ghost" size="sm" className="h-8 text-xs text-stone-400 hover:text-stone-300">Last month <ChevronDown className="h-3 w-3 ml-1"/></Button>
                  </div>
                  <div className="flex items-baseline gap-4">
                    <span className="text-5xl font-bold tracking-tight">$9.00</span>
-                   <Badge variant="secondary" className="bg-green-50 text-green-500 hover:bg-green-100 px-2 py-1">
+                   <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-200 px-2 py-1">
                      <TrendingUp className="h-3 w-3 mr-1" /> Low Price
                    </Badge>
                  </div>
-                 <p className="text-sm text-gray-400 mt-2">Starting at</p>
+                 <p className="text-sm text-stone-400 mt-2">Starting at</p>
               </CardContent>
             </Card>
           </div>
 
           {/* New Customers / Leads Avatars */}
           <div className="bg-transparent space-y-4">
-            <h3 className="font-semibold text-gray-700">857 new leads today!</h3>
-            <p className="text-sm text-gray-400">Send a welcome message to all new potential clients.</p>
+            <h3 className="font-semibold text-stone-700">857 new leads today!</h3>
+            <p className="text-sm text-stone-500">Send a welcome message to all new potential clients.</p>
 
             <div className="flex items-center gap-4 flex-wrap">
                {[1,2,3,4,5].map((i) => (
@@ -201,22 +201,22 @@ export default function ShopPage() {
                      <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i}`} />
                      <AvatarFallback>U{i}</AvatarFallback>
                    </Avatar>
-                   <span className="text-xs font-medium text-gray-600">Lead {i}</span>
+                   <span className="text-xs font-medium text-stone-600">Lead {i}</span>
                  </div>
                ))}
-               <Button size="icon" className="h-16 w-16 rounded-full bg-white text-black shadow-sm hover:bg-gray-50 border ml-2">
+               <Button size="icon" className="h-16 w-16 rounded-full bg-white text-[#1C1917] shadow-sm hover:bg-stone-50 border ml-2">
                  <ArrowRight className="h-6 w-6" />
                </Button>
-               <span className="text-sm font-medium text-gray-500 ml-2">View all</span>
+               <span className="text-sm font-medium text-stone-500 ml-2">View all</span>
             </div>
           </div>
 
           {/* Product View - Blurred Preview */}
-          <Card className="rounded-[32px] border-none shadow-sm min-h-[400px]">
+          <Card className="rounded-[32px] border-none shadow-sm min-h-[400px] bg-[#1C1917] text-[#FAFAF9]">
             <CardContent className="p-8">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-bold">Product view</h3>
-                <Button variant="ghost" size="sm" className="text-gray-400">Last 7 days <ChevronDown className="h-4 w-4 ml-2"/></Button>
+                <Button variant="ghost" size="sm" className="text-stone-400 hover:text-stone-300">Last 7 days <ChevronDown className="h-4 w-4 ml-2"/></Button>
               </div>
 
               {/* The "Blurry" Content */}
@@ -225,51 +225,47 @@ export default function ShopPage() {
 
                  {PREVIEW_LEADS.map((lead, i) => (
                    <div key={i} className="relative group">
-                     <div className="bg-gray-50 rounded-2xl p-4 h-full border border-transparent hover:border-gray-200 transition-all">
+                     {/* Using lighter cream background for inner cards for contrast against dark card */}
+                     <div className="bg-[#F5F5F4] rounded-2xl p-4 h-full border border-transparent hover:border-stone-200 transition-all text-[#1C1917]">
                        <div className="flex items-center gap-3 mb-3">
-                         <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold">
+                         <div className="h-10 w-10 rounded-full bg-[#E7E5E4] flex items-center justify-center text-stone-600 font-bold">
                            {lead.businessName.charAt(0)}
                          </div>
                          <div>
-                           <div className="font-bold text-sm">{lead.businessName}</div>
-                           <div className="text-xs text-gray-400">Verified • Mobile</div>
+                           <div className="font-bold text-sm text-[#1C1917]">{lead.businessName}</div>
+                           <div className="text-xs text-stone-500">Verified • Mobile</div>
                          </div>
                        </div>
 
                        {/* Blurred details */}
                        <div className="space-y-2 mt-4 select-none filter blur-sm opacity-50">
-                         <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                         <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                         <div className="h-4 bg-gray-200 rounded w-full"></div>
+                         <div className="h-4 bg-stone-300 rounded w-3/4"></div>
+                         <div className="h-4 bg-stone-300 rounded w-1/2"></div>
+                         <div className="h-4 bg-stone-300 rounded w-full"></div>
                        </div>
                      </div>
 
                      {/* Hover Action */}
                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                        <div className="bg-black/80 backdrop-blur text-white px-4 py-2 rounded-full text-xs font-bold shadow-lg">
+                        <div className="bg-[#1C1917]/90 backdrop-blur text-[#FAFAF9] px-4 py-2 rounded-full text-xs font-bold shadow-lg">
                            Buy Bundle to Reveal
                         </div>
                      </div>
                    </div>
                  ))}
-
-                 {/* Visual indicator of the "Bar Chart" from screenshot represented as value pillars?
-                     Actually the screenshot had a bar chart. But the user asked for "preview of new leads... everything blurry".
-                     I'll stick to the leads grid above as it serves the function better than a fake chart.
-                 */}
               </div>
 
-              <div className="mt-8 pt-8 border-t flex items-center justify-between">
-                 <div className="text-4xl font-bold text-gray-200">$10.2m</div>
-                 {/* Some fake bars to mimic the screenshot aesthetic at the bottom */}
-                 <div className="flex items-end gap-2 h-16 opacity-20">
-                    <div className="w-8 bg-gray-400 h-[40%] rounded-t-sm"></div>
-                    <div className="w-8 bg-gray-400 h-[70%] rounded-t-sm"></div>
+              <div className="mt-8 pt-8 border-t border-stone-800 flex items-center justify-between">
+                 <div className="text-4xl font-bold text-stone-200">$10.2m</div>
+                 {/* Fake bars */}
+                 <div className="flex items-end gap-2 h-16 opacity-30">
+                    <div className="w-8 bg-stone-500 h-[40%] rounded-t-sm"></div>
+                    <div className="w-8 bg-stone-500 h-[70%] rounded-t-sm"></div>
                     <div className="w-8 bg-green-500 h-[100%] rounded-t-sm relative">
-                       <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 rounded">2.2m</div>
+                       <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#FAFAF9] text-[#1C1917] text-[10px] px-2 py-1 rounded font-bold">2.2m</div>
                     </div>
-                    <div className="w-8 bg-gray-400 h-[60%] rounded-t-sm"></div>
-                    <div className="w-8 bg-gray-400 h-[80%] rounded-t-sm"></div>
+                    <div className="w-8 bg-stone-500 h-[60%] rounded-t-sm"></div>
+                    <div className="w-8 bg-stone-500 h-[80%] rounded-t-sm"></div>
                  </div>
               </div>
 
@@ -281,7 +277,7 @@ export default function ShopPage() {
         {/* Right Column */}
         <div className="col-span-12 lg:col-span-4 space-y-8">
            {/* Popular Products */}
-           <Card className="rounded-[32px] border-none shadow-sm h-full">
+           <Card className="rounded-[32px] border-none shadow-sm h-full bg-[#1C1917] text-[#FAFAF9]">
              <CardContent className="p-8">
                <div className="flex justify-between items-center mb-6">
                  <h3 className="text-xl font-bold">Popular products</h3>
@@ -295,13 +291,13 @@ export default function ShopPage() {
                           <Package className="h-6 w-6" />
                        </div>
                        <div>
-                         <div className="font-bold text-sm">{pkg.name}</div>
-                         <div className="text-xs text-gray-400">{pkg.description}</div>
+                         <div className="font-bold text-sm text-[#FAFAF9]">{pkg.name}</div>
+                         <div className="text-xs text-stone-400">{pkg.description}</div>
                        </div>
                      </div>
                      <div className="text-right">
-                       <div className="font-bold">${pkg.price.toFixed(2)}</div>
-                       <Badge variant={pkg.status === 'Active' ? 'secondary' : 'outline'} className={`mt-1 text-[10px] ${pkg.status === 'Active' ? 'text-green-600 bg-green-50' : 'text-gray-400'}`}>
+                       <div className="font-bold text-[#FAFAF9]">${pkg.price.toFixed(2)}</div>
+                       <Badge variant={pkg.status === 'Active' ? 'secondary' : 'outline'} className={`mt-1 text-[10px] ${pkg.status === 'Active' ? 'text-green-600 bg-green-50' : 'text-stone-500 border-stone-700'}`}>
                          {pkg.status}
                        </Badge>
                      </div>
@@ -309,7 +305,7 @@ export default function ShopPage() {
                  ))}
                </div>
 
-               <Button variant="outline" className="w-full mt-8 rounded-full h-12 border-gray-200 text-gray-600 hover:bg-gray-50">
+               <Button variant="outline" className="w-full mt-8 rounded-full h-12 border-stone-700 text-stone-400 hover:bg-stone-800 hover:text-stone-200">
                  All products
                </Button>
              </CardContent>
@@ -317,8 +313,8 @@ export default function ShopPage() {
 
            {/* Comments / Activity */}
            <div className="px-4">
-             <h3 className="text-lg font-bold mb-4">Comments</h3>
-             <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+             <h3 className="text-lg font-bold mb-4 text-[#1C1917]">Comments</h3>
+             <div className="bg-white rounded-3xl p-6 shadow-sm border border-stone-100">
                <div className="flex gap-4">
                  <Avatar className="h-10 w-10">
                    <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" />
@@ -326,11 +322,11 @@ export default function ShopPage() {
                  </Avatar>
                  <div>
                    <div className="flex items-baseline gap-2">
-                     <span className="font-bold text-sm">Joyce</span>
-                     <span className="text-xs text-gray-400">on Starter Pack</span>
+                     <span className="font-bold text-sm text-[#1C1917]">Joyce</span>
+                     <span className="text-xs text-stone-400">on Starter Pack</span>
                    </div>
-                   <div className="text-[10px] text-gray-300 mb-2">09:00 AM</div>
-                   <p className="text-sm text-gray-600 leading-relaxed">
+                   <div className="text-[10px] text-stone-300 mb-2">09:00 AM</div>
+                   <p className="text-sm text-stone-600 leading-relaxed">
                      Great quality leads! When will the HTML industry pack be available? ⚡
                    </p>
                  </div>
