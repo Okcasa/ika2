@@ -69,10 +69,10 @@ export function Sidebar() {
   };
 
   return (
-    <div className="w-64 h-screen flex flex-col p-6 fixed left-0 top-0 hidden md:flex z-50 bg-[#F2F2F2]">
+    <div className="w-64 h-screen flex flex-col p-6 fixed left-0 top-0 hidden md:flex z-50 bg-[#E5E4E2]">
       {/* Logo */}
       <div className="flex items-center gap-2 mb-10 px-2">
-        <div className="h-10 w-10 bg-[#1C1917] text-[#F2F2F2] rounded-full flex items-center justify-center">
+        <div className="h-10 w-10 bg-[#1C1917] text-[#E5E4E2] rounded-full flex items-center justify-center">
             <LayoutGrid className="h-6 w-6" />
         </div>
       </div>

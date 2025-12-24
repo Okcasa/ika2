@@ -9,7 +9,7 @@ export default function LandingPage() {
   const [authOpen, setAuthOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-[#F2F2F2]">
+    <div className="flex min-h-screen bg-[#E5E4E2]">
       {/* Sidebar - render it but maybe simpler or just standard */}
       <Sidebar />
 

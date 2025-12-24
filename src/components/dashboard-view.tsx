@@ -133,7 +133,7 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
           </div>
 
           <Button
-            className="h-12 px-6 rounded-full bg-[#1C1917] hover:bg-stone-800 text-[#F2F2F2] font-medium"
+            className="h-12 px-6 rounded-full bg-[#1C1917] hover:bg-stone-800 text-[#E5E4E2] font-medium"
             onClick={handleRestrictedAction}
           >
             Create
@@ -173,7 +173,7 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
                  </div>
                  <div className="flex items-baseline gap-4">
                    <span className="text-5xl font-bold tracking-tight">3,493</span>
-                   <Badge variant="secondary" className="bg-[#F2F2F2] text-[#1C1917] hover:bg-white px-2 py-1">
+                   <Badge variant="secondary" className="bg-[#E5E4E2] text-[#1C1917] hover:bg-white px-2 py-1">
                      <TrendingUp className="h-3 w-3 mr-1" /> +36.8%
                    </Badge>
                  </div>
