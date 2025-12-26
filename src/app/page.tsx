@@ -14,7 +14,10 @@ export default function LandingPage() {
       <Sidebar />
 
       {/* We need to mimic the platform layout structure */}
-      <main className="flex-1 md:ml-64 p-8 overflow-y-auto h-screen">
+      <main 
+        className="flex-1 p-8 overflow-y-auto h-screen transition-[margin] duration-75"
+        style={{ marginLeft: 'var(--sidebar-width, 256px)' }}
+      >
         <DashboardView isGuest={true} onAuthRequest={() => setAuthOpen(true)} />
       </main>
 

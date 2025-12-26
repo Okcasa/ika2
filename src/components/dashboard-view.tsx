@@ -170,16 +170,10 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
             <Input
               type="search"
               placeholder="Search anything..."
-              className="pl-10 h-12 rounded-full border-none bg-white shadow-sm placeholder:text-stone-400 text-stone-800"
+              className="pl-10 h-12 rounded-full border-none bg-white shadow-sm placeholder:text-stone-400 text-stone-800 focus-visible:ring-stone-200"
             />
           </div>
 
-          <Button
-            className="h-12 px-6 rounded-full bg-[#1C1917] hover:bg-stone-800 text-[#E5E4E2] font-medium"
-            onClick={handleRestrictedAction}
-          >
-            Create
-          </Button>
 
           <div className="flex items-center gap-2">
             <Button size="icon" variant="ghost" className="rounded-full h-10 w-10 bg-white shadow-sm hover:bg-stone-50">
