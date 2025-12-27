@@ -25,11 +25,22 @@ import {
   Folder,
   Tag,
   Clock,
-  X
+  X,
+  Globe
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 
@@ -105,6 +116,9 @@ function LogsPageContent() {
   const [activeGroup, setActiveGroup] = useState('All Leads');
   const [newGroupName, setNewGroupName] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [logToDelete, setLogToDelete] = useState<{leadId: string, logId: number} | null>(null);
   const { toast } = useToast();
 
   // Pagination State
@@ -204,6 +218,9 @@ function LogsPageContent() {
       note: isDealOutcome ? (dealAmount ? `Amount: $${dealAmount}` : 'No amount added') : (note || 'No notes added.')
     };
 
+    const leadToUpdate = leads.find(l => l.id === selectedLeadId);
+    if (!leadToUpdate) return;
+
     const updatedLeads = leads.map(lead => {
       if (lead.id === selectedLeadId) {
         let newColor = lead.color;
@@ -211,6 +228,16 @@ function LogsPageContent() {
 
         // Update color and value based on new status
         const newStatus = conclusionObj?.label || lead.status;
+        
+        // Map to internal leadStatus if possible
+        let newLeadStatus = lead.leadStatus;
+        if (selectedConclusion === 'scheduled') newLeadStatus = 'meeting-scheduled';
+        else if (selectedConclusion === 'not-interested') newLeadStatus = 'not-interested';
+        else if (selectedConclusion === 'no-answer') newLeadStatus = 'no-answer';
+        else if (selectedConclusion === 'closed') newLeadStatus = 'sale-made';
+        else if (selectedConclusion === 'lost') newLeadStatus = 'closed-lost';
+        // 'interested' doesn't have a direct map in standard types, keep as is or map to something else
+
         switch(newStatus) {
           case 'Not Interested': newColor = 'bg-red-100 text-red-700'; break;
           case 'Interested': newColor = 'bg-blue-100 text-blue-700'; break;
@@ -229,11 +256,12 @@ function LogsPageContent() {
           return {
             ...lead,
             status: newStatus,
+            leadStatus: newLeadStatus,
             scheduledDate: scheduledStr || lead.scheduledDate,
             value: newValue,
             color: newColor,
             lastContact: 'Just now',
-            history: [newEntry, ...lead.history]
+            history: [newEntry, ...(lead.history || [])]
           };
         }
         return lead;
@@ -246,7 +274,7 @@ function LogsPageContent() {
         title: "Interaction Logged",
         description: scheduledStr 
           ? `Meeting scheduled for ${scheduledStr}` 
-          : `Saved log for ${activeLead?.businessName}`,
+          : `Saved log for ${leadToUpdate.businessName || leadToUpdate.correctedBusinessName || leadToUpdate.name || 'Lead'}`,
       });
 
     // Reset Form
@@ -286,6 +314,103 @@ function LogsPageContent() {
         description: `'${newGroupName}' added to your groups.`
       });
     }
+  };
+
+  const initiateDeleteLog = (e: React.MouseEvent, leadId: string, logId: number) => {
+    e.stopPropagation();
+    setLogToDelete({ leadId, logId });
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteLog = () => {
+    if (!logToDelete) return;
+
+    const { leadId, logId } = logToDelete;
+    
+    const updatedLeads = leads.map(lead => {
+      if (lead.id === leadId) {
+        // Filter out the log
+        const newHistory = lead.history.filter((log: any) => log.id !== logId);
+        
+        // Recalculate state from remaining history
+        let newStatus = 'New';
+        let newLeadStatus = 'new';
+        let newColor = 'bg-stone-100 text-stone-600';
+        let newValue = undefined;
+        let newScheduledDate = '-';
+        let newLastContact = 'Never';
+
+        if (newHistory.length > 0) {
+          const latestLog = newHistory[0]; // Assuming index 0 is latest
+          newLastContact = latestLog.date; // Or calculate '2 days ago' etc. if feasible, but date string is fine
+          
+          switch(latestLog.result) {
+            case 'Meeting Scheduled':
+              newStatus = 'Meeting Scheduled';
+              newLeadStatus = 'meeting-scheduled';
+              newColor = 'bg-purple-100 text-purple-700';
+              // Ideally parse scheduled date from note or log if stored, otherwise reset or keep
+              break;
+            case 'Interested':
+              newStatus = 'Interested';
+              newLeadStatus = 'new'; // or interested
+              newColor = 'bg-blue-100 text-blue-700';
+              break;
+            case 'Not Interested':
+              newStatus = 'Not Interested';
+              newLeadStatus = 'not-interested';
+              newColor = 'bg-red-100 text-red-700';
+              break;
+            case 'No Answer':
+              newStatus = 'No Answer';
+              newLeadStatus = 'no-answer';
+              newColor = 'bg-amber-100 text-amber-700';
+              break;
+            case 'Closed Deal':
+              newStatus = 'Closed Deal';
+              newLeadStatus = 'sale-made';
+              newColor = 'bg-green-100 text-green-700';
+              // Attempt to parse value from note "Amount: $399"
+              if (latestLog.note && latestLog.note.includes('Amount: $')) {
+                 const match = latestLog.note.match(/Amount: \$([\d,.]+)/);
+                 if (match) newValue = `$${match[1]}`;
+              }
+              break;
+            case 'Deal Lost':
+              newStatus = 'Deal Lost';
+              newLeadStatus = 'closed-lost';
+              newColor = 'bg-stone-100 text-stone-700';
+              break;
+            default: 
+              newStatus = 'In Progress';
+              newColor = 'bg-stone-100 text-stone-600';
+          }
+        }
+
+        return {
+          ...lead,
+          history: newHistory,
+          status: newStatus,
+          leadStatus: newLeadStatus,
+          color: newColor,
+          value: newValue,
+          scheduledDate: newScheduledDate, // Resetting scheduled date as simpler approach, user can re-schedule if needed
+          lastContact: newLastContact
+        };
+      }
+      return lead;
+    });
+
+    setLeads(updatedLeads);
+    localStorage.setItem(LEADS_STORAGE_KEY, JSON.stringify(updatedLeads));
+    
+    setDeleteDialogOpen(false);
+    setLogToDelete(null);
+    
+    toast({
+      title: "Log Deleted",
+      description: "The interaction log has been removed and lead status updated."
+    });
   };
 
   const handleDeleteGroup = (e: React.MouseEvent, groupName: string) => {
@@ -425,12 +550,12 @@ function LogsPageContent() {
               <div className="flex justify-between items-start mb-2">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-10 w-10 border border-stone-100">
-                    <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${lead.businessName}`} />
-                    <AvatarFallback>{lead.avatar}</AvatarFallback>
+                    <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${lead.businessName || lead.correctedBusinessName || lead.name}`} />
+                    <AvatarFallback>{lead.avatar || (lead.businessName || lead.correctedBusinessName || lead.name || 'LE').substring(0, 2)}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <h3 className="font-semibold text-stone-900">{lead.businessName}</h3>
-                    <p className="text-xs text-stone-500">{lead.contactName}</p>
+                    <h3 className="font-semibold text-stone-900">{lead.businessName || lead.correctedBusinessName || lead.name || 'Unknown Business'}</h3>
+                    <p className="text-xs text-stone-500">{lead.contactName || lead.ownerName || 'No contact name'}</p>
                   </div>
                 </div>
                 {selectedLeadId === lead.id && (
@@ -439,7 +564,7 @@ function LogsPageContent() {
               </div>
               
               <div className="flex flex-wrap gap-1 mb-2 pl-[52px]">
-                {lead.groups.map((g: string) => (
+                {lead.groups?.map((g: string) => (
                   <span key={g} className="text-[10px] px-1.5 py-0.5 bg-stone-100 text-stone-500 rounded-md border border-stone-200 flex items-center gap-1">
                     {g}
                   </span>
@@ -447,15 +572,44 @@ function LogsPageContent() {
               </div>
 
               <div className="flex justify-between items-center mt-3 pl-[52px]">
-                 <Badge variant="secondary" className={`font-bold border-0 px-3 py-1 rounded-full text-[11px] shadow-sm transition-colors cursor-default ${
-                    lead.status === 'Closed' || lead.status === 'Closed Deal' ? 'bg-green-100 text-green-700 hover:bg-green-500 hover:text-white' :
-                    lead.status === 'Not Interested' ? 'bg-red-100 text-red-700 hover:bg-red-500 hover:text-white' :
-                    lead.status === 'No Answer' || lead.status === 'Follow Up' ? 'bg-amber-100 text-amber-700 hover:bg-amber-500 hover:text-white' :
-                    lead.status === 'Meeting Scheduled' || lead.status === 'Scheduled' ? 'bg-purple-100 text-purple-700 hover:bg-purple-500 hover:text-white' :
-                    (lead.color || 'bg-stone-100 text-stone-600') + ' hover:bg-stone-200'
-                  }`}>
-                    {lead.status}
-                  </Badge>
+                 {(() => {
+                    const manualStatuses = ['Meeting Scheduled', 'Closed Deal', 'Deal Lost', 'Interested', 'Not Interested', 'No Answer', 'Closed', 'Sale Made'];
+                    let displayStatus = lead.status;
+                    
+                    // Safety: If history is empty, an interaction status is invalid -> Reset to New
+                    if ((!lead.history || lead.history.length === 0) && manualStatuses.includes(displayStatus)) {
+                       displayStatus = 'New';
+                    } 
+                    // Otherwise, prefer manual status if present, else format leadStatus
+                    else if (!manualStatuses.includes(lead.status) && lead.leadStatus) {
+                       displayStatus = lead.leadStatus.replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+                    }
+
+                    // Initialize with default or stored color (only if status matches)
+                    let badgeColor = 'bg-stone-100 text-stone-600 hover:bg-stone-200';
+                    if (lead.color && displayStatus === lead.status) {
+                       badgeColor = lead.color + ' hover:bg-stone-200';
+                    }
+
+                    // Apply specific colors based on the resolved display status
+                    if (displayStatus === 'Closed' || displayStatus === 'Closed Deal' || displayStatus === 'Sale Made') {
+                        badgeColor = 'bg-green-100 text-green-700 hover:bg-green-500 hover:text-white';
+                    } else if (displayStatus === 'Not Interested') {
+                        badgeColor = 'bg-red-100 text-red-700 hover:bg-red-500 hover:text-white';
+                    } else if (displayStatus === 'No Answer' || displayStatus === 'Follow Up') {
+                        badgeColor = 'bg-amber-100 text-amber-700 hover:bg-amber-500 hover:text-white';
+                    } else if (displayStatus === 'Meeting Scheduled' || displayStatus === 'Scheduled') {
+                        badgeColor = 'bg-purple-100 text-purple-700 hover:bg-purple-500 hover:text-white';
+                    } else if (displayStatus === 'Interested') {
+                        badgeColor = 'bg-blue-100 text-blue-700 hover:bg-blue-500 hover:text-white';
+                    }
+
+                    return (
+                      <Badge variant="secondary" className={`font-bold border-0 px-3 py-1 rounded-full text-[11px] shadow-sm transition-colors cursor-default ${badgeColor}`}>
+                        {displayStatus}
+                      </Badge>
+                    );
+                 })()}
                 <span className="text-[10px] text-stone-400">{lead.lastContact}</span>
               </div>
             </div>
@@ -495,6 +649,7 @@ function LogsPageContent() {
       {/* Detail View (Right Panel) */}
       <div className={`flex-1 flex flex-col h-full bg-[#E5E4E2] overflow-y-auto ${!selectedLeadId ? 'hidden md:flex' : 'flex'}`}>
         {activeLead ? (
+          <>
           <div className="p-8 max-w-5xl mx-auto w-full space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
             {/* Mobile Back Button */}
             <Button 
@@ -514,10 +669,10 @@ function LogsPageContent() {
                     <AvatarFallback>{activeLead.avatar}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <h2 className="text-2xl font-bold text-stone-900">{activeLead.businessName}</h2>
+                    <h2 className="text-2xl font-bold text-stone-900">{activeLead.businessName || activeLead.correctedBusinessName || activeLead.name || 'Unknown Business'}</h2>
                     <div className="flex items-center gap-2 text-stone-500 mt-1">
                       <User className="w-4 h-4" />
-                      <span className="text-sm font-medium">{activeLead.contactName}</span>
+                      <span className="text-sm font-medium">{activeLead.contactName || activeLead.ownerName || 'No contact name'}</span>
                     </div>
                   </div>
                 </div>
@@ -539,7 +694,7 @@ function LogsPageContent() {
                              className="w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-stone-100 flex items-center justify-between transition-colors"
                            >
                              <span>{group}</span>
-                             {activeLead.groups.includes(group) && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+                             {activeLead.groups?.includes(group) && <CheckCircle2 className="w-3 h-3 text-green-600" />}
                            </button>
                          ))}
                          {customGroups.length === 0 && (
@@ -551,6 +706,14 @@ function LogsPageContent() {
                    <Button size="sm" className="rounded-full bg-stone-900 text-white hover:bg-stone-800 shadow-sm">
                      <Phone className="w-4 h-4 mr-2" /> Call Now
                    </Button>
+                   <Button 
+                     size="sm" 
+                     variant="destructive"
+                     className="rounded-full shadow-sm"
+                     onClick={() => setReportDialogOpen(true)}
+                   >
+                     <Globe className="w-4 h-4 mr-2" /> Report Website
+                   </Button>
                 </div>
               </div>
 
@@ -560,15 +723,15 @@ function LogsPageContent() {
                     <Building2 className="w-4 h-4" />
                     <span className="text-xs font-bold uppercase tracking-wider">Company</span>
                   </div>
-                  <p className="text-sm font-medium text-stone-900">{activeLead.address}</p>
+                  <p className="text-sm font-medium text-stone-900">{activeLead.address || activeLead.notes || 'No address available'}</p>
                 </div>
                 <div className="p-4 bg-stone-50 rounded-2xl border border-stone-100">
                   <div className="flex items-center gap-2 text-stone-400 mb-2">
                     <Phone className="w-4 h-4" />
                     <span className="text-xs font-bold uppercase tracking-wider">Contact</span>
                   </div>
-                  <p className="text-sm font-medium text-stone-900">{activeLead.phone}</p>
-                  <p className="text-sm text-stone-500">{activeLead.email}</p>
+                  <p className="text-sm font-medium text-stone-900">{activeLead.phone || activeLead.phoneNumber || activeLead.correctedPhoneNumber || 'No phone available'}</p>
+                  <p className="text-sm text-stone-500">{activeLead.email || activeLead.website || 'No email available'}</p>
                 </div>
               </div>
             </div>
@@ -664,7 +827,7 @@ function LogsPageContent() {
                 <div className="bg-white/50 backdrop-blur rounded-[2rem] p-6 border border-stone-200/50 h-full shadow-sm">
                   <h3 className="text-sm font-bold text-stone-900 mb-6 uppercase tracking-wider">Past Activity</h3>
                   <div className="space-y-8 relative before:absolute before:left-[19px] before:top-2 before:bottom-2 before:w-[2px] before:bg-stone-200/50">
-                    {activeLead.history.map((log: any) => (
+                    {activeLead.history?.map((log: any) => (
                       <div key={log.id} className="relative pl-10">
                         <div className="absolute left-0 top-1 w-10 h-10 flex items-center justify-center">
                           <div className="w-3 h-3 rounded-full bg-white border-[3px] border-stone-300 shadow-sm z-10" />
@@ -674,14 +837,21 @@ function LogsPageContent() {
                             <span className="text-xs font-bold uppercase tracking-wider text-stone-600">{log.type}</span>
                             <span className="text-[10px] text-stone-400 font-medium">{log.date}</span>
                           </div>
-                          <div className="bg-white p-3 rounded-xl border border-stone-100 shadow-sm group-hover:border-stone-200 transition-colors">
+                          <div className="bg-white p-3 rounded-xl border border-stone-100 shadow-sm group-hover:border-stone-200 transition-colors relative pr-8">
                             <p className="font-bold text-stone-900 text-sm mb-1">{log.result}</p>
                             <p className="text-xs text-stone-500 leading-relaxed">{log.note}</p>
+                            <button 
+                              onClick={(e) => initiateDeleteLog(e, activeLead.id, log.id)}
+                              className="absolute top-2 right-2 text-stone-400 hover:text-red-600 hover:bg-red-100 p-2 rounded-full transition-all"
+                              title="Delete Log"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
                           </div>
                         </div>
                       </div>
                     ))}
-                    {activeLead.history.length === 0 && (
+                    {(!activeLead.history || activeLead.history.length === 0) && (
                       <p className="text-xs text-stone-400 italic text-center py-8">No past interactions logged.</p>
                     )}
                   </div>
@@ -689,6 +859,52 @@ function LogsPageContent() {
               </div>
             </div>
           </div>
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent className="bg-white border-stone-200 shadow-xl rounded-2xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-stone-900">Delete Interaction Log?</AlertDialogTitle>
+              <AlertDialogDescription className="text-stone-500">
+                This will remove this log from the history and revert the lead's status and value to the previous state.
+                <br /><br />
+                Income recorded from this log will be removed.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setLogToDelete(null)} className="bg-white border-stone-200 text-stone-700 hover:bg-stone-50 rounded-xl">Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDeleteLog} className="bg-red-600 hover:bg-red-700 rounded-xl text-white">Delete</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
+          <AlertDialogContent className="bg-white border-stone-200 shadow-xl rounded-2xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-stone-900">Report Existing Website</AlertDialogTitle>
+              <AlertDialogDescription className="text-stone-500">
+                Are you sure you want to flag this lead as having a website?
+                <br /><br />
+                This will help track lead quality issues and prevent future errors.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="bg-white border-stone-200 text-stone-700 hover:bg-stone-50 rounded-xl">Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={() => {
+                  setReportDialogOpen(false);
+                  toast({
+                    title: "Lead Reported",
+                    description: "This lead has been flagged for having an existing website.",
+                    variant: "destructive"
+                  });
+                }}
+                className="bg-red-600 hover:bg-red-700 rounded-xl text-white"
+              >
+                Report Issue
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-stone-400 p-8 text-center">
             <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-6 shadow-sm border border-stone-100">

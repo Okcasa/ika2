@@ -93,9 +93,10 @@ function IncomePageContent() {
   }, [leads]);
 
   const stats = useMemo(() => {
-    const closedLeads = leads.filter(l => l.status === 'Closed' || l.status === 'Closed Deal');
+    // Only count leads as closed if they have history supporting it (prevents counting deleted logs)
+    const closedLeads = leads.filter(l => (l.status === 'Closed' || l.status === 'Closed Deal') && (l.history && l.history.length > 0));
     const totalRevenue = closedLeads.reduce((acc, l) => {
-      const val = parseFloat(l.value.replace(/[$,]/g, '')) || 0;
+      const val = parseFloat(l.value?.replace(/[$,]/g, '') || '0') || 0;
       return acc + val;
     }, 0);
 
@@ -232,7 +233,7 @@ function IncomePageContent() {
            </CardHeader>
            <CardContent className="p-8 pt-0 flex-1">
               <div className="space-y-6">
-                {leads.filter(l => l.status === 'Closed' || l.status === 'Closed Deal').slice(0, 5).map((lead, i) => (
+                {leads.filter(l => (l.status === 'Closed' || l.status === 'Closed Deal') && (l.history && l.history.length > 0)).slice(0, 5).map((lead, i) => (
                   <div key={i} className="flex items-center justify-between group">
                     <div className="flex items-center gap-4">
                       <div className="h-10 w-10 rounded-full bg-stone-100 flex items-center justify-center border border-stone-200 overflow-hidden">
@@ -248,7 +249,7 @@ function IncomePageContent() {
                     </div>
                   </div>
                 ))}
-                {leads.filter(l => l.status === 'Closed' || l.status === 'Closed Deal').length === 0 && (
+                {leads.filter(l => (l.status === 'Closed' || l.status === 'Closed Deal') && (l.history && l.history.length > 0)).length === 0 && (
                    <div className="text-center py-12 text-stone-400">
                       <HistoryIcon className="w-10 h-10 mx-auto mb-2 opacity-10" />
                       <p className="text-xs">No transactions found.</p>
