@@ -95,6 +95,8 @@ function LogsPageContent() {
   const [selectedConclusion, setSelectedConclusion] = useState<string | null>(null);
   const [note, setNote] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  // Use a debounced search term to prevent lagging while typing
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   
   // Leads & Groups State
@@ -105,24 +107,45 @@ function LogsPageContent() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  // Load from Storage
-  useEffect(() => {
-    const savedLeads = localStorage.getItem(LEADS_STORAGE_KEY);
-    const savedGroups = localStorage.getItem(GROUPS_STORAGE_KEY);
-    
-    if (savedLeads) {
-      setLeads(JSON.parse(savedLeads));
-    } else {
-      setLeads(DEFAULT_LEADS);
-      localStorage.setItem(LEADS_STORAGE_KEY, JSON.stringify(DEFAULT_LEADS));
-    }
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
 
-    if (savedGroups) {
-      setCustomGroups(JSON.parse(savedGroups));
-    } else {
-      setCustomGroups(DEFAULT_GROUPS);
-      localStorage.setItem(GROUPS_STORAGE_KEY, JSON.stringify(DEFAULT_GROUPS));
-    }
+  // Debounce effect
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setCurrentPage(1); // Reset page on search
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Load from Storage Optimized
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        try {
+          const savedLeads = localStorage.getItem(LEADS_STORAGE_KEY);
+          const savedGroups = localStorage.getItem(GROUPS_STORAGE_KEY);
+          
+          if (savedLeads) {
+            setLeads(JSON.parse(savedLeads));
+          } else {
+            setLeads(DEFAULT_LEADS);
+            localStorage.setItem(LEADS_STORAGE_KEY, JSON.stringify(DEFAULT_LEADS));
+          }
+
+          if (savedGroups) {
+            setCustomGroups(JSON.parse(savedGroups));
+          } else {
+            setCustomGroups(DEFAULT_GROUPS);
+            localStorage.setItem(GROUPS_STORAGE_KEY, JSON.stringify(DEFAULT_GROUPS));
+          }
+        } catch (e) {
+          console.error("Failed to load logs data", e);
+        }
+      }, 0);
+    });
   }, []);
 
   const activeLead = leads.find(l => l.id === selectedLeadId);
@@ -156,7 +179,9 @@ function LogsPageContent() {
       }
 
       const conclusionObj = conclusions.find(c => c.id === selectedConclusion);
-    const logDate = format(new Date(), 'MMM d, h:mm a');
+    const now = new Date();
+    const logDate = format(now, 'MMM d, h:mm a');
+    const timestamp = now.toISOString(); // For analytics
     
     // Format scheduled time into 12h format
     let scheduledStr = null;
@@ -175,6 +200,7 @@ function LogsPageContent() {
       type: selectedConclusion === 'scheduled' ? 'meeting' : 'call',
       result: conclusionObj?.label || 'Interaction',
       date: logDate,
+      timestamp: timestamp,
       note: isDealOutcome ? (dealAmount ? `Amount: $${dealAmount}` : 'No amount added') : (note || 'No notes added.')
     };
 
@@ -223,17 +249,30 @@ function LogsPageContent() {
           : `Saved log for ${activeLead?.businessName}`,
       });
 
-      // Reset Form
-      setSelectedConclusion(null);
-      setNote('');
-    };
+    // Reset Form
+    setSelectedConclusion(null);
+    setNote('');
+  };
 
-    const filteredLeads = leads.filter(lead => {
-      const matchesSearch = lead.businessName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                            lead.contactName.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesGroup = activeGroup === 'All Leads' || lead.groups.includes(activeGroup);
-      return matchesSearch && matchesGroup;
-    });
+  // Memoize filtered leads for performance
+  const filteredLeads = leads.filter(lead => {
+    const lowerSearch = debouncedSearch.toLowerCase();
+    const matchesSearch = (lead.businessName || '').toLowerCase().includes(lowerSearch) || 
+                          (lead.contactName || '').toLowerCase().includes(lowerSearch);
+    const matchesGroup = activeGroup === 'All Leads' || (lead.groups && lead.groups.includes(activeGroup));
+    return matchesSearch && matchesGroup;
+  });
+
+  const totalPages = Math.ceil(filteredLeads.length / itemsPerPage);
+  const paginatedLeads = filteredLeads.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(prev => prev + 1);
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) setCurrentPage(prev => prev - 1);
+  };
 
   const handleCreateGroup = () => {
     if (newGroupName && !customGroups.includes(newGroupName)) {
@@ -373,7 +412,7 @@ function LogsPageContent() {
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {filteredLeads.map(lead => (
+          {paginatedLeads.map(lead => (
             <div 
               key={lead.id}
               onClick={() => setSelectedLeadId(lead.id)}
@@ -408,13 +447,48 @@ function LogsPageContent() {
               </div>
 
               <div className="flex justify-between items-center mt-3 pl-[52px]">
-                <Badge variant="secondary" className="text-[10px] bg-stone-100 text-stone-600 hover:bg-stone-200">
-                  {lead.status}
-                </Badge>
+                 <Badge variant="secondary" className={`font-bold border-0 px-3 py-1 rounded-full text-[11px] shadow-sm transition-colors cursor-default ${
+                    lead.status === 'Closed' || lead.status === 'Closed Deal' ? 'bg-green-100 text-green-700 hover:bg-green-500 hover:text-white' :
+                    lead.status === 'Not Interested' ? 'bg-red-100 text-red-700 hover:bg-red-500 hover:text-white' :
+                    lead.status === 'No Answer' || lead.status === 'Follow Up' ? 'bg-amber-100 text-amber-700 hover:bg-amber-500 hover:text-white' :
+                    lead.status === 'Meeting Scheduled' || lead.status === 'Scheduled' ? 'bg-purple-100 text-purple-700 hover:bg-purple-500 hover:text-white' :
+                    (lead.color || 'bg-stone-100 text-stone-600') + ' hover:bg-stone-200'
+                  }`}>
+                    {lead.status}
+                  </Badge>
                 <span className="text-[10px] text-stone-400">{lead.lastContact}</span>
               </div>
             </div>
           ))}
+          
+          {/* Pagination Controls */}
+          {filteredLeads.length > 0 && (
+            <div className="pt-4 mt-2 border-t border-stone-200 flex justify-between items-center px-2">
+              <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
+                Page {currentPage} of {totalPages || 1}
+              </span>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="h-8 w-8 bg-white border-stone-200 text-stone-700 hover:bg-stone-100 hover:text-stone-900 disabled:opacity-40"
+                  onClick={handlePrevPage}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronRight className="h-4 w-4 rotate-180" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="h-8 w-8 bg-stone-900 border-stone-900 text-white hover:bg-stone-800 disabled:opacity-40 disabled:bg-stone-300 disabled:border-stone-300"
+                  onClick={handleNextPage}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

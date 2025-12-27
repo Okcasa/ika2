@@ -32,6 +32,8 @@ const LEADS_STORAGE_KEY = 'ika_leads_data';
 function LeadsPageContent() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
+  // Use a debounced search term to prevent lagging while typing
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [leads, setLeads] = useState<any[]>([]);
   const [closingLead, setClosingLead] = useState<any>(null);
   const [editingLead, setEditingLead] = useState<any>(null);
@@ -40,39 +42,62 @@ function LeadsPageContent() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  // Load from Storage
+  // Debounce effect
   useEffect(() => {
-    const saved = localStorage.getItem(LEADS_STORAGE_KEY);
-    if (saved) {
-      setLeads(JSON.parse(saved));
-    }
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Optimized Load from Storage
+  useEffect(() => {
+    // Load data in a non-blocking way
+    const loadData = () => {
+      try {
+        const saved = localStorage.getItem(LEADS_STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          setLeads(parsed);
+        }
+      } catch (e) {
+        console.error("Failed to load leads", e);
+      }
+    };
+    
+    // Use requestAnimationFrame to let the UI paint first
+    requestAnimationFrame(() => {
+      setTimeout(loadData, 0);
+    });
   }, []);
 
-  // Calculate Smart Projections
+  // Calculate Smart Projections - Memoized
   const stats = useMemo(() => {
-    // Normalize "Closed" status to catch all variations
-    const isClosed = (s: string) => s === 'Closed' || s === 'Closed Deal';
-    const closedLeads = leads.filter(l => isClosed(l.status));
-    const activeLeads = leads.filter(l => !isClosed(l.status) && l.status !== 'Not Interested');
-    
-    // Parse values (removing $ and ,)
-    const totalClosedValue = closedLeads.reduce((acc, l) => {
-      const val = parseFloat(l.value.replace(/[$,]/g, '')) || 0;
-      return acc + val;
-    }, 0);
+    // Create a quick summary without iterating multiple times if possible
+    let closedCount = 0;
+    let activeCount = 0;
+    let totalClosedValue = 0;
 
-    const averageDealValue = closedLeads.length > 0 
-      ? totalClosedValue / closedLeads.length 
-      : 0;
+    for (const l of leads) {
+      const isClosed = l.status === 'Closed' || l.status === 'Closed Deal';
+      
+      if (isClosed) {
+        closedCount++;
+        totalClosedValue += (parseFloat(l.value.replace(/[$,]/g, '')) || 0);
+      } else if (l.status !== 'Not Interested') {
+        activeCount++;
+      }
+    }
 
-    const projectedRevenue = totalClosedValue + (activeLeads.length * averageDealValue);
+    const averageDealValue = closedCount > 0 ? totalClosedValue / closedCount : 0;
+    const projectedRevenue = totalClosedValue + (activeCount * averageDealValue);
 
     return {
       totalClosedValue,
       averageDealValue,
       projectedRevenue,
-      closedCount: closedLeads.length,
-      activeCount: activeLeads.length
+      closedCount,
+      activeCount
     };
   }, [leads]);
 
@@ -117,10 +142,35 @@ function LeadsPageContent() {
     setEditingLead(null);
   };
 
-  const filteredLeads = leads.filter(lead => 
-    (lead.name || lead.businessName).toLowerCase().includes(searchTerm.toLowerCase()) || 
-    (lead.company || lead.businessName).toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
+
+  // Memoize filtered leads to avoid re-calculation on every render
+  const filteredLeads = useMemo(() => {
+    if (!debouncedSearch) return leads;
+    
+    const lowerSearch = debouncedSearch.toLowerCase();
+    return leads.filter(lead => 
+      (lead.name || lead.businessName || '').toLowerCase().includes(lowerSearch) || 
+      (lead.company || lead.businessName || '').toLowerCase().includes(lowerSearch)
+    );
+  }, [leads, debouncedSearch]);
+
+  const totalPages = Math.ceil(filteredLeads.length / itemsPerPage);
+  const paginatedLeads = filteredLeads.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(prev => prev + 1);
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) setCurrentPage(prev => prev - 1);
+  };
+
+  // Reset to page 1 if search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   return (
     <div className="p-8 space-y-8 bg-[#E5E4E2] min-h-screen text-stone-900 select-none">
@@ -200,7 +250,7 @@ function LeadsPageContent() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredLeads.map((lead) => (
+            {paginatedLeads.map((lead) => (
               <TableRow key={lead.id} className="hover:bg-stone-50/50 border-stone-100 transition-colors group">
                 <TableCell className="pl-6 py-5">
                   <div className="flex items-center gap-4">
@@ -334,8 +384,30 @@ function LeadsPageContent() {
         </Table>
         
         {/* Pagination */}
-        <div className="p-6 border-t border-stone-100 flex justify-center bg-stone-50/30">
-          <Button variant="ghost" size="sm" className="text-xs font-bold text-stone-400 hover:text-stone-900 uppercase tracking-widest">Load more leads</Button>
+        <div className="p-6 border-t border-stone-100 flex justify-between items-center bg-stone-50/30">
+          <div className="text-xs font-bold text-stone-400 uppercase tracking-widest">
+            Page {currentPage} of {totalPages}
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-xs font-bold bg-white text-stone-700 border-stone-200 hover:bg-stone-50 hover:text-stone-900 disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={handlePrevPage}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-xs font-bold bg-stone-900 text-white border-stone-900 hover:bg-stone-800 hover:text-white disabled:opacity-50 disabled:bg-stone-300 disabled:border-stone-300 disabled:cursor-not-allowed"
+              onClick={handleNextPage}
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </Button>
+          </div>
         </div>
       </div>
     </div>

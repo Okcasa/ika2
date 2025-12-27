@@ -75,28 +75,56 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
   const [leadsCount, setLeadsCount] = useState<number>(0);
   const [newLeadsToday, setNewLeadsToday] = useState<number>(0);
 
+  // Disable scroll on body when dashboard is mounted to ensure full-screen feel
   useEffect(() => {
-    if (isGuest) return;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = 'unset'; };
+  }, []);
 
+  useEffect(() => {
     const loadLeads = async () => {
-      let userId: string | null = null;
-      const { data: { session } } = await supabase.auth.getSession();
+      // Use the synchronized key we established
+      const storageKey = 'ika_leads_data';
+      const trialKey = 'ika_trial_claimed';
+      const storedLeads = localStorage.getItem(storageKey);
+      const trialClaimed = localStorage.getItem(trialKey);
 
-      if (session) {
-        userId = session.user.id;
-      } else if (typeof window !== 'undefined' && localStorage.getItem('demo_mode')) {
-        userId = 'demo-user';
+      // FORCE RESET if we detect the old 3000+ dump to clean slate for the "Paid Model"
+      // In a real app, this would be handled by a DB migration, but here we do it on load
+      if (storedLeads && JSON.parse(storedLeads).length > 1000) {
+         localStorage.removeItem(storageKey);
+         localStorage.removeItem(trialKey);
+         window.location.reload(); // Hard refresh to clear state
+         return;
       }
-
-      if (userId) {
-        const storageKey = `leadsorter_leads_${userId}`;
-        const storedLeads = localStorage.getItem(storageKey);
-        if (storedLeads) {
-          const parsedLeads: ProcessedLead[] = JSON.parse(storedLeads);
-          setMyLeads(parsedLeads);
-          setLeadsCount(parsedLeads.length);
-          // Just a simulation for "new today" - maybe random or last 24h if we had dates
-          setNewLeadsToday(Math.min(parsedLeads.length, Math.floor(Math.random() * 20) + 1));
+      
+      if (storedLeads) {
+        const parsedLeads: ProcessedLead[] = JSON.parse(storedLeads);
+        setMyLeads(parsedLeads.slice(0, 50));
+        setLeadsCount(parsedLeads.length);
+        
+        const newToday = Math.floor(parsedLeads.length * 0.15); 
+        setNewLeadsToday(newToday);
+      } else {
+        // Initialize Free Trial (7 Leads)
+        if (!trialClaimed) {
+           const trialLeads = generateMockLeads(7).map(l => ({ ...l, leadStatus: 'new' }));
+           // @ts-ignore
+           localStorage.setItem(storageKey, JSON.stringify(trialLeads));
+           localStorage.setItem(trialKey, 'true');
+           
+           // @ts-ignore
+           setMyLeads(trialLeads);
+           setLeadsCount(7);
+           setNewLeadsToday(7);
+           
+           toast({
+             title: "Welcome! 🎁",
+             description: "You've unlocked 7 Free Leads to try the platform.",
+           });
+        } else {
+           setLeadsCount(0);
+           setNewLeadsToday(0);
         }
       }
     };
@@ -139,8 +167,8 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
     const allLeads = [...existingLeads, ...newLeads];
     localStorage.setItem(storageKey, JSON.stringify(allLeads));
 
-    // Update state to reflect immediate change
-    setMyLeads(allLeads);
+    // Update state to reflect immediate change - only keep a subset in memory for display
+    setMyLeads(allLeads.slice(0, 50)); 
     setLeadsCount(allLeads.length);
 
     toast({
@@ -159,7 +187,7 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
   }
 
   return (
-    <div className="flex flex-col gap-8 max-w-[1600px] mx-auto">
+    <div className="flex flex-col gap-4 max-w-[1600px] mx-auto h-full overflow-hidden">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <h1 className="text-3xl font-bold tracking-tight text-[#1C1917]">Dashboard</h1>
@@ -190,12 +218,12 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
         </div>
       </div>
 
-      <div className="grid grid-cols-12 gap-8">
+      <div className="grid grid-cols-12 gap-6 flex-1 min-h-0 overflow-hidden">
         {/* Left Column */}
-        <div className="col-span-12 lg:col-span-8 space-y-8">
+        <div className="col-span-12 lg:col-span-8 space-y-6 flex flex-col min-h-0">
 
           {/* Overview Cards */}
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-2 gap-4">
             {/* Customers / Leads Available */}
             <Card className="rounded-[32px] border-none shadow-sm hover:shadow-md transition-shadow bg-[#1C1917] text-[#FAFAF9]">
               <CardContent className="p-8">
@@ -288,15 +316,15 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
           </div>
 
           {/* Product View - Blurred Preview */}
-          <Card className="rounded-[32px] border-none shadow-sm min-h-[400px] bg-[#1C1917] text-[#FAFAF9]">
-            <CardContent className="p-8">
-              <div className="flex justify-between items-center mb-6">
+          <Card className="rounded-[32px] border-none shadow-sm flex-1 min-h-0 bg-[#1C1917] text-[#FAFAF9] overflow-hidden flex flex-col">
+            <CardContent className="p-6 flex flex-col h-full overflow-hidden">
+              <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-bold">Product view</h3>
                 <Button variant="ghost" size="sm" className="text-stone-400 hover:text-stone-300">Last 7 days <ChevronDown className="h-4 w-4 ml-2"/></Button>
               </div>
 
               {/* The "Blurry" Content */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 relative flex-1 min-h-0 overflow-y-auto pr-2 custom-scrollbar">
                  {/* Overlay that forces login/buy */}
 
                  {PREVIEW_LEADS.map((lead, i) => (
@@ -387,28 +415,6 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
              </CardContent>
            </Card>
 
-           {/* Comments / Activity */}
-           <div className="px-4">
-             <h3 className="text-lg font-bold mb-4 text-[#1C1917]">Comments</h3>
-             <div className="bg-white rounded-3xl p-6 shadow-sm border border-stone-100">
-               <div className="flex gap-4">
-                 <Avatar className="h-10 w-10">
-                   <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" />
-                   <AvatarFallback>FL</AvatarFallback>
-                 </Avatar>
-                 <div>
-                   <div className="flex items-baseline gap-2">
-                     <span className="font-bold text-sm text-[#1C1917]">Joyce</span>
-                     <span className="text-xs text-stone-400">on Starter Pack</span>
-                   </div>
-                   <div className="text-[10px] text-stone-300 mb-2">09:00 AM</div>
-                   <p className="text-sm text-stone-600 leading-relaxed">
-                     Great quality leads! When will the HTML industry pack be available? ⚡
-                   </p>
-                 </div>
-               </div>
-             </div>
-           </div>
         </div>
       </div>
     </div>
