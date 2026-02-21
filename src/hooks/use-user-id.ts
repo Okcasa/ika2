@@ -11,14 +11,9 @@ export function useUserId() {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
           setUserId(session.user.id);
-        } else if (typeof window !== 'undefined' && localStorage.getItem('demo_mode')) {
-          setUserId('demo-user');
         }
       } catch (e) {
-        // Fallback for demo if auth fails completely
-        if (typeof window !== 'undefined' && localStorage.getItem('demo_mode')) {
-          setUserId('demo-user');
-        }
+        console.error("User ID hook failed", e);
       } finally {
         setLoading(false);
       }
