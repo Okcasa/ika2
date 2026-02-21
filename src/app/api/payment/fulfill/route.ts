@@ -11,6 +11,22 @@ const COMPLETED_TRANSACTION_STATUSES = new Set([
   'transaction.closed',
 ]);
 
+const CANCELED_TRANSACTION_STATUSES = new Set([
+  'canceled',
+  'cancelled',
+  'transaction.canceled',
+  'transaction_cancelled',
+]);
+
+const NON_FINAL_TRANSACTION_STATUSES = new Set([
+  'paid',
+  'billed',
+  'ready',
+  'draft',
+  'past_due',
+  'transaction.paid',
+]);
+
 const COMPLETED_WEBHOOK_EVENT_TYPES = new Set([
   'transaction.completed',
   'transaction_completed',
@@ -20,6 +36,12 @@ const parseRequestedLeads = (value: unknown) => {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return 0;
   return Math.max(1, Math.floor(parsed));
+};
+
+const parseCheckoutStartedAtMs = (value: unknown) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) return 0;
+  return Math.floor(parsed);
 };
 
 const extractCustomerIds = (rows: any[]) => {
@@ -117,9 +139,13 @@ export async function POST(request: Request) {
     const requestedLeads = LEADS_PER_COMPLETED_PAYMENT;
     const requestedTransactionId = typeof body?.transactionId === 'string' ? body.transactionId : '';
     const packageId = typeof body?.packageId === 'string' ? body.packageId : null;
+    const checkoutStartedAtMs = parseCheckoutStartedAtMs(body?.checkoutStartedAtMs);
 
     if (!requestedTransactionId) {
       return NextResponse.json({ error: 'transactionId is required for fulfillment.' }, { status: 400 });
+    }
+    if (!checkoutStartedAtMs) {
+      return NextResponse.json({ error: 'checkoutStartedAtMs is required for fulfillment.' }, { status: 400 });
     }
 
     if (requestedLeads < 1 || requestedLeads > 1000 || parseRequestedLeads(body?.requestedLeads) < 1) {
@@ -173,6 +199,22 @@ export async function POST(request: Request) {
     const { data: txRows, error: txErr } = await txQuery;
     if (txErr) {
       return NextResponse.json({ error: `Unable to verify transaction: ${txErr.message}` }, { status: 500 });
+    }
+    const matchedTransaction = (txRows || [])[0] as any;
+    const matchedStatus = String(matchedTransaction?.status || '').toLowerCase();
+    if (matchedTransaction && CANCELED_TRANSACTION_STATUSES.has(matchedStatus)) {
+      return NextResponse.json({
+        error: 'This transaction was canceled and cannot be fulfilled.',
+        status: matchedStatus,
+        transactionId: requestedTransactionId,
+      }, { status: 409 });
+    }
+    if (matchedTransaction && NON_FINAL_TRANSACTION_STATUSES.has(matchedStatus)) {
+      return NextResponse.json({
+        error: 'Transaction exists but is not completed yet.',
+        status: matchedStatus,
+        transactionId: requestedTransactionId,
+      }, { status: 409 });
     }
     const completedTransactions = (txRows || [])
       .filter((tx: any) =>
@@ -279,6 +321,15 @@ export async function POST(request: Request) {
         reason: 'already_fulfilled',
         transactionId: selectedTransaction.id,
       }, { status: 200 });
+    }
+
+    const txTs = Date.parse(String(selectedTransaction?.updated_at || selectedTransaction?.created_at || ''));
+    if (!Number.isFinite(txTs)) {
+      return NextResponse.json({ error: 'Transaction timestamp unavailable for validation.' }, { status: 409 });
+    }
+    // Require transaction to be tied to this checkout attempt (allow small clock skew).
+    if (txTs < checkoutStartedAtMs - 60_000) {
+      return NextResponse.json({ error: 'Completed transaction does not match this checkout session.' }, { status: 409 });
     }
 
     const { data: availableLeads, error: availableErr } = await supabaseAdmin

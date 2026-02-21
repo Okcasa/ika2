@@ -70,7 +70,7 @@ function ProductPageContent() {
   const holdIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const paymentPopupRef = useRef<Window | null>(null);
   const paymentPopupWatchRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pendingPurchaseRef = useRef<{ pkgId: string; leads: number; total: number; checkoutSessionId: string } | null>(null);
+  const pendingPurchaseRef = useRef<{ pkgId: string; leads: number; total: number; checkoutSessionId: string; checkoutStartedAtMs: number } | null>(null);
   const paymentInFlightRef = useRef(false);
   const recentTransactionRef = useRef<Set<string>>(new Set());
 
@@ -232,7 +232,7 @@ function ProductPageContent() {
     ]);
   };
 
-  const fulfillPurchasedLeads = async (payload?: { leads?: number; packageId?: string; transactionId?: string }) => {
+  const fulfillPurchasedLeads = async (payload?: { leads?: number; packageId?: string; transactionId?: string; checkoutStartedAtMs?: number }) => {
     if (paymentInFlightRef.current) return;
     const transactionId = typeof payload?.transactionId === 'string' ? payload.transactionId : '';
     if (!transactionId) {
@@ -258,6 +258,7 @@ function ProductPageContent() {
       const requestedLeads = Number(payload?.leads || fallback?.leads || currentLeads);
       const packageId = payload?.packageId || fallback?.pkgId || 'standard';
       const total = Number(fallback?.total || getBundlePrice(requestedLeads));
+      const checkoutStartedAtMs = Number(payload?.checkoutStartedAtMs || fallback?.checkoutStartedAtMs || 0);
 
       let response: Response | null = null;
       let json: any = null;
@@ -272,6 +273,7 @@ function ProductPageContent() {
             requestedLeads,
             packageId,
             transactionId,
+            checkoutStartedAtMs: Number.isFinite(checkoutStartedAtMs) ? checkoutStartedAtMs : 0,
           }),
         });
         json = await response.json().catch(() => ({}));
@@ -336,6 +338,7 @@ function ProductPageContent() {
         leads: Number(data?.leads || 0),
         packageId: typeof data?.packageId === 'string' ? data.packageId : undefined,
         transactionId: extractTransactionId(data),
+        checkoutStartedAtMs: pending.checkoutStartedAtMs,
       });
     };
     window.addEventListener('message', onPaymentMessage);
@@ -355,7 +358,13 @@ function ProductPageContent() {
     const checkoutSessionId = (typeof crypto !== 'undefined' && crypto.randomUUID)
       ? crypto.randomUUID()
       : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-    pendingPurchaseRef.current = { pkgId, leads: selectedLeads, total: selectedTotal, checkoutSessionId };
+    pendingPurchaseRef.current = {
+      pkgId,
+      leads: selectedLeads,
+      total: selectedTotal,
+      checkoutSessionId,
+      checkoutStartedAtMs: Date.now(),
+    };
 
     const params = new URLSearchParams({
       uid: session.user.id,
