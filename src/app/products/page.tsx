@@ -70,7 +70,7 @@ function ProductPageContent() {
   const holdIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const paymentPopupRef = useRef<Window | null>(null);
   const paymentPopupWatchRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pendingPurchaseRef = useRef<{ pkgId: string; leads: number; total: number } | null>(null);
+  const pendingPurchaseRef = useRef<{ pkgId: string; leads: number; total: number; checkoutSessionId: string } | null>(null);
   const paymentInFlightRef = useRef(false);
   const recentTransactionRef = useRef<Set<string>>(new Set());
 
@@ -307,13 +307,7 @@ function ProductPageContent() {
   };
 
   useEffect(() => {
-    const successTypes = new Set([
-      'ika:paddle_payment_success',
-      'transaction_closed',
-      'transaction.closed',
-      'paddle:transaction_closed',
-      'paddle:transaction.closed',
-    ]);
+    const successTypes = new Set(['paddle:transaction.completed']);
 
     const extractTransactionId = (data: any): string | undefined => {
       const possible = [
@@ -331,6 +325,10 @@ function ProductPageContent() {
       const data = event.data || {};
       const messageType = String(data?.type || data?.eventType || '');
       if (!successTypes.has(messageType)) return;
+      const pending = pendingPurchaseRef.current;
+      if (!pending) return;
+      const checkoutSessionId = String(data?.checkoutSessionId || '');
+      if (!checkoutSessionId || checkoutSessionId !== pending.checkoutSessionId) return;
       try {
         paymentPopupRef.current?.close();
       } catch {}
@@ -354,7 +352,10 @@ function ProductPageContent() {
       ? (customLeads || quantities.standard || currentLeads)
       : (PACKAGES.find((p) => p.id === pkgId)?.leads || currentLeads);
     const selectedTotal = customCost || getBundlePrice(selectedLeads);
-    pendingPurchaseRef.current = { pkgId, leads: selectedLeads, total: selectedTotal };
+    const checkoutSessionId = (typeof crypto !== 'undefined' && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    pendingPurchaseRef.current = { pkgId, leads: selectedLeads, total: selectedTotal, checkoutSessionId };
 
     const params = new URLSearchParams({
       uid: session.user.id,
@@ -362,6 +363,7 @@ function ProductPageContent() {
       pkg: pkgId,
       price: selectedTotal.toFixed(2),
       origin: window.location.origin,
+      ck: checkoutSessionId,
     });
     const popupUrl = `${window.location.origin}/checkout/paddle?${params.toString()}`;
     const popupName = "automa_checkout";

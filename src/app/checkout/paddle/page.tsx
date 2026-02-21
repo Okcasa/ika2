@@ -23,6 +23,7 @@ export default function PaddlePopupCheckoutPage() {
   const params = useMemo(() => new URLSearchParams(typeof window !== 'undefined' ? window.location.search : ''), []);
   const pkg = params.get('pkg') || 'standard';
   const requestedLeads = toInt(params.get('leads'), MIN_CUSTOM_LEADS);
+  const checkoutSessionId = params.get('ck') || '';
 
   const paddleToken = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN || '';
   const paddleEnv = (process.env.NEXT_PUBLIC_PADDLE_ENV || 'sandbox').toLowerCase();
@@ -42,11 +43,12 @@ export default function PaddlePopupCheckoutPage() {
       if (window.opener && !window.opener.closed) {
         window.opener.postMessage(
           {
-            type: 'paddle:transaction.closed',
+            type: 'paddle:transaction.completed',
             transactionId,
             priceId,
             leads,
             packageId,
+            checkoutSessionId,
           },
           window.location.origin
         );
@@ -125,7 +127,7 @@ export default function PaddlePopupCheckoutPage() {
     return () => {
       script.remove();
     };
-  }, [paddleEnv, paddleToken, pkg, price180, price280, price90, priceCustom, requestedLeads]);
+  }, [checkoutSessionId, paddleEnv, paddleToken, pkg, price180, price280, price90, priceCustom, requestedLeads]);
 
   return (
     <main
