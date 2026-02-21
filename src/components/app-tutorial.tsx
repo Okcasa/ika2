@@ -123,6 +123,7 @@ export function AppTutorial() {
   const [isOpen, setIsOpen] = useState(false);
   const [authReady, setAuthReady] = useState(false);
   const [isAuthed, setIsAuthed] = useState(false);
+  const [authGatePassed, setAuthGatePassed] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
 
@@ -160,6 +161,19 @@ export function AppTutorial() {
 
   useEffect(() => {
     if (!authReady || !isAuthed) {
+      setAuthGatePassed(false);
+      return;
+    }
+
+    const openDelayTimer = setTimeout(() => {
+      setAuthGatePassed(true);
+    }, 1500);
+
+    return () => clearTimeout(openDelayTimer);
+  }, [authReady, isAuthed]);
+
+  useEffect(() => {
+    if (!authReady || !isAuthed || !authGatePassed) {
       setIsOpen(false);
       return;
     }
@@ -198,7 +212,7 @@ export function AppTutorial() {
     }
 
     setIsOpen(false);
-  }, [authReady, isAuthed, pathname, routeIndex, steps.length]);
+  }, [authGatePassed, authReady, isAuthed, pathname, routeIndex, steps.length]);
 
   useEffect(() => {
     if (!isOpen || routeIndex < 0) return;
@@ -206,7 +220,7 @@ export function AppTutorial() {
   }, [isOpen, routeIndex, stepIndex]);
 
   useEffect(() => {
-    if (!authReady || !isAuthed) return;
+    if (!authReady || !isAuthed || !authGatePassed) return;
     if (typeof window === 'undefined') return;
     const handleReplay = (event: Event) => {
       const custom = event as CustomEvent<TutorialReplayDetail>;
@@ -253,7 +267,7 @@ export function AppTutorial() {
     return () => {
       window.removeEventListener('tutorial:redo', handleReplay as EventListener);
     };
-  }, [authReady, isAuthed, pathname, routeIndex, router, steps.length]);
+  }, [authGatePassed, authReady, isAuthed, pathname, routeIndex, router, steps.length]);
 
   useEffect(() => {
     if (!isOpen || !currentStep) {
