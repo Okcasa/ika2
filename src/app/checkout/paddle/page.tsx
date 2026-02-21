@@ -87,13 +87,20 @@ export default function PaddlePopupCheckoutPage() {
             }
             if (event?.name === 'checkout.completed') {
               const txId = String(event?.data?.transaction_id || '');
-              setStatus('Payment complete. Closing...');
+              setStatus('Payment complete. Closing in 3...');
               postSuccess(txId, checkout.priceId, checkout.leads, checkout.packageId);
-              window.setTimeout(() => {
-                try {
-                  window.close();
-                } catch {}
-              }, 500);
+              let remaining = 2;
+              const countdownTimer = window.setInterval(() => {
+                if (remaining <= 0) {
+                  window.clearInterval(countdownTimer);
+                  try {
+                    window.close();
+                  } catch {}
+                  return;
+                }
+                setStatus(`Payment complete. Closing in ${remaining}...`);
+                remaining -= 1;
+              }, 1000);
             }
           },
         });
@@ -138,4 +145,3 @@ export default function PaddlePopupCheckoutPage() {
     </main>
   );
 }
-

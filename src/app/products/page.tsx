@@ -234,6 +234,14 @@ function ProductPageContent() {
 
   const fulfillPurchasedLeads = async (payload?: { leads?: number; packageId?: string; transactionId?: string }) => {
     if (paymentInFlightRef.current) return;
+    const transactionId = typeof payload?.transactionId === 'string' ? payload.transactionId : '';
+    if (!transactionId) {
+      toast({
+        title: 'Checkout not completed',
+        description: 'No completed transaction found for this checkout session.',
+      });
+      return;
+    }
     paymentInFlightRef.current = true;
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -263,7 +271,7 @@ function ProductPageContent() {
           body: JSON.stringify({
             requestedLeads,
             packageId,
-            transactionId: payload?.transactionId || null,
+            transactionId,
           }),
         });
         json = await response.json().catch(() => ({}));
@@ -386,7 +394,11 @@ function ProductPageContent() {
           paymentPopupWatchRef.current = null;
         }
         if (pendingPurchaseRef.current) {
-          void fulfillPurchasedLeads();
+          pendingPurchaseRef.current = null;
+          toast({
+            title: 'Purchase not completed',
+            description: 'No payment was captured. You can try checkout again.',
+          });
         }
       }
     }, 900);
