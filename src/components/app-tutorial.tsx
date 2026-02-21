@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 type TutorialStep = {
   selector: string;
@@ -120,6 +121,8 @@ export function AppTutorial() {
   const router = useRouter();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
+  const [isAuthed, setIsAuthed] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
 
@@ -132,6 +135,34 @@ export function AppTutorial() {
   );
 
   useEffect(() => {
+    let mounted = true;
+
+    const loadSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!mounted) return;
+      setIsAuthed(Boolean(data.session));
+      setAuthReady(true);
+    };
+
+    loadSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
+      setIsAuthed(Boolean(session));
+      setAuthReady(true);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!authReady || !isAuthed) {
+      setIsOpen(false);
+      return;
+    }
     if (!pathname || steps.length === 0) {
       setIsOpen(false);
       return;
@@ -167,7 +198,7 @@ export function AppTutorial() {
     }
 
     setIsOpen(false);
-  }, [pathname, routeIndex, steps.length]);
+  }, [authReady, isAuthed, pathname, routeIndex, steps.length]);
 
   useEffect(() => {
     if (!isOpen || routeIndex < 0) return;
@@ -175,6 +206,7 @@ export function AppTutorial() {
   }, [isOpen, routeIndex, stepIndex]);
 
   useEffect(() => {
+    if (!authReady || !isAuthed) return;
     if (typeof window === 'undefined') return;
     const handleReplay = (event: Event) => {
       const custom = event as CustomEvent<TutorialReplayDetail>;
@@ -221,7 +253,7 @@ export function AppTutorial() {
     return () => {
       window.removeEventListener('tutorial:redo', handleReplay as EventListener);
     };
-  }, [pathname, routeIndex, router, steps.length]);
+  }, [authReady, isAuthed, pathname, routeIndex, router, steps.length]);
 
   useEffect(() => {
     if (!isOpen || !currentStep) {
