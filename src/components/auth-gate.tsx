@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { AuthDialog } from '@/components/auth-dialog';
 import { cn } from '@/lib/utils';
@@ -10,7 +10,6 @@ const GATED_PATHS = new Set(['/shop', '/leads', '/customers', '/products', '/log
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [authOpen, setAuthOpen] = useState(false);
   const [isAuthed, setIsAuthed] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
@@ -86,10 +85,22 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!isGated) return;
-    if (searchParams?.get('auth') === 'true') {
-      setAuthOpen(true);
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      if (searchParams.get('auth') === 'true') {
+        setAuthOpen(true);
+      }
     }
-  }, [isGated, searchParams]);
+  }, [isGated, pathname]);
+  useEffect(() => {
+    if (!isGated) return;
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      if (searchParams.get('auth') === 'true') {
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    }
+  }, [isGated, pathname]);
 
   useEffect(() => {
     const handleOpen = () => {

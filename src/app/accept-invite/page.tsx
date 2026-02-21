@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/lib/supabase';
 
-export default function AcceptInvitePage() {
+function AcceptInvitePageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = useMemo(() => searchParams?.get('token') || '', [searchParams]);
@@ -148,5 +148,13 @@ export default function AcceptInvitePage() {
         </CardContent>
       </Card>
     </main>
+  );
+}
+
+export default function AcceptInvitePage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen app-shell-bg app-shell-text p-6 flex items-center justify-center">Loading invite...</main>}>
+      <AcceptInvitePageContent />
+    </Suspense>
   );
 }

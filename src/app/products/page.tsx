@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { Suspense, useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Sidebar } from '@/components/sidebar';
 import { Button } from '@/components/ui/button';
@@ -731,16 +731,18 @@ function ProductPageContent() {
 
 export default function RootProductsPage() {
   return (
-    <div className="flex min-h-screen app-shell-bg app-shell-text">
-      <div className="hidden md:block fixed left-0 top-0 h-full z-50">
-        <Sidebar />
+    <Suspense fallback={<div className="min-h-screen app-shell-bg app-shell-text" />}>
+      <div className="flex min-h-screen app-shell-bg app-shell-text">
+        <div className="hidden md:block fixed left-0 top-0 h-full z-50">
+          <Sidebar />
+        </div>
+        <main 
+          className="flex-1 p-0 min-h-screen relative z-0 transition-[margin] duration-75"
+          style={{ marginLeft: 'var(--sidebar-width, 256px)' }}
+        >
+          <ProductPageContent />
+        </main>
       </div>
-      <main 
-        className="flex-1 p-0 min-h-screen relative z-0 transition-[margin] duration-75"
-        style={{ marginLeft: 'var(--sidebar-width, 256px)' }}
-      >
-        <ProductPageContent />
-      </main>
-    </div>
+    </Suspense>
   );
 }
