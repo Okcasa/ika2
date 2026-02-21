@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lead Credits Checkout (Sandbox)</title>
+  <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+  <style>
+    :root {
+      --bg: radial-gradient(circle at 10% 10%, #fef3c7 0%, #fde68a 20%, #f8fafc 65%);
+      --ink: #111827;
+      --muted: #374151;
+      --accent: #ef4444;
+      --card: rgba(255, 255, 255, 0.88);
+      --border: rgba(17, 24, 39, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Space Grotesk", "Avenir Next", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .card {
+      width: min(92vw, 560px);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 28px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 18px 48px rgba(15, 23, 42, 0.16);
+      animation: rise 420ms ease-out;
+    }
+
+    @keyframes rise {
+      from { transform: translateY(16px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    h1 { margin: 0 0 8px; font-size: clamp(1.5rem, 4vw, 2rem); }
+    p { margin: 0 0 18px; color: var(--muted); line-height: 1.45; }
+
+    .bundle {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      margin-bottom: 18px;
+      background: rgba(255, 255, 255, 0.85);
+    }
+
+    .price { font-size: 1.9rem; font-weight: 700; margin: 0; }
+    .meta { margin: 6px 0 0; color: var(--muted); font-size: 0.95rem; }
+    .preset-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+      margin: 12px 0 10px;
+    }
+    .preset-btn {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #ffffff;
+      color: var(--ink);
+      padding: 8px 6px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .preset-btn.active {
+      background: #111827;
+      color: #ffffff;
+      border-color: #111827;
+    }
+    .qty-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .qty-row label { font-size: 0.88rem; color: #4b5563; font-weight: 700; }
+    .qty-row input {
+      width: 110px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.9);
+    }
+    #checkout-btn {
+      appearance: none;
+      width: 100%;
+      border: 0;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 1rem;
+      font-weight: 700;
+      background: linear-gradient(120deg, #ef4444, #f97316);
+      color: white;
+      cursor: pointer;
+      transition: transform 120ms ease, filter 120ms ease;
+    }
+
+    #checkout-btn:hover { transform: translateY(-1px); filter: saturate(1.05); }
+    #checkout-btn:active { transform: translateY(0); }
+
+    .status {
+      margin-top: 12px;
+      font-size: 0.93rem;
+      color: #14532d;
+      min-height: 1.2em;
+    }
+
+    .small { margin-top: 14px; font-size: 0.82rem; color: #6b7280; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Buy Lead Credits (Sandbox)</h1>
+    <p>Secure checkout powered by Paddle sandbox. Test payments only.</p>
+
+    <section class="bundle" aria-label="Bundle details">
+      <p class="price" id="display-price">$0.60</p>
+      <p class="meta" id="display-meta">5 lead credits · one-time · $0.12 per lead</p>
+      <div class="preset-grid" id="preset-grid">
+        <button type="button" class="preset-btn" data-pack="p30">30</button>
+        <button type="button" class="preset-btn" data-pack="p90">90</button>
+        <button type="button" class="preset-btn" data-pack="p180">180</button>
+        <button type="button" class="preset-btn" data-pack="p280">280</button>
+        <button type="button" class="preset-btn active" data-pack="custom">Custom</button>
+      </div>
+      <div class="qty-row">
+        <label for="qty-input">Lead quantity (min 5)</label>
+        <input id="qty-input" type="number" min="5" step="1" value="5" />
+      </div>
+    </section>
+
+    <button id="checkout-btn" type="button">Checkout Now</button>
+    <div id="status" class="status"></div>
+    <p class="small">Price ID: <code id="price-id-code">pri_01khzt0zqn7c48rqsgw90sdkm3</code></p>
+  </main>
+
+  <script>
+    const CLIENT_TOKEN = new URLSearchParams(window.location.search).get("client_token") || "";
+    const UNIT_PRICE = 0.12;
+    const MIN_QTY = 5;
+    const PACKS = {
+      p30: { priceId: "pri_01khzt0zkxeyxqyrw26z10hza0", leads: 30, total: 3.5, meta: "30 lead pack · one-time" },
+      p90: { priceId: "pri_01khzt0zvb6wmjjz5wfpay3zgy", leads: 90, total: 7.0, meta: "90 lead pack · one-time" },
+      p180: { priceId: "pri_01khzt0zyr2j5c8szmc0bj159z", leads: 180, total: 15.35, meta: "180 lead pack · one-time" },
+      p280: { priceId: "pri_01khzt102fa2c34jwr9rxd6vj5", leads: 280, total: 30.0, meta: "280 lead pack · one-time" },
+      custom: { priceId: "pri_01khzt0zqn7c48rqsgw90sdkm3", leads: null, total: null, meta: "Custom leads · one-time · $0.12 per lead" },
+    };
+
+    const statusEl = document.getElementById("status");
+    const button = document.getElementById("checkout-btn");
+    const qtyInput = document.getElementById("qty-input");
+    const qtyRow = document.querySelector(".qty-row");
+    const displayPrice = document.getElementById("display-price");
+    const displayMeta = document.getElementById("display-meta");
+    const priceIdCode = document.getElementById("price-id-code");
+    const presetButtons = Array.from(document.querySelectorAll(".preset-btn"));
+    const params = new URLSearchParams(window.location.search);
+    let selectedPack = "custom";
+
+    function parseTypedQty(rawValue) {
+      const raw = String(rawValue ?? "").trim();
+      if (!raw) return null;
+      const parsed = Number.parseInt(raw, 10);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    function normalizeQty(rawValue) {
+      const parsed = parseTypedQty(rawValue);
+      if (parsed === null) return MIN_QTY;
+      return Math.max(MIN_QTY, parsed);
+    }
+
+    function formatMoney(value) {
+      return "$" + Number(value).toFixed(2);
+    }
+
+    function renderCustomPreview(qty) {
+      const total = (qty * UNIT_PRICE).toFixed(2);
+      displayPrice.textContent = "$" + total;
+      displayMeta.textContent = qty + " lead credits · one-time · $" + UNIT_PRICE.toFixed(2) + " per lead";
+    }
+
+    function commitQty() {
+      const qty = normalizeQty(qtyInput.value);
+      qtyInput.value = String(qty);
+      if (selectedPack === "custom") {
+        renderCustomPreview(qty);
+      }
+      return qty;
+    }
+
+    function renderSelectedPack() {
+      const pack = PACKS[selectedPack];
+      presetButtons.forEach((btn) => btn.classList.toggle("active", btn.dataset.pack === selectedPack));
+      priceIdCode.textContent = pack.priceId;
+
+      if (selectedPack === "custom") {
+        qtyRow.style.display = "grid";
+        commitQty();
+        return;
+      }
+
+      qtyRow.style.display = "none";
+      displayPrice.textContent = formatMoney(pack.total);
+      displayMeta.textContent = pack.meta;
+    }
+
+    function setSelectedPack(packKey) {
+      if (!PACKS[packKey]) return;
+      selectedPack = packKey;
+      renderSelectedPack();
+    }
+
+    const requestedLeads = parseTypedQty(params.get("leads"));
+    const pkg = String(params.get("pkg") || "");
+    const leadsToPack = { 30: "p30", 90: "p90", 180: "p180", 280: "p280" };
+    const pkgToPack = { growth: "p90", pro: "p180", enterprise: "p280" };
+
+    qtyInput.value = String(normalizeQty(requestedLeads));
+    if (pkgToPack[pkg]) {
+      selectedPack = pkgToPack[pkg];
+    } else if (leadsToPack[requestedLeads]) {
+      selectedPack = leadsToPack[requestedLeads];
+    } else {
+      selectedPack = "custom";
+    }
+
+    presetButtons.forEach((btn) => {
+      btn.addEventListener("click", () => setSelectedPack(btn.dataset.pack));
+    });
+
+    qtyInput.addEventListener("input", () => {
+      if (selectedPack !== "custom") return;
+      const typed = parseTypedQty(qtyInput.value);
+      if (typed === null) return;
+      renderCustomPreview(typed);
+    });
+    qtyInput.addEventListener("blur", commitQty);
+    renderSelectedPack();
+
+    if (!CLIENT_TOKEN) {
+      statusEl.textContent = "Missing Paddle client token. Pass ?client_token=test_... to this page.";
+      button.disabled = true;
+    } else {
+      Paddle.Environment.set("sandbox");
+      Paddle.Initialize({
+      token: CLIENT_TOKEN,
+      eventCallback: (event) => {
+        if (event.name === "checkout.error") {
+          const message = event?.data?.message || "Checkout failed. Please retry.";
+          statusEl.textContent = message;
+          console.error("Paddle checkout error", event);
+          return;
+        }
+        if (event.name === "checkout.completed") {
+          const txId = event.data?.transaction_id || "";
+          statusEl.textContent = `Payment complete${txId ? ` · ${txId}` : ""}`;
+          if (window.opener && !window.opener.closed) {
+            const pack = PACKS[selectedPack];
+            const qty = selectedPack === "custom" ? commitQty() : 1;
+            const leads = selectedPack === "custom" ? qty : pack.leads;
+            window.opener.postMessage(
+              {
+                type: "paddle:transaction.closed",
+                transactionId: txId,
+                priceId: pack.priceId,
+                leads,
+                packageId: selectedPack === "custom" ? "custom" : selectedPack,
+              },
+              "*"
+            );
+          }
+        }
+      }
+    });
+    }
+
+    button.addEventListener("click", () => {
+      const pack = PACKS[selectedPack];
+      const qty = selectedPack === "custom" ? commitQty() : 1;
+      statusEl.textContent = "Opening checkout...";
+      Paddle.Checkout.open({
+        items: [{ priceId: pack.priceId, quantity: qty }],
+        settings: {
+          variant: "one-page",
+          displayMode: "overlay",
+          theme: "light",
+          locale: "en",
+        }
+      });
+    });
+  </script>
+</body>
+</html>

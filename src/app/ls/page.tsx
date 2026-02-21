@@ -42,6 +42,7 @@ const buildMarketplacePayload = (lead: any) => ({
 export default function AdminUploadPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [accessKey, setAccessKey] = useState('');
+  const adminAccessKey = process.env.NEXT_PUBLIC_ADMIN_ACCESS_KEY || '';
   const [allLeads, setAllLeads] = useState<ProcessedLead[]>([]);
   const [visibleLeads, setVisibleLeads] = useState<ProcessedLead[]>([]);
   const [editingLead, setEditingLead] = useState<ProcessedLead | null>(null);
@@ -68,7 +69,7 @@ export default function AdminUploadPage() {
   }, []);
 
   const handleCheckKey = () => {
-    if (accessKey === 'okcasa') { // Simple secret key
+    if (adminAccessKey && accessKey === adminAccessKey) {
       setIsAuthorized(true);
       toast({ title: "Access Granted", description: "Welcome to the Admin Workspace." });
     } else {

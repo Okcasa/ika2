@@ -319,7 +319,7 @@ function ProductPageContent() {
     };
 
     const onPaymentMessage = (event: MessageEvent) => {
-      if (event.origin !== 'https://paddle-webhook-live.okcasa27.workers.dev') return;
+      if (event.origin !== window.location.origin) return;
       const data = event.data || {};
       const messageType = String(data?.type || data?.eventType || '');
       if (!successTypes.has(messageType)) return;
@@ -355,7 +355,7 @@ function ProductPageContent() {
       price: selectedTotal.toFixed(2),
       origin: window.location.origin,
     });
-    const popupUrl = `https://paddle-webhook-live.okcasa27.workers.dev/checkout?${params.toString()}`;
+    const popupUrl = `${window.location.origin}/checkout/paddle?${params.toString()}`;
     const popupName = "automa_checkout";
     const width = 1000;
     const height = 720;

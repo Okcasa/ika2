@@ -1,0 +1,5 @@
+name = "paddle-webhook-live"
+main = "src/index.ts"
+compatibility_date = "2026-02-18"
+workers_dev = true
+account_id = "674e5e77a0d9bff86136ee6617c75ad0"

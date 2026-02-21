@@ -24,6 +24,12 @@
 # misc
 .DS_Store
 *.pem
+.idx/
+.modified
+dev_server.log
+next
+nextn@0.1.0
+test-results/
 
 # debug
 npm-debug.log*
