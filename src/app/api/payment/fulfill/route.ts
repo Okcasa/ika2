@@ -118,6 +118,10 @@ export async function POST(request: Request) {
     const requestedTransactionId = typeof body?.transactionId === 'string' ? body.transactionId : '';
     const packageId = typeof body?.packageId === 'string' ? body.packageId : null;
 
+    if (!requestedTransactionId) {
+      return NextResponse.json({ error: 'transactionId is required for fulfillment.' }, { status: 400 });
+    }
+
     if (requestedLeads < 1 || requestedLeads > 1000 || parseRequestedLeads(body?.requestedLeads) < 1) {
       return NextResponse.json({ error: 'Invalid lead count.' }, { status: 400 });
     }
@@ -164,10 +168,7 @@ export async function POST(request: Request) {
       .in('customer_id', customerIds)
       .order('updated_at', { ascending: false })
       .limit(50);
-
-    if (requestedTransactionId) {
-      txQuery = txQuery.eq('id', requestedTransactionId);
-    }
+    txQuery = txQuery.eq('id', requestedTransactionId);
 
     const { data: txRows, error: txErr } = await txQuery;
     if (txErr) {
@@ -202,7 +203,7 @@ export async function POST(request: Request) {
 
       // If webhook mirror table is unavailable in this environment, keep existing behavior.
       if (!webhookErr && Array.isArray(webhookRows)) {
-        const derivedTransactions = webhookRows
+      const derivedTransactions = webhookRows
           .filter((row: any) => COMPLETED_WEBHOOK_EVENT_TYPES.has(extractWebhookEventType(row)))
           .map((row: any) => ({
             id: extractWebhookTransactionId(row),
@@ -212,7 +213,7 @@ export async function POST(request: Request) {
             (row): row is { id: string; customer_id: string | null } =>
               typeof row.id === 'string' && row.id.length > 0
           )
-          .filter((row) => !requestedTransactionId || row.id === requestedTransactionId)
+          .filter((row) => row.id === requestedTransactionId)
           .filter((row) => {
             if (!row.customer_id) return true;
             return customerIds.includes(row.customer_id);
