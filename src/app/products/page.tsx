@@ -321,7 +321,10 @@ function ProductPageContent() {
   };
 
   useEffect(() => {
-    const successTypes = new Set(['paddle:transaction.completed']);
+    const successTypes = new Set(['paddle:transaction.completed', 'paddle:transaction.closed']);
+    const workerCheckoutOrigin =
+      process.env.NEXT_PUBLIC_PADDLE_CHECKOUT_ORIGIN ||
+      'https://paddle-webhook-live.okcasa27.workers.dev';
 
     const extractTransactionId = (data: any): string | undefined => {
       const possible = [
@@ -335,14 +338,18 @@ function ProductPageContent() {
     };
 
     const onPaymentMessage = (event: MessageEvent) => {
-      if (event.origin !== window.location.origin) return;
+      const isSameOrigin = event.origin === window.location.origin;
+      const isWorkerOrigin = event.origin === workerCheckoutOrigin;
+      if (!isSameOrigin && !isWorkerOrigin) return;
       const data = event.data || {};
       const messageType = String(data?.type || data?.eventType || '');
       if (!successTypes.has(messageType)) return;
       const pending = pendingPurchaseRef.current;
       if (!pending) return;
       const checkoutSessionId = String(data?.checkoutSessionId || '');
-      if (!checkoutSessionId || checkoutSessionId !== pending.checkoutSessionId) return;
+      const hasMatchingSession = checkoutSessionId && checkoutSessionId === pending.checkoutSessionId;
+      const isTrustedWorkerMessage = isWorkerOrigin && messageType === 'paddle:transaction.closed';
+      if (!hasMatchingSession && !isTrustedWorkerMessage) return;
       try {
         paymentPopupRef.current?.close();
       } catch {}
@@ -386,7 +393,10 @@ function ProductPageContent() {
       origin: window.location.origin,
       ck: checkoutSessionId,
     });
-    const popupUrl = `${window.location.origin}/checkout/paddle?${params.toString()}`;
+    const checkoutBaseUrl =
+      process.env.NEXT_PUBLIC_PADDLE_CHECKOUT_URL ||
+      'https://paddle-webhook-live.okcasa27.workers.dev/';
+    const popupUrl = `${checkoutBaseUrl.replace(/\/$/, '')}/?${params.toString()}`;
     const popupName = "automa_checkout";
     const width = 1000;
     const height = 720;
