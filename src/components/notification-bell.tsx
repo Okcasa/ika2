@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Bell } from 'lucide-react';
+import { Bell, CreditCard, Sparkles } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -63,6 +63,23 @@ export function NotificationBell({
     storeNotifications(next);
   };
 
+  const formatBody = (item: AppNotification) => {
+    if (item.kind === 'payment') {
+      const leadText = Number.isFinite(item.leads) ? `${item.leads} lead${item.leads === 1 ? '' : 's'}` : 'Lead package';
+      const amountText =
+        Number.isFinite(item.amount)
+          ? new Intl.NumberFormat(undefined, {
+              style: 'currency',
+              currency: item.currency || 'USD',
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            }).format(item.amount as number)
+          : '';
+      return amountText ? `${leadText} added • ${amountText} paid` : `${leadText} added`;
+    }
+    return item.text;
+  };
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -86,14 +103,14 @@ export function NotificationBell({
       <PopoverContent
         align="end"
         className={cn(
-          'w-80 rounded-2xl border border-stone-200 bg-[#F5F5F4] text-stone-900 p-0 overflow-hidden shadow-lg',
+          'w-96 rounded-2xl border border-stone-200 bg-[#F5F5F4] text-stone-900 p-0 overflow-hidden shadow-lg font-poppins',
           popoverClassName
         )}
       >
         <div className="border-b border-stone-100 px-4 py-3 flex items-center justify-between">
           <div>
-            <div className="text-sm font-bold text-stone-900">Notifications</div>
-            <div className="text-xs text-stone-500">Team activity and lead updates</div>
+            <div className="text-base font-extrabold text-stone-900">Notifications</div>
+            <div className="text-xs font-semibold text-stone-500">Team activity and lead updates</div>
           </div>
           {unreadCount > 0 && (
             <button
@@ -106,7 +123,7 @@ export function NotificationBell({
           )}
         </div>
 
-        <div className="max-h-80 overflow-y-auto p-2 space-y-2">
+        <div className="max-h-96 overflow-y-auto p-3 space-y-2">
           {notifications.length === 0 ? (
             <div className="rounded-xl border border-dashed border-stone-300 bg-[#F5F5F4] px-3 py-4 text-center text-xs text-stone-500">
               No notifications yet.
@@ -116,12 +133,33 @@ export function NotificationBell({
               <div
                 key={item.id}
                 className={cn(
-                  'rounded-xl border px-3 py-2.5',
-                  item.read ? 'border-stone-100 bg-white' : 'border-blue-100 bg-blue-50/40'
+                  'rounded-2xl border px-3 py-3',
+                  item.read
+                    ? 'border-stone-100 bg-white'
+                    : item.kind === 'payment'
+                      ? 'border-violet-200 bg-gradient-to-r from-violet-50 to-fuchsia-50'
+                      : 'border-blue-100 bg-blue-50/40'
                 )}
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div className="text-sm font-medium text-stone-800 leading-snug">{item.text}</div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={cn(
+                          'inline-flex h-7 w-7 items-center justify-center rounded-full',
+                          item.kind === 'payment' ? 'bg-violet-100 text-violet-700' : 'bg-stone-100 text-stone-600'
+                        )}
+                      >
+                        {item.kind === 'payment' ? <CreditCard className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+                      </span>
+                      <div className="text-sm font-bold text-stone-900 leading-snug">
+                        {item.title || (item.kind === 'payment' ? 'Payment completed' : 'Notification')}
+                      </div>
+                    </div>
+                    <div className="mt-1 text-sm font-semibold text-stone-700 leading-snug">
+                      {formatBody(item)}
+                    </div>
+                  </div>
                   <button
                     type="button"
                     onClick={() => deleteOne(item.id)}
@@ -131,7 +169,7 @@ export function NotificationBell({
                   </button>
                 </div>
                 <div className="mt-2 flex items-center justify-between">
-                  <div className="text-[11px] text-stone-400">
+                  <div className="text-[11px] font-medium text-stone-400">
                     {formatDistanceToNow(item.at, { addSuffix: true })}
                   </div>
                   {!item.read && (

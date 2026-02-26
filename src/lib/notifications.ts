@@ -1,6 +1,11 @@
 export type AppNotification = {
   id: string;
+  kind?: 'payment' | 'info';
+  title?: string;
   text: string;
+  leads?: number;
+  amount?: number;
+  currency?: string;
   at: number;
   read: boolean;
 };
@@ -13,7 +18,15 @@ const sanitize = (items: AppNotification[]): AppNotification[] =>
     .filter((item) => item && typeof item.id === 'string')
     .map((item) => ({
       id: String(item.id),
+      kind:
+        item.kind === 'payment' || item.kind === 'info'
+          ? item.kind
+          : 'info',
+      title: item.title ? String(item.title) : undefined,
       text: String(item.text || ''),
+      leads: Number.isFinite(Number(item.leads)) ? Number(item.leads) : undefined,
+      amount: Number.isFinite(Number(item.amount)) ? Number(item.amount) : undefined,
+      currency: item.currency ? String(item.currency).toUpperCase() : 'USD',
       at: Number(item.at) || Date.now(),
       read: Boolean(item.read),
     }))

@@ -210,21 +210,29 @@ function ProductPageContent() {
     });
   };
 
-  const pushPaymentNotification = (grantedCount: number, transactionId?: string) => {
+  const pushPaymentNotification = (grantedCount: number, totalAmount: number, transactionId?: string) => {
     if (transactionId && recentTransactionRef.current.has(transactionId)) return;
     if (transactionId) {
       recentTransactionRef.current.add(transactionId);
     }
 
     const existing = getStoredNotifications();
-    const message = transactionId
-      ? `Transaction ${transactionId} completed. ${grantedCount} leads were added.`
-      : `${grantedCount} leads were added after your payment.`;
+    const message = `${grantedCount} leads added • ${new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(totalAmount)} paid`;
 
     storeNotifications([
       {
         id: transactionId || `payment-${Date.now()}`,
+        kind: 'payment',
+        title: 'Payment completed',
         text: message,
+        leads: grantedCount,
+        amount: Number.isFinite(totalAmount) ? totalAmount : undefined,
+        currency: 'USD',
         at: Date.now(),
         read: false,
       },
@@ -291,7 +299,11 @@ function ProductPageContent() {
       recordPurchaseHistory(packName, grantedCount, total, json?.transactionId);
       setAvailableLeadsCount((prev) => Math.max(0, prev - grantedCount));
       pendingPurchaseRef.current = null;
-      pushPaymentNotification(grantedCount, typeof json?.transactionId === 'string' ? json.transactionId : undefined);
+      pushPaymentNotification(
+        grantedCount,
+        Number.isFinite(total) ? total : 0,
+        typeof json?.transactionId === 'string' ? json.transactionId : undefined
+      );
       window.dispatchEvent(new Event('leads:refresh'));
       toast({
         title: 'Payment complete',

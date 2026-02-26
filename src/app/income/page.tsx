@@ -295,12 +295,12 @@ function IncomePageContent() {
   };
 
   return (
-    <div className="p-8 space-y-8 app-shell-bg app-shell-text min-h-screen">
+    <div className="p-8 space-y-8 app-shell-bg app-shell-text min-h-screen font-poppins">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-stone-900">Income Overview</h1>
-          <p className="text-stone-700 mt-1 font-medium">Real-time performance analytics and revenue tracking.</p>
+          <h1 className="text-4xl font-extrabold tracking-tight text-stone-900">Income Overview</h1>
+          <p className="text-base text-stone-700 mt-1 font-semibold">Real-time performance analytics and revenue tracking.</p>
         </div>
         <div className="flex gap-3">
           {teamRole === 'viewer' && (
@@ -330,8 +330,8 @@ function IncomePageContent() {
                  <ArrowUpRight className="w-3 h-3 mr-1" /> +12.5%
               </Badge>
             </div>
-            <p className="text-sm font-bold text-stone-400 uppercase tracking-widest mt-4">Total Revenue</p>
-            <p className="text-3xl font-black text-stone-900 mt-1">
+            <p className="text-sm font-extrabold text-stone-400 uppercase tracking-widest mt-4">Total Revenue</p>
+            <p className="text-4xl font-extrabold text-stone-900 mt-1">
               {isLoadingLeads ? 'Loading...' : `$${stats.totalRevenue.toLocaleString()}`}
             </p>
           </CardContent>
@@ -349,7 +349,7 @@ function IncomePageContent() {
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-stone-400">
+              <div className="flex items-center justify-between text-xs font-extrabold uppercase tracking-widest text-stone-400">
                 <span>Progress</span>
                 <span>{goalProgress.toFixed(1)}%</span>
               </div>
@@ -374,13 +374,13 @@ function IncomePageContent() {
                 value={goalInput}
                 onChange={(e) => setGoalInput(e.target.value)}
                 disabled={!teamCanEdit}
-                className="h-11 flex-1 rounded-xl border border-stone-200 bg-stone-50 px-3 text-sm font-semibold text-stone-900 outline-none focus:ring-2 focus:ring-violet-500"
+                className="h-11 flex-1 rounded-xl border border-stone-200 bg-stone-50 px-3 text-base font-semibold text-stone-900 outline-none focus:ring-2 focus:ring-violet-500"
                 placeholder="Set revenue goal"
               />
               <Button
                 onClick={handleSaveGoal}
                 disabled={isGoalSaving || !teamCanEdit}
-                className="h-11 rounded-xl bg-violet-600 hover:bg-violet-700 text-white px-5 font-bold"
+                className="h-11 rounded-xl bg-violet-600 hover:bg-violet-700 text-white px-5 text-base font-bold"
               >
                 {isGoalSaving ? 'Saving...' : 'Save Goal'}
               </Button>
@@ -395,8 +395,8 @@ function IncomePageContent() {
           <CardHeader className="p-8 pb-0">
             <div className="flex justify-between items-center">
               <div>
-                <CardTitle className="text-xl font-bold text-stone-900">Revenue Performance</CardTitle>
-                <CardDescription className="text-stone-600 font-medium">Daily revenue trends for the current period</CardDescription>
+                <CardTitle className="text-3xl font-extrabold tracking-tight text-stone-900">Revenue Performance</CardTitle>
+                <CardDescription className="text-base text-stone-600 font-semibold">Daily revenue trends for the current period</CardDescription>
               </div>
               <Button variant="ghost" size="sm" className="rounded-full text-stone-900 hover:text-stone-900 hover:bg-stone-100 font-semibold select-none">
                  <Filter className="w-4 h-4 mr-2" /> Filter
@@ -413,8 +413,8 @@ function IncomePageContent() {
                   <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{fill: '#57534E', fontSize: 12, fontWeight: 600}} />
                   <Tooltip 
                     cursor={{fill: '#F5F5F4'}}
-                    contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}}
-                    itemStyle={{fontWeight: 'bold', fontSize: '12px'}}
+                    contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontFamily: 'Poppins, sans-serif'}}
+                    itemStyle={{fontWeight: '700', fontSize: '12px'}}
                   />
                   <Bar yAxisId="left" dataKey="revenue" fill="#1C1917" radius={[4, 4, 0, 0]} name="Revenue ($)" />
                   <Bar yAxisId="right" dataKey="closed" fill="#10B981" radius={[4, 4, 0, 0]} name="Closed Deals" />
@@ -428,13 +428,13 @@ function IncomePageContent() {
         {/* Transaction Feed */}
         <Card className="rounded-3xl border border-stone-200 shadow-sm bg-white overflow-hidden flex flex-col min-h-[520px]" data-tutorial-id="income-recent">
            <CardHeader className="p-8">
-              <CardTitle className="text-xl font-bold text-stone-900">Recent Closed Deals</CardTitle>
-              <CardDescription className="text-stone-600 font-medium">Company, amount, close time, and status.</CardDescription>
+              <CardTitle className="text-3xl font-extrabold tracking-tight text-stone-900">Recent Closed Deals</CardTitle>
+              <CardDescription className="text-base text-stone-600 font-semibold">Company, amount, close time, and status.</CardDescription>
            </CardHeader>
            <CardContent className="p-8 pt-0 flex-1">
               <div className="space-y-4">
                 {recentClosedDeals.length > 0 && (
-                  <div className="grid grid-cols-[1.4fr_0.8fr_0.9fr_0.7fr] gap-2 px-2 text-[10px] font-black uppercase tracking-widest text-stone-500">
+                  <div className="grid grid-cols-[1.4fr_0.8fr_0.9fr_0.7fr] gap-2 px-2 text-[10px] font-extrabold uppercase tracking-widest text-stone-500">
                     <span>Company</span>
                     <span>Amount</span>
                     <span>Closed</span>
@@ -446,7 +446,7 @@ function IncomePageContent() {
                   {recentClosedDeals.map((deal) => (
                     <div key={deal.id} className="grid grid-cols-[1.4fr_0.8fr_0.9fr_0.7fr] gap-2 items-center rounded-2xl border border-stone-100 bg-stone-50 px-3 py-3">
                       <div>
-                        <p className="text-sm font-bold text-stone-900 leading-tight">{deal.company}</p>
+                        <p className="text-base font-bold text-stone-900 leading-tight">{deal.company}</p>
                         <div className="mt-1 flex items-center gap-2">
                           <p className="text-[10px] text-stone-500 font-medium truncate">{deal.contact}</p>
                           {isTeamContext && (
@@ -462,8 +462,8 @@ function IncomePageContent() {
                           )}
                         </div>
                       </div>
-                      <p className="text-sm font-black text-stone-900">{deal.amountLabel || `$${deal.amount.toLocaleString()}`}</p>
-                      <p className="text-xs font-semibold text-stone-600">
+                      <p className="text-base font-extrabold text-stone-900">{deal.amountLabel || `$${deal.amount.toLocaleString()}`}</p>
+                      <p className="text-sm font-semibold text-stone-600">
                         {deal.closedAt
                           ? `${formatDistanceToNow(new Date(deal.closedAt), { addSuffix: true })}`
                           : 'Unknown'}
@@ -477,7 +477,7 @@ function IncomePageContent() {
                   {recentClosedDeals.length === 0 && (
                    <div className="text-center py-12 text-stone-600">
                       <HistoryIcon className="w-10 h-10 mx-auto mb-2 opacity-10" />
-                      <p className="text-xs">No closed deals found yet.</p>
+                      <p className="text-sm">No closed deals found yet.</p>
                    </div>
                   )}
                 </div>

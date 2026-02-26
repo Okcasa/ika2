@@ -71,6 +71,37 @@ interface DashboardViewProps {
   onAuthRequest?: () => void;
 }
 
+const formatUsdAmount = (amount: number | null) => {
+  if (!Number.isFinite(Number(amount))) return null;
+  return new Intl.NumberFormat(undefined, {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number(amount));
+};
+
+const extractTransactionAmount = (tx: any): number | null => {
+  const rawCandidates = [
+    tx?.amount,
+    tx?.total,
+    tx?.grand_total,
+    tx?.details?.totals?.total,
+    tx?.payload?.details?.totals?.total,
+    tx?.payload?.data?.details?.totals?.total,
+  ];
+
+  for (const candidate of rawCandidates) {
+    const parsed = Number(candidate);
+    if (!Number.isFinite(parsed)) continue;
+    if (Number.isInteger(parsed) && Math.abs(parsed) >= 100) {
+      return parsed / 100;
+    }
+    return parsed;
+  }
+  return null;
+};
+
 export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewProps) {
   const { toast } = useToast();
   const router = useRouter();
@@ -427,6 +458,47 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
           });
         });
 
+      const { data: fulfillmentRows } = await supabase
+        .from('paddle_fulfillments')
+        .select('id, transaction_id, lead_count, created_at')
+        .eq('user_id', currentUserId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      const txIds = Array.from(
+        new Set(
+          (fulfillmentRows || [])
+            .map((row: any) => String(row?.transaction_id || '').trim())
+            .filter((id) => id.length > 0)
+        )
+      );
+
+      let transactionById = new Map<string, any>();
+      if (txIds.length > 0) {
+        const { data: txRows } = await supabase
+          .from('paddle_transactions')
+          .select('*')
+          .in('id', txIds);
+        transactionById = new Map((txRows || []).map((row: any) => [String(row.id), row]));
+      }
+
+      (fulfillmentRows || []).forEach((row: any) => {
+        const leads = Math.max(1, Number(row?.lead_count) || 1);
+        const txId = String(row?.transaction_id || '').trim();
+        const tx = txId ? transactionById.get(txId) : null;
+        const amount = extractTransactionAmount(tx);
+        const amountLabel = formatUsdAmount(amount);
+        const leadLabel = `${leads} lead${leads === 1 ? '' : 's'} added`;
+        next.push({
+          id: `payment-${row.id || txId || Date.now()}`,
+          text: amountLabel
+            ? `Payment completed • ${leadLabel} • ${amountLabel} paid`
+            : `Payment completed • ${leadLabel}`,
+          at: Date.parse(row?.created_at) || Date.now(),
+          read: true,
+        });
+      });
+
       if (!mounted) return;
       const filtered = next.filter((item) => !dismissedNotificationIdsRef.current.has(item.id));
       seenNotificationIdsRef.current = new Set(filtered.map((item) => item.id));
@@ -503,6 +575,44 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
       )
       .subscribe();
     channels.push(requestsChannel);
+
+    const paymentChannel = supabase
+      .channel(`dashboard-notif-payments-${currentUserId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'paddle_fulfillments',
+          filter: `user_id=eq.${currentUserId}`,
+        },
+        async (payload) => {
+          const row = payload.new as any;
+          const leads = Math.max(1, Number(row?.lead_count) || 1);
+          const txId = String(row?.transaction_id || '').trim();
+          let amountLabel: string | null = null;
+
+          if (txId) {
+            const { data: tx } = await supabase
+              .from('paddle_transactions')
+              .select('*')
+              .eq('id', txId)
+              .maybeSingle();
+            amountLabel = formatUsdAmount(extractTransactionAmount(tx));
+          }
+
+          const leadLabel = `${leads} lead${leads === 1 ? '' : 's'} added`;
+          pushNotification(
+            `payment-${row?.id || txId || Date.now()}`,
+            amountLabel
+              ? `Payment completed • ${leadLabel} • ${amountLabel} paid`
+              : `Payment completed • ${leadLabel}`,
+            row?.created_at ? Date.parse(row.created_at) : Date.now()
+          );
+        }
+      )
+      .subscribe();
+    channels.push(paymentChannel);
 
     const leadLogsChannel = supabase
       .channel('dashboard-notif-lead-logs')

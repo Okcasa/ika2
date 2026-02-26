@@ -9,7 +9,6 @@ import {
   Users,
   Store,
   CheckSquare,
-  Megaphone,
   Moon,
   LogOut,
   GripVertical,
@@ -37,7 +36,6 @@ const sidebarItems = [
   { icon: Users, label: 'Leads', href: '/customers' },
   { icon: Store, label: 'Logs', href: '/logs' },
   { icon: CheckSquare, label: 'Income', href: '/income' },
-  { icon: Megaphone, label: 'Promote', href: '/promote' },
 ];
 
 export function Sidebar() {
@@ -362,68 +360,61 @@ export function Sidebar() {
         </div>
       </div>
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <DialogContent className="max-w-5xl bg-[#f1ece9] text-stone-900 p-0">
-          <div className="flex items-start justify-between border-b border-stone-200 px-8 py-6">
+        <DialogContent className="max-w-3xl bg-[#f1ece9] text-stone-900 p-0 rounded-3xl overflow-hidden font-poppins">
+          <div className="flex items-start justify-between border-b border-stone-200 px-6 py-4">
             <DialogHeader className="text-left">
-              <DialogTitle className="text-xl font-semibold">Account Settings</DialogTitle>
-              <DialogDescription className="text-[13px] text-stone-500">Manage your profile, preferences, and workspace settings.</DialogDescription>
+              <DialogTitle className="text-2xl font-extrabold tracking-tight">Account Settings</DialogTitle>
+              <DialogDescription className="text-sm font-semibold text-stone-500">Manage your profile, preferences, and workspace settings.</DialogDescription>
             </DialogHeader>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-stone-500 hover:text-stone-700 hover:bg-stone-100">
-                <Moon className="h-4 w-4" />
-              </Button>
-            </div>
+            <div className="flex items-center gap-2" />
           </div>
 
           <div className="grid grid-cols-1">
-            <section className="px-8 py-6">
-              <div className="flex items-center gap-4">
-                <div className="h-16 w-16 rounded-2xl bg-stone-100 flex items-center justify-center text-stone-700 font-semibold">
+            <section className="px-6 py-4 max-h-[75vh] overflow-y-auto">
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-xl bg-stone-100 flex items-center justify-center text-stone-700 font-semibold text-sm">
                   {userName.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <div className="text-lg font-semibold text-stone-900">Profile Details</div>
-                  <div className="text-[13px] text-stone-500">Update your photo and personal details here.</div>
+                  <div className="text-2xl font-bold text-stone-900 tracking-tight">Profile Details</div>
+                  <div className="text-sm font-semibold text-stone-500">Update your photo and personal details here.</div>
                 </div>
-                <Button size="icon" className="ml-auto h-9 w-9 rounded-full bg-violet-500 text-white hover:bg-violet-600">
-                  <Settings className="h-4 w-4" />
-                </Button>
               </div>
 
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <label className="text-[12px] font-semibold text-stone-500">Full Name</label>
-                  <Input className="h-11 rounded-xl text-sm bg-white text-stone-900 placeholder:text-stone-400 border border-stone-200 focus-visible:ring-2 focus-visible:ring-violet-200 focus-visible:border-violet-300" value={userName} onChange={(e) => setUserName(e.target.value)} />
+                  <label className="inline-flex rounded-full bg-stone-200/80 px-2.5 py-1 text-xs font-semibold text-stone-600">Full Name</label>
+                  <Input className="h-10 rounded-2xl text-sm bg-white text-stone-900 placeholder:text-stone-400 border border-stone-200 focus-visible:ring-2 focus-visible:ring-violet-200 focus-visible:border-violet-300" value={userName} onChange={(e) => setUserName(e.target.value)} />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[12px] font-semibold text-stone-500">Display Name</label>
-                  <Input className="h-11 rounded-xl text-sm bg-white text-stone-900 placeholder:text-stone-400 border border-stone-200 focus-visible:ring-2 focus-visible:ring-violet-200 focus-visible:border-violet-300" placeholder="e.g. ika-admin" />
+                  <label className="inline-flex rounded-full bg-stone-200/80 px-2.5 py-1 text-xs font-semibold text-stone-600">Display Name</label>
+                  <Input className="h-10 rounded-2xl text-sm bg-white text-stone-900 placeholder:text-stone-400 border border-stone-200 focus-visible:ring-2 focus-visible:ring-violet-200 focus-visible:border-violet-300" placeholder="e.g. ika-admin" />
                 </div>
                 <div className="space-y-2 md:col-span-2">
-                  <label className="text-[12px] font-semibold text-stone-500">Email Address</label>
+                  <label className="inline-flex rounded-full bg-stone-200/80 px-2.5 py-1 text-xs font-semibold text-stone-600">Email Address</label>
                   <Input
-                    className="h-11 rounded-xl text-sm bg-white text-stone-900 placeholder:text-stone-400 border border-stone-200 focus-visible:ring-2 focus-visible:ring-violet-200 focus-visible:border-violet-300"
+                    className="h-10 rounded-2xl text-sm bg-white text-stone-900 placeholder:text-stone-400 border border-stone-200 focus-visible:ring-2 focus-visible:ring-violet-200 focus-visible:border-violet-300"
                     value={userEmail || ''}
                     readOnly
                   />
                 </div>
                 <div className="space-y-2 md:col-span-2">
-                  <label className="text-[12px] font-semibold text-stone-500">Bio</label>
-                  <Textarea placeholder="Tell us about yourself..." className="min-h-[120px] rounded-2xl text-sm bg-white text-stone-900 placeholder:text-stone-400 border border-stone-200 focus-visible:ring-2 focus-visible:ring-violet-200 focus-visible:border-violet-300" />
+                  <label className="inline-flex rounded-full bg-stone-200/80 px-2.5 py-1 text-xs font-semibold text-stone-600">Bio</label>
+                  <Textarea placeholder="Tell us about yourself..." className="min-h-[96px] rounded-2xl text-sm bg-white text-stone-900 placeholder:text-stone-400 border border-stone-200 focus-visible:ring-2 focus-visible:ring-violet-200 focus-visible:border-violet-300" />
                 </div>
                 <p className="text-xs text-stone-400 md:col-span-2">
                   Brief description for your profile. URLs are hyperlinked.
                 </p>
               </div>
 
-              <div className="mt-8 border-t border-stone-200 pt-6">
-                <div className="text-sm font-semibold text-stone-900">Workspace Role</div>
-                <p className="text-sm text-stone-500 mt-1">You are currently a {userRole}.</p>
+              <div className="mt-6 border-t border-stone-200 pt-4">
+                <div className="inline-flex rounded-full bg-stone-200 px-3 py-1 text-xs font-semibold text-stone-700">Workspace Role</div>
+                <p className="text-base font-semibold text-stone-500 mt-2">You are currently a {userRole}.</p>
               </div>
 
-              <div className="mt-8 border-t border-stone-200 pt-6 space-y-5">
+              <div className="mt-6 border-t border-stone-200 pt-4 space-y-4">
                 <div className="flex items-center justify-between">
-                  <div className="text-sm font-semibold text-stone-900">Team Access</div>
+                  <div className="inline-flex rounded-full bg-stone-200 px-3 py-1 text-xs font-semibold text-stone-700">Team Access</div>
                   <div className="flex items-center gap-2">
                     {teamCaps.role && (
                       <span className="text-xs font-semibold rounded-full px-3 py-1 bg-amber-100 text-amber-700">
@@ -439,26 +430,26 @@ export function Sidebar() {
                 </div>
 
                 {!overview?.team && (
-                  <div className="rounded-2xl border border-stone-200 bg-white p-4 space-y-3">
+                  <div className="rounded-2xl border border-stone-200 bg-white p-3 space-y-2.5">
                     <p className="text-xs text-stone-500">Create a team to invite admins, editors, and viewers.</p>
                     <Input
                       value={teamNameInput}
                       onChange={(e) => setTeamNameInput(e.target.value)}
-                      className="h-10 rounded-xl border-stone-200"
+                      className="h-9 rounded-2xl border-stone-200"
                       placeholder="Team name"
                     />
                     <Button
                       onClick={handleCreateTeam}
                       disabled={teamBusy}
-                      className="h-10 rounded-xl bg-stone-900 text-white hover:bg-stone-800"
+                      className="h-9 rounded-2xl bg-stone-900 text-white hover:bg-stone-800"
                     >
                       {teamBusy ? 'Creating...' : 'Create Team'}
                     </Button>
                   </div>
                 )}
 
-                <div className="rounded-2xl border border-stone-200 bg-white p-4 space-y-3">
-                  <p className="text-xs font-semibold text-stone-600">Join Team by Code</p>
+                <div className="rounded-2xl border border-stone-200 bg-white p-3 space-y-2.5">
+                  <p className="inline-flex rounded-full bg-stone-200/80 px-2.5 py-1 text-xs font-semibold text-stone-700">Join Team by Code</p>
                   <p className="text-[11px] text-stone-500">
                     Enter a 5-digit code. You can still request to join another team even if you already created one.
                   </p>
@@ -466,13 +457,13 @@ export function Sidebar() {
                     <Input
                       value={joinCodeInput}
                       onChange={(e) => setJoinCodeInput(e.target.value.replace(/\D/g, '').slice(0, 5))}
-                      className="h-10 rounded-xl border-stone-200"
+                      className="h-9 rounded-2xl border-stone-200"
                       placeholder="12345"
                     />
                     <Button
                       onClick={handleJoinWithCode}
                       disabled={teamBusy}
-                      className="h-10 rounded-xl bg-stone-900 text-white hover:bg-stone-800"
+                      className="h-9 rounded-2xl bg-stone-900 text-white hover:bg-stone-800"
                     >
                       Join by Code
                     </Button>
@@ -482,14 +473,14 @@ export function Sidebar() {
                 {overview?.team && (
                   <>
                     {teamCaps.canInvite && (
-                      <div className="rounded-2xl border border-stone-200 bg-white p-4 space-y-3">
-                        <p className="text-xs font-semibold text-stone-600">Invite Member</p>
+                      <div className="rounded-2xl border border-stone-200 bg-white p-3 space-y-2.5">
+                        <p className="inline-flex rounded-full bg-stone-200/80 px-2.5 py-1 text-xs font-semibold text-stone-700">Invite Member</p>
                         <p className="text-[11px] text-stone-500">Use team code or share invite link. Email is no longer required.</p>
                         <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2">
                           <select
                             value={inviteRole}
                             onChange={(e) => setInviteRole(e.target.value as any)}
-                            className="h-10 rounded-xl border border-stone-200 bg-white px-3 text-sm text-stone-800"
+                            className="h-9 rounded-2xl border border-stone-200 bg-white px-3 text-sm text-stone-800"
                           >
                             <option value="viewer">Viewer</option>
                             <option value="editor">Editor</option>
@@ -498,7 +489,7 @@ export function Sidebar() {
                           <Button
                             onClick={handleInvite}
                             disabled={teamBusy}
-                            className="h-10 rounded-xl bg-violet-600 text-white hover:bg-violet-700"
+                            className="h-9 rounded-2xl bg-violet-600 text-white hover:bg-violet-700"
                           >
                             Invite
                           </Button>
@@ -529,8 +520,8 @@ export function Sidebar() {
                     )}
 
                     {teamCaps.canManageMembers && overview.requests?.filter((r) => r.status === 'pending').length > 0 && (
-                      <div className="rounded-2xl border border-stone-200 bg-white p-4 space-y-2">
-                        <p className="text-xs font-semibold text-stone-600">Pending Requests</p>
+                      <div className="rounded-2xl border border-stone-200 bg-white p-3 space-y-2">
+                        <p className="inline-flex rounded-full bg-stone-200/80 px-2.5 py-1 text-xs font-semibold text-stone-700">Pending Requests</p>
                         {overview.requests
                           .filter((r) => r.status === 'pending')
                           .map((r) => (
@@ -559,8 +550,8 @@ export function Sidebar() {
                       </div>
                     )}
 
-                    <div className="rounded-2xl border border-stone-200 bg-white p-4 space-y-2">
-                      <p className="text-xs font-semibold text-stone-600">Members</p>
+                    <div className="rounded-2xl border border-stone-200 bg-white p-3 space-y-2">
+                      <p className="inline-flex rounded-full bg-stone-200/80 px-2.5 py-1 text-xs font-semibold text-stone-700">Members</p>
                       {overview.members.map((m) => {
                         const isSelf = m.user_id === currentUserId;
                         const isOwner = String(m.role).toLowerCase() === 'owner';

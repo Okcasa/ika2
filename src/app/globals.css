@@ -133,6 +133,10 @@
     font-weight: 700;
   }
 
+  .font-poppins {
+    font-family: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  }
+
   .font-bungee {
     font-family: "Bungee", sans-serif;
     font-weight: 400;
