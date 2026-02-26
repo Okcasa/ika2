@@ -243,6 +243,12 @@ const CHECKOUT_HTML = `<!doctype html>
     const pkg = String(params.get("pkg") || "");
     const leadsToPack = { 30: "p30", 90: "p90", 180: "p180", 280: "p280" };
     const pkgToPack = { growth: "p90", pro: "p180", enterprise: "p280" };
+    const packToPackageId = { p30: "standard", p90: "growth", p180: "pro", p280: "enterprise", custom: "custom" };
+    const shouldAutoOpen =
+      params.get("autostart") === "1" ||
+      params.has("pkg") ||
+      params.has("leads");
+    let hasOpenedCheckout = false;
 
     qtyInput.value = String(normalizeQty(requestedLeads));
     if (pkgToPack[pkg]) {
@@ -265,6 +271,23 @@ const CHECKOUT_HTML = `<!doctype html>
     });
     qtyInput.addEventListener("blur", commitQty);
     renderSelectedPack();
+
+    function openCheckout() {
+      if (hasOpenedCheckout) return;
+      hasOpenedCheckout = true;
+      const pack = PACKS[selectedPack];
+      const qty = selectedPack === "custom" ? commitQty() : 1;
+      statusEl.textContent = "Opening checkout...";
+      Paddle.Checkout.open({
+        items: [{ priceId: pack.priceId, quantity: qty }],
+        settings: {
+          variant: "one-page",
+          displayMode: "overlay",
+          theme: "light",
+          locale: "en"
+        }
+      });
+    }
 
     if (!CLIENT_TOKEN) {
       statusEl.textContent = "Missing Paddle client token on Worker env (PADDLE_CLIENT_TOKEN).";
@@ -294,7 +317,7 @@ const CHECKOUT_HTML = `<!doctype html>
                 transactionId: txId,
                 priceId: pack.priceId,
                 leads,
-                packageId: selectedPack === "custom" ? "custom" : selectedPack
+                packageId: packToPackageId[selectedPack] || "custom"
               },
               "*"
             );
@@ -304,20 +327,11 @@ const CHECKOUT_HTML = `<!doctype html>
     });
     }
 
-    button.addEventListener("click", () => {
-      const pack = PACKS[selectedPack];
-      const qty = selectedPack === "custom" ? commitQty() : 1;
-      statusEl.textContent = "Opening checkout...";
-      Paddle.Checkout.open({
-        items: [{ priceId: pack.priceId, quantity: qty }],
-        settings: {
-          variant: "one-page",
-          displayMode: "overlay",
-          theme: "light",
-          locale: "en"
-        }
-      });
-    });
+    button.addEventListener("click", openCheckout);
+
+    if (shouldAutoOpen && CLIENT_TOKEN) {
+      window.setTimeout(openCheckout, 120);
+    }
   </script>
 </body>
 </html>`;
