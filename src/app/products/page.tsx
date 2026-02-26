@@ -51,6 +51,15 @@ const getBundlePrice = (leads: number) => {
   return qty * (last.price / last.leads);
 };
 
+const getCheckoutPackageId = (leads: number): string => {
+  const normalized = Math.max(5, Math.floor(leads));
+  if (normalized === 30) return 'standard';
+  if (normalized === 90) return 'growth';
+  if (normalized === 180) return 'pro';
+  if (normalized === 280) return 'enterprise';
+  return 'custom';
+};
+
 function ProductPageContent() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -630,7 +639,7 @@ function ProductPageContent() {
                     <div className="pay-btn-wrapper w-full">
                       <button
                         type="button"
-                        onClick={() => handlePurchase('standard')}
+                        onClick={() => handlePurchase(getCheckoutPackageId(currentLeads), currentPrice, currentLeads)}
                         disabled={loading === 'standard'}
                         className="pay-btn w-full"
                       >
