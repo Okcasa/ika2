@@ -80,12 +80,18 @@ export default function PaddlePopupCheckoutPage() {
       }
 
       try {
-        w.Paddle.Environment?.set(paddleEnv === 'production' ? 'production' : 'sandbox');
+        const inferredEnv =
+          paddleToken.startsWith('live_') ? 'production' :
+          paddleToken.startsWith('test_') ? 'sandbox' :
+          (paddleEnv === 'production' ? 'production' : 'sandbox');
+        w.Paddle.Environment?.set(inferredEnv);
         w.Paddle.Initialize({
           token: paddleToken,
           eventCallback: (event) => {
             if (event?.name === 'checkout.error') {
-              setStatus(event?.data?.message || 'Checkout failed.');
+              const message = event?.data?.message || 'Checkout failed.';
+              const details = event?.data ? ` :: ${JSON.stringify(event.data)}` : '';
+              setStatus(`${message}${details}`);
             }
             if (event?.name === 'checkout.completed') {
               const txId = String(event?.data?.transaction_id || '');

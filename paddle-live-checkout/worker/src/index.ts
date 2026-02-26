@@ -276,7 +276,8 @@ const CHECKOUT_HTML = `<!doctype html>
       eventCallback: (event) => {
         if (event.name === "checkout.error") {
           const message = event?.data?.message || "Checkout failed. Please retry.";
-          statusEl.textContent = message;
+          const details = event?.data ? " :: " + JSON.stringify(event.data) : "";
+          statusEl.textContent = message + details;
           console.error("Paddle checkout error", event);
           return;
         }
