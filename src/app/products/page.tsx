@@ -7,6 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Bell, ArrowUpRight, Zap, Mail, Video, Check } from 'lucide-react';
 
+const CHECKOUT_BASE_URL =
+  process.env.NEXT_PUBLIC_PADDLE_CHECKOUT_URL ||
+  'https://paddle-webhook-sandbox.okcasa27.workers.dev/checkout';
+
 const PACKAGES = [
   {
     id: 'standard',
@@ -40,19 +44,46 @@ const PACKAGES = [
   },
 ];
 
-const PRESETS = [10, 30, 50, 100, 200];
+const PRESETS = [30, 90, 180, 280];
+const MIN_CUSTOM_LEADS = 6;
+const MAX_CUSTOM_LEADS = 420;
 
 function ProductPageContent() {
   const [quantities, setQuantities] = useState<{ [key: string]: number }>({
-    standard: 10,
-    premium: 5,
-    enterprise: 1,
+    standard: 30,
+    premium: 90,
+    enterprise: 180,
   });
 
   const handleQuantityChange = (id: string, value: number) => {
-    // Ensure value is at least 1 and handle max limits if needed
-    const safeValue = Math.max(1, value);
+    const safeValue = Math.max(MIN_CUSTOM_LEADS, Math.min(MAX_CUSTOM_LEADS, value));
     setQuantities((prev) => ({ ...prev, [id]: safeValue }));
+  };
+
+  const openCheckoutPopup = (requestedLeads: number) => {
+    const leads = Math.max(MIN_CUSTOM_LEADS, Math.min(MAX_CUSTOM_LEADS, requestedLeads));
+    const url = new URL(CHECKOUT_BASE_URL);
+    url.searchParams.set('leads', String(leads));
+    if (leads === 90) {
+      url.searchParams.set('pkg', 'growth');
+    } else if (leads === 180) {
+      url.searchParams.set('pkg', 'pro');
+    } else if (leads === 280) {
+      url.searchParams.set('pkg', 'enterprise');
+    }
+
+    const width = 520;
+    const height = 820;
+    const left = window.screenX + Math.max(0, Math.floor((window.outerWidth - width) / 2));
+    const top = window.screenY + Math.max(0, Math.floor((window.outerHeight - height) / 2));
+    const features = `popup=yes,width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`;
+
+    const popup = window.open(url.toString(), 'paddleCheckout', features);
+    if (!popup) {
+      window.location.href = url.toString();
+      return;
+    }
+    popup.focus();
   };
 
   return (
@@ -106,7 +137,8 @@ function ProductPageContent() {
                 <span className="text-xs font-medium text-stone-500">Quantity</span>
                 <Input 
                   type="number" 
-                  min={1}
+                  min={MIN_CUSTOM_LEADS}
+                  max={MAX_CUSTOM_LEADS}
                   value={quantities[pkg.id]}
                   onChange={(e) => handleQuantityChange(pkg.id, parseInt(e.target.value) || 0)}
                   className="w-20 h-8 text-right font-bold text-stone-900 border-stone-200 bg-white"
@@ -132,8 +164,8 @@ function ProductPageContent() {
               
               <Slider
                 value={[quantities[pkg.id]]}
-                max={200}
-                min={1}
+                max={MAX_CUSTOM_LEADS}
+                min={MIN_CUSTOM_LEADS}
                 step={1}
                 onValueChange={(val) => handleQuantityChange(pkg.id, val[0])}
                 className="py-2"
@@ -143,7 +175,11 @@ function ProductPageContent() {
                 <div className="text-xl font-bold text-stone-900">
                   ${(pkg.basePrice * quantities[pkg.id]).toLocaleString()}
                 </div>
-                <Button size="sm" className="rounded-full bg-stone-900 hover:bg-stone-800 text-white w-8 h-8 p-0 flex items-center justify-center">
+                <Button
+                  size="sm"
+                  onClick={() => openCheckoutPopup(quantities[pkg.id])}
+                  className="rounded-full bg-stone-900 hover:bg-stone-800 text-white w-8 h-8 p-0 flex items-center justify-center"
+                >
                   <ArrowUpRight className="w-4 h-4" />
                 </Button>
               </div>

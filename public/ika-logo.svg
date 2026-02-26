@@ -1,0 +1,8 @@
+<svg width="1200" height="320" viewBox="0 0 1200 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g>
+    <path d="M40 40 L82 40 L60 94 H94 L44 174 L62 112 H30 L40 40Z" fill="#FF00B8"/>
+    <circle cx="78" cy="164" r="14" stroke="#FF00B8" stroke-width="8" fill="none"/>
+    <path d="M82 174 L104 198" stroke="#FF00B8" stroke-width="8" stroke-linecap="round"/>
+  </g>
+  <text x="22" y="292" fill="#FFFFFF" font-family="Inter, Arial, sans-serif" font-size="138" font-weight="800" letter-spacing="1">IKALEADS</text>
+</svg>

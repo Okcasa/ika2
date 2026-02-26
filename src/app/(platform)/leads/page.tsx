@@ -32,11 +32,47 @@ import { cn } from '@/lib/utils';
 import { LeadInteractionForm } from '@/components/lead-interaction-form';
 import { useToast } from '@/hooks/use-toast';
 import { CalendarDialog } from '@/components/calendar-dialog';
-import { useRouter } from 'next/navigation';
 import { useUserId } from '@/hooks/use-user-id';
+import { supabase } from '@/lib/supabase';
+import { getRoleCapabilities } from '@/lib/team-role';
+
+const mapLeadRowToProcessed = (row: any): ProcessedLead => ({
+  id: row.id,
+  businessName: row.business_name ?? row.businessName ?? row.name ?? '',
+  phoneNumber: row.phone ?? row.phoneNumber ?? '',
+  website: row.website ?? row.corrected_website ?? row.correctedWebsite ?? '',
+  businessType: row.business_type ?? row.businessType ?? 'General',
+  correctedBusinessName: row.corrected_business_name ?? row.business_name ?? row.correctedBusinessName ?? row.name ?? '',
+  correctedPhoneNumber: row.corrected_phone_number ?? row.phone ?? row.correctedPhoneNumber ?? '',
+  correctedWebsite: row.corrected_website ?? row.website ?? row.correctedWebsite ?? '',
+  confidenceScore: typeof row.confidence_score === 'number' ? row.confidence_score : 0,
+  status: row.processing_status ?? 'completed',
+  errorMessage: row.error_message ?? undefined,
+  leadStatus: row.lead_status ?? 'new',
+  notes: row.notes ?? undefined,
+  meetingTime: row.meeting_time ?? undefined,
+  ownerName: row.owner_name ?? undefined,
+});
+
+const buildLeadUpdatePayload = (lead: ProcessedLead) => ({
+  business_name: lead.businessName ?? null,
+  phone: lead.phoneNumber ?? null,
+  website: lead.website ?? null,
+  business_type: lead.businessType ?? null,
+  corrected_business_name: lead.correctedBusinessName ?? null,
+  corrected_phone_number: lead.correctedPhoneNumber ?? null,
+  corrected_website: lead.correctedWebsite ?? null,
+  confidence_score: lead.confidenceScore ?? 0,
+  processing_status: lead.status ?? 'completed',
+  lead_status: lead.leadStatus ?? 'new',
+  notes: lead.notes ?? null,
+  meeting_time: lead.meetingTime ?? null,
+  owner_name: lead.ownerName ?? null,
+  scheduled_date: lead.meetingTime ? format(new Date(lead.meetingTime), 'PPp') : null,
+  last_contact: lead.meetingTime ? format(new Date(lead.meetingTime), 'PPp') : 'Never',
+});
 
 export default function LeadsPage() {
-  const router = useRouter();
   const { userId, loading } = useUserId();
   const [allLeads, setAllLeads] = useState<ProcessedLead[]>([]);
   const [dispensedLeads, setDispensedLeads] = useState<ProcessedLead[]>([]);
@@ -45,33 +81,71 @@ export default function LeadsPage() {
   const [showAlert, setShowAlert] = useState(false);
   const [recentlyUpdatedId, setRecentlyUpdatedId] = useState<string | null>(null);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [teamCanEdit, setTeamCanEdit] = useState(true);
+  const [teamRole, setTeamRole] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     if (loading) return;
     if (!userId) {
-      router.push('/');
       return;
     }
 
-    const leadsKey = `leadsorter_leads_${userId}`;
     const dispensedKey = `leadsorter_dispensed_leads_${userId}`;
 
-    const storedLeads = localStorage.getItem(leadsKey);
-    if (storedLeads) {
-        setAllLeads(JSON.parse(storedLeads));
-    }
-    const storedDispensedLeads = localStorage.getItem(dispensedKey);
-    if (storedDispensedLeads) {
-        setDispensedLeads(JSON.parse(storedDispensedLeads));
-    }
-  }, [userId, loading, router]);
+    const loadLeads = async () => {
+      let resolvedTeamId: string | null = null;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        try {
+          const teamRes = await fetch('/api/team/overview', {
+            method: 'GET',
+            headers: { authorization: `Bearer ${session.access_token}` },
+          });
+          const teamJson = await teamRes.json().catch(() => ({}));
+          const caps = getRoleCapabilities(teamJson?.role || null);
+          resolvedTeamId = teamJson?.team?.id || null;
+          setTeamCanEdit(caps.canEdit);
+          setTeamRole(caps.role);
+        } catch {
+          // Keep default editable personal mode.
+        }
+      }
 
-  useEffect(() => {
-    if (userId && allLeads.length > 0) {
-      localStorage.setItem(`leadsorter_leads_${userId}`, JSON.stringify(allLeads));
-    }
-  }, [allLeads, userId]);
+      const leadQuery = supabase
+        .from('leads')
+        .select('*')
+        .order('created_at', { ascending: false });
+      const { data, error } = resolvedTeamId
+        ? await leadQuery.or(`team_id.eq.${resolvedTeamId},user_id.eq.${userId}`)
+        : await leadQuery.eq('user_id', userId);
+      if (!error && data) {
+        setAllLeads(data.map(mapLeadRowToProcessed));
+      }
+    };
+    const loadDispensed = async () => {
+      const { data, error } = await supabase
+        .from('dispensed_leads')
+        .select('lead_id, leads(*)')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+      if (!error && data) {
+        const mapped = data
+          .map((row: any) => row.leads)
+          .filter(Boolean)
+          .map(mapLeadRowToProcessed);
+        setDispensedLeads(mapped);
+        localStorage.setItem(dispensedKey, JSON.stringify(mapped));
+      } else {
+        const storedDispensedLeads = localStorage.getItem(dispensedKey);
+        if (storedDispensedLeads) {
+          setDispensedLeads(JSON.parse(storedDispensedLeads));
+        }
+      }
+    };
+    loadLeads();
+    loadDispensed();
+  }, [userId, loading]);
 
   useEffect(() => {
     if (userId && dispensedLeads.length > 0) {
@@ -79,7 +153,15 @@ export default function LeadsPage() {
     }
   }, [dispensedLeads, userId]);
 
-  const getLeads = (force = false) => {
+  const getLeads = async (force = false) => {
+    if (!teamCanEdit) {
+      toast({
+        title: "Read-only access",
+        description: "Viewer role can view/export only.",
+        variant: "destructive"
+      });
+      return;
+    }
     // Only verify we have leads to dispense from the purchased pool
     const newLeadsPool = allLeads.filter(l => l.leadStatus === 'new' || l.leadStatus === 'call-back' || l.leadStatus === 'no-answer');
 
@@ -108,10 +190,20 @@ export default function LeadsPage() {
     const resetDispensed = leadsToDispense.map(l => ({ ...l }));
 
     setDispensedLeads(resetDispensed);
+    if (userId) {
+      const ids = resetDispensed.map(l => l.id);
+      if (ids.length > 0) {
+        await supabase.from('dispensed_leads').delete().eq('user_id', userId);
+        await supabase.from('dispensed_leads').insert(
+          ids.map((leadId) => ({ user_id: userId, lead_id: leadId }))
+        );
+      }
+    }
     setShowAlert(false);
   };
 
   const handleUpdateLeadStatus = (updatedLead: ProcessedLead) => {
+    if (!teamCanEdit) return;
     const newAllLeads = allLeads.map(l => l.id === updatedLead.id ? updatedLead : l);
     setAllLeads(newAllLeads);
     setDispensedLeads(dispensedLeads.map(l => l.id === updatedLead.id ? updatedLead : l));
@@ -119,6 +211,7 @@ export default function LeadsPage() {
     setRecentlyUpdatedId(updatedLead.id);
     setTimeout(() => setRecentlyUpdatedId(null), 3000);
     setInteractingLead(null);
+    supabase.from('leads').update(buildLeadUpdatePayload(updatedLead)).eq('id', updatedLead.id);
   }
 
   const handleSelectLead = (lead: ProcessedLead) => {
@@ -240,6 +333,9 @@ export default function LeadsPage() {
             <p className="text-muted-foreground">
                 Manage your active leads and log your interactions.
             </p>
+            {teamRole === 'viewer' && (
+              <Badge className="mt-2 bg-amber-100 text-amber-700 border-0">Viewer Mode</Badge>
+            )}
         </div>
         <div className="flex items-center gap-2">
              <Button variant="outline" onClick={() => setIsCalendarOpen(true)}>

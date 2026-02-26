@@ -45,7 +45,7 @@ function PromotePageContent() {
   };
 
   return (
-    <div className="p-8 space-y-8 bg-[#E5E4E2] min-h-screen text-stone-900">
+    <div className="p-8 space-y-8 app-shell-bg app-shell-text min-h-screen">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -179,7 +179,7 @@ function PromotePageContent() {
 
 export default function RootPromotePage() {
   return (
-    <div className="flex min-h-screen bg-[#E5E4E2]">
+    <div className="flex min-h-screen app-shell-bg app-shell-text">
       <div className="hidden md:block fixed left-0 top-0 h-full z-50">
         <Sidebar />
       </div>

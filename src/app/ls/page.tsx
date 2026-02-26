@@ -10,9 +10,34 @@ import { useToast } from "@/hooks/use-toast";
 import { Briefcase, Lock, ShieldCheck, ArrowRight, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { supabase } from '@/lib/supabase';
 
 const PAGE_SIZE = 50;
-const LEADS_KEY = 'ika_leads_data'; // Synchronized key
+const mapMarketplaceLead = (row: any): ProcessedLead => ({
+  id: row.id,
+  businessName: row.business_name ?? '',
+  phoneNumber: row.phone ?? '',
+  website: row.website ?? '',
+  businessType: row.business_type ?? 'Unknown',
+  correctedBusinessName: row.business_name ?? '',
+  correctedPhoneNumber: row.phone ?? '',
+  correctedWebsite: row.website ?? '',
+  confidenceScore: 1,
+  status: 'completed',
+  leadStatus: 'new',
+  groups: [],
+  history: [],
+});
+
+const buildMarketplacePayload = (lead: any) => ({
+  business_name: lead.correctedBusinessName ?? lead.businessName ?? '',
+  contact_name: lead.contactName ?? '',
+  email: lead.email ?? '',
+  phone: lead.correctedPhoneNumber ?? lead.phoneNumber ?? '',
+  address: lead.address ?? '',
+  website: lead.correctedWebsite ?? lead.website ?? null,
+  business_type: lead.businessType ?? 'Unknown',
+});
 
 export default function AdminUploadPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
@@ -23,14 +48,23 @@ export default function AdminUploadPage() {
   const { toast } = useToast();
   const router = useRouter();
 
+  const loadMarketplaceLeads = async () => {
+    const { data, error } = await supabase
+      .from('marketplace_leads')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) {
+      toast({ title: "Failed to load leads", description: error.message, variant: "destructive" });
+      return;
+    }
+    const mapped = (data || []).map(mapMarketplaceLead);
+    setAllLeads(mapped);
+    setVisibleLeads(mapped.slice(0, PAGE_SIZE));
+  };
+
   // Load existing leads on mount
   useEffect(() => {
-    const saved = localStorage.getItem(LEADS_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      setAllLeads(parsed);
-      setVisibleLeads(parsed.slice(0, PAGE_SIZE));
-    }
+    loadMarketplaceLeads();
   }, []);
 
   const handleCheckKey = () => {
@@ -43,6 +77,12 @@ export default function AdminUploadPage() {
   };
 
   const handleLeadsUpload = async (rawLeads: Lead[]) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast({ title: "Sign in required", description: "Please sign in to upload leads.", variant: "destructive" });
+      return;
+    }
+
     const processedLeads = rawLeads.map(lead => ({
       ...lead,
       correctedBusinessName: lead.businessName,
@@ -55,27 +95,34 @@ export default function AdminUploadPage() {
       groups: [],
       history: []
     }));
-    
-    const combinedLeads = [...allLeads, ...processedLeads];
-    setAllLeads(combinedLeads);
-    setVisibleLeads(combinedLeads.slice(0, PAGE_SIZE));
-    localStorage.setItem(LEADS_STORAGE_KEY_LEGACY, JSON.stringify(combinedLeads)); // Safeguard
-    localStorage.setItem(LEADS_KEY, JSON.stringify(combinedLeads));
-    
+
+    const insertPayload = processedLeads.map((lead) => ({
+      ...buildMarketplacePayload(lead),
+      uploaded_by: session.user.id,
+      status: 'available',
+    }));
+
+    const { error } = await supabase.from('marketplace_leads').insert(insertPayload);
+    if (error) {
+      toast({ title: "Upload failed", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    await loadMarketplaceLeads();
     toast({
       title: "Upload complete!",
       description: `${rawLeads.length} leads added to the marketplace.`,
     });
   };
 
-  // Helper for old key cleanup
-  const LEADS_STORAGE_KEY_LEGACY = 'leadsorter_leads';
-
   const handleUpdateLead = (updatedLead: ProcessedLead) => {
     const newAllLeads = allLeads.map(lead => lead.id === updatedLead.id ? updatedLead : lead);
     setAllLeads(newAllLeads);
     setVisibleLeads(newAllLeads.slice(0, visibleLeads.length));
-    localStorage.setItem(LEADS_KEY, JSON.stringify(newAllLeads));
+    supabase
+      .from('marketplace_leads')
+      .update(buildMarketplacePayload(updatedLead))
+      .eq('id', updatedLead.id);
     setEditingLead(null);
   };
 
@@ -83,22 +130,113 @@ export default function AdminUploadPage() {
     const newAllLeads = allLeads.filter(lead => lead.id !== leadId);
     setAllLeads(newAllLeads);
     setVisibleLeads(newAllLeads.slice(0, visibleLeads.length));
-    localStorage.setItem(LEADS_KEY, JSON.stringify(newAllLeads));
+    supabase.from('marketplace_leads').delete().eq('id', leadId);
   };
   
   const handleReset = () => {
     if (confirm("Are you sure? This will wipe the entire marketplace.")) {
       setAllLeads([]);
       setVisibleLeads([]);
-      localStorage.removeItem(LEADS_KEY);
-      localStorage.removeItem(LEADS_STORAGE_KEY_LEGACY);
+      supabase.from('marketplace_leads').delete().neq('id', '');
       toast({ title: "System Reset", description: "All data cleared." });
     }
   };
 
+  const handleRemoveWithWebsites = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast({ title: "Sign in required", description: "Please sign in to remove leads.", variant: "destructive" });
+      window.dispatchEvent(new Event('auth:open'));
+      return;
+    }
+
+    const hasWebsite = (value: string | null) => {
+      const v = (value || '').trim().toLowerCase();
+      if (!v || v === 'n/a' || v === 'na' || v === 'none') return false;
+      return true;
+    };
+
+    const idsToDelete: string[] = [];
+    const pageSize = 1000;
+    let offset = 0;
+    while (true) {
+      const { data: rows, error: fetchError } = await supabase
+        .from('marketplace_leads')
+        .select('id, website')
+        .eq('uploaded_by', session.user.id)
+        .range(offset, offset + pageSize - 1);
+      if (fetchError) {
+        toast({ title: "Remove failed", description: fetchError.message, variant: "destructive" });
+        return;
+      }
+      const batch = (rows || []).filter((r) => hasWebsite(r.website)).map((r) => r.id);
+      idsToDelete.push(...batch);
+      if (!rows || rows.length < pageSize) break;
+      offset += pageSize;
+    }
+    if (idsToDelete.length === 0) {
+      toast({ title: "No leads removed", description: "No leads with websites found." });
+      return;
+    }
+
+    const chunkSize = 500;
+    for (let i = 0; i < idsToDelete.length; i += chunkSize) {
+      const chunk = idsToDelete.slice(i, i + chunkSize);
+      const { error } = await supabase
+        .from('marketplace_leads')
+        .delete()
+        .in('id', chunk);
+      if (error) {
+        toast({ title: "Remove failed", description: error.message, variant: "destructive" });
+        return;
+      }
+    }
+    await loadMarketplaceLeads();
+    toast({ title: "Leads removed", description: `${idsToDelete.length} leads removed.` });
+  };
+
+  const handlePublishNext = async () => {
+    if (allLeads.length === 0) {
+      toast({ title: "No leads to publish", description: "Upload leads first." });
+      return;
+    }
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast({ title: "Sign in required", description: "Please sign in to publish leads.", variant: "destructive" });
+      window.dispatchEvent(new Event('auth:open'));
+      return;
+    }
+    // Remove any leads with websites before publishing
+    await handleRemoveWithWebsites();
+
+    const { data: rows, error: fetchError } = await supabase
+      .from('marketplace_leads')
+      .select('id')
+      .eq('uploaded_by', session.user.id);
+    if (fetchError) {
+      toast({ title: "Publish failed", description: fetchError.message, variant: "destructive" });
+      return;
+    }
+    const ids = (rows || []).map((r) => r.id);
+    if (ids.length === 0) {
+      toast({ title: "No leads to publish", description: "No eligible leads after removing websites." });
+      return;
+    }
+    const { error } = await supabase
+      .from('marketplace_leads')
+      .update({ status: 'available' })
+      .eq('uploaded_by', session.user.id);
+    if (error) {
+      toast({ title: "Publish failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Leads published", description: "Marketplace leads are now live." });
+    router.push('/shop');
+  };
+
   if (!isAuthorized) {
     return (
-      <div className="min-h-screen bg-[#E5E4E2] flex items-center justify-center p-4">
+      <div className="min-h-screen app-shell-bg app-shell-text flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-[2.5rem] p-10 shadow-xl border border-stone-200 text-center space-y-8">
           <div className="w-20 h-20 bg-stone-900 rounded-3xl flex items-center justify-center mx-auto shadow-lg shadow-black/20">
             <Lock className="w-10 h-10 text-white" />
@@ -126,7 +264,7 @@ export default function AdminUploadPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#E5E4E2] p-8 text-stone-900">
+    <div className="min-h-screen app-shell-bg app-shell-text p-8">
       <div className="max-w-6xl mx-auto space-y-8">
         <header className="flex justify-between items-end">
           <div>
@@ -158,15 +296,15 @@ export default function AdminUploadPage() {
         ) : (
           <div className="space-y-6">
             <div className="bg-white rounded-[2.5rem] p-4 border border-stone-200 shadow-sm overflow-hidden">
-               <LeadsTable
+                <LeadsTable
                 leads={visibleLeads}
                 totalLeads={allLeads.length}
                 onEdit={setEditingLead}
                 onDelete={handleDeleteLead}
                 onReset={handleReset}
-                onScan={() => {}} // Placeholder
+                onScan={handleRemoveWithWebsites}
                 onLoadMore={() => setVisibleLeads(allLeads.slice(0, visibleLeads.length + PAGE_SIZE))}
-                onNext={() => router.push('/')}
+                onNext={handlePublishNext}
               />
             </div>
           </div>
