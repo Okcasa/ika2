@@ -250,6 +250,14 @@ const CHECKOUT_HTML = `<!doctype html>
       params.has("leads");
     let hasOpenedCheckout = false;
 
+    if (shouldAutoOpen) {
+      const card = document.querySelector(".card");
+      if (card) card.style.display = "none";
+      document.body.style.background = "#ffffff";
+      document.body.style.padding = "0";
+      document.body.style.minHeight = "100vh";
+    }
+
     qtyInput.value = String(normalizeQty(requestedLeads));
     if (pkgToPack[pkg]) {
       selectedPack = pkgToPack[pkg];
