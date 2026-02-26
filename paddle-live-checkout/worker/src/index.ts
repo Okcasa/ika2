@@ -10,7 +10,7 @@ const CHECKOUT_HTML = `<!doctype html>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lead Credits Checkout (Sandbox)</title>
+  <title>Lead Credits Checkout</title>
   <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
   <style>
     :root {
@@ -133,9 +133,9 @@ const CHECKOUT_HTML = `<!doctype html>
 </head>
 <body>
   <main class="card">
-    <h1>Buy Lead Credits (Sandbox)</h1>
+    <h1>Buy Lead Credits</h1>
     <p><strong>Allkinds</strong> - official checkout page.</p>
-    <p>Secure checkout powered by Paddle sandbox. Test payments only.</p>
+    <p>Secure checkout powered by Paddle.</p>
     <section class="bundle" aria-label="Bundle details">
       <p class="price" id="display-price">$0.60</p>
       <p class="meta" id="display-meta">5 lead credits · one-time · $0.12 per lead</p>
@@ -153,7 +153,7 @@ const CHECKOUT_HTML = `<!doctype html>
     </section>
     <button id="checkout-btn" type="button">Checkout Now</button>
     <div id="status" class="status"></div>
-    <p class="small">Price ID: <code id="price-id-code">pri_01khzt0zqn7c48rqsgw90sdkm3</code></p>
+    <p class="small">Price ID: <code id="price-id-code">pri_01khz6h3paqn23tsdgkzmqangf</code></p>
     <footer>
       <div>Legal business name: Allkinds</div>
       <nav class="legal" aria-label="Legal policies">
@@ -168,11 +168,11 @@ const CHECKOUT_HTML = `<!doctype html>
     const UNIT_PRICE = 0.12;
     const MIN_QTY = 5;
     const PACKS = {
-      p30: { priceId: "pri_01khzt0zkxeyxqyrw26z10hza0", leads: 30, total: 3.5, meta: "30 lead pack · one-time" },
-      p90: { priceId: "pri_01khzt0zvb6wmjjz5wfpay3zgy", leads: 90, total: 7.0, meta: "90 lead pack · one-time" },
-      p180: { priceId: "pri_01khzt0zyr2j5c8szmc0bj159z", leads: 180, total: 15.35, meta: "180 lead pack · one-time" },
-      p280: { priceId: "pri_01khzt102fa2c34jwr9rxd6vj5", leads: 280, total: 30.0, meta: "280 lead pack · one-time" },
-      custom: { priceId: "pri_01khzt0zqn7c48rqsgw90sdkm3", leads: null, total: null, meta: "Custom leads · one-time · $0.12 per lead" },
+      p30: { priceId: "pri_01khz4yjp25njyd9hw0dvs2aj0", leads: 30, total: 3.5, meta: "30 lead pack · one-time" },
+      p90: { priceId: "pri_01khz4yt8pwmzjzmzwy08g0b5z", leads: 90, total: 7.0, meta: "90 lead pack · one-time" },
+      p180: { priceId: "pri_01khz4ytg9sy96hxyhxe1fxrvh", leads: 180, total: 15.35, meta: "180 lead pack · one-time" },
+      p280: { priceId: "pri_01khz4ytcgm7f9xmfbjebeb747", leads: 280, total: 30.0, meta: "280 lead pack · one-time" },
+      custom: { priceId: "pri_01khz6h3paqn23tsdgkzmqangf", leads: null, total: null, meta: "Custom leads · one-time · $0.12 per lead" },
     };
     const statusEl = document.getElementById("status");
     const button = document.getElementById("checkout-btn");
@@ -270,7 +270,7 @@ const CHECKOUT_HTML = `<!doctype html>
       statusEl.textContent = "Missing Paddle client token on Worker env (PADDLE_CLIENT_TOKEN).";
       button.disabled = true;
     } else {
-      Paddle.Environment.set("sandbox");
+      Paddle.Environment.set("production");
       Paddle.Initialize({
       token: CLIENT_TOKEN,
       eventCallback: (event) => {
