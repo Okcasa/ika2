@@ -66,6 +66,13 @@ const PACKAGES = [
   },
 ];
 
+const DASHBOARD_CHECKOUT_BASE_URL =
+  process.env.NEXT_PUBLIC_PADDLE_CHECKOUT_URL ||
+  'https://paddle-webhook-live.okcasa27.workers.dev/';
+const DASHBOARD_CHECKOUT_ORIGIN =
+  process.env.NEXT_PUBLIC_PADDLE_CHECKOUT_ORIGIN ||
+  'https://paddle-webhook-live.okcasa27.workers.dev';
+
 interface DashboardViewProps {
   isGuest?: boolean;
   onAuthRequest?: () => void;
@@ -127,6 +134,9 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
   const seenNotificationIdsRef = useRef<Set<string>>(new Set());
   const dismissedNotificationIdsRef = useRef<Set<string>>(new Set());
   const teamLeadIdsRef = useRef<Set<string>>(new Set());
+  const quickCheckoutPopupRef = useRef<Window | null>(null);
+  const quickCheckoutWatchRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pendingQuickCheckoutRef = useRef<{ checkoutSessionId: string } | null>(null);
   const effectiveGuest = isGuest || !isAuthed;
   const openAuth = () => {
     if (onAuthRequest) {
@@ -146,6 +156,15 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
     return () => {
       if (typeof document !== 'undefined' && document.body) {
         document.body.style.overflow = '';
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (quickCheckoutWatchRef.current) {
+        clearInterval(quickCheckoutWatchRef.current);
+        quickCheckoutWatchRef.current = null;
       }
     };
   }, []);
@@ -846,6 +865,113 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
     }
   }
 
+  const handleQuickBundleCheckout = async (pkg: typeof PACKAGES[0]) => {
+    if (pkg.status === 'Offline') return;
+
+    if (effectiveGuest) {
+      openAuth();
+      return;
+    }
+
+    if (teamRole === 'viewer') {
+      toast({
+        title: 'Read-only access',
+        description: 'Viewer role can view/export only.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      onAuthRequest?.();
+      return;
+    }
+
+    const packageId = pkg.id === 'starter' ? 'standard' : pkg.id;
+    const checkoutSessionId =
+      (typeof crypto !== 'undefined' && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+    const params = new URLSearchParams({
+      uid: session.user.id,
+      leads: String(pkg.count),
+      pkg: packageId,
+      price: pkg.price.toFixed(2),
+      origin: window.location.origin,
+      ck: checkoutSessionId,
+    });
+
+    const popupUrl = `${DASHBOARD_CHECKOUT_BASE_URL.replace(/\/$/, '')}/?${params.toString()}`;
+    const popupName = 'dashboard_quick_checkout';
+    const width = 1000;
+    const height = 720;
+    const left = Math.max(0, Math.floor((window.screen.width - width) / 2));
+    const top = Math.max(0, Math.floor((window.screen.height - height) / 2));
+    const popupFeatures = `popup=yes,width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`;
+    const popup = window.open(popupUrl, popupName, popupFeatures);
+
+    if (!popup) {
+      toast({
+        title: 'Popup blocked',
+        description: 'Allow popups and retry checkout.',
+        variant: 'destructive',
+      });
+      pendingQuickCheckoutRef.current = null;
+      return;
+    }
+
+    quickCheckoutPopupRef.current = popup;
+    pendingQuickCheckoutRef.current = { checkoutSessionId };
+
+    if (quickCheckoutWatchRef.current) {
+      clearInterval(quickCheckoutWatchRef.current);
+      quickCheckoutWatchRef.current = null;
+    }
+
+    quickCheckoutWatchRef.current = setInterval(() => {
+      const activePopup = quickCheckoutPopupRef.current;
+      if (!activePopup || activePopup.closed) {
+        if (quickCheckoutWatchRef.current) {
+          clearInterval(quickCheckoutWatchRef.current);
+          quickCheckoutWatchRef.current = null;
+        }
+        if (pendingQuickCheckoutRef.current) {
+          pendingQuickCheckoutRef.current = null;
+          toast({
+            title: 'Purchase not completed',
+            description: 'No payment was captured. You can try checkout again.',
+          });
+        }
+      }
+    }, 900);
+  };
+
+  useEffect(() => {
+    const successTypes = new Set(['paddle:transaction.closed', 'paddle:transaction.completed']);
+
+    const onQuickCheckoutMessage = (event: MessageEvent) => {
+      if (event.origin !== DASHBOARD_CHECKOUT_ORIGIN && event.origin !== window.location.origin) return;
+      const data = event.data || {};
+      const messageType = String(data?.type || data?.eventType || '');
+      if (!successTypes.has(messageType)) return;
+      if (!pendingQuickCheckoutRef.current) return;
+
+      pendingQuickCheckoutRef.current = null;
+      if (quickCheckoutWatchRef.current) {
+        clearInterval(quickCheckoutWatchRef.current);
+        quickCheckoutWatchRef.current = null;
+      }
+      try {
+        quickCheckoutPopupRef.current?.close();
+      } catch {}
+    };
+
+    window.addEventListener('message', onQuickCheckoutMessage);
+    return () => window.removeEventListener('message', onQuickCheckoutMessage);
+  }, []);
+
   const unreadCount = useMemo(
     () => notifications.reduce((acc, item) => acc + (item.read ? 0 : 1), 0),
     [notifications]
@@ -870,10 +996,12 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
   }, [notifications]);
 
   return (
-    <div className="flex flex-col gap-4 max-w-[1600px] mx-auto h-full overflow-hidden">
+    <div className="shop-doodle-theme flex flex-col gap-4 max-w-[1600px] mx-auto h-full overflow-hidden px-2 md:px-3 py-4 md:py-5">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-        <h1 className="text-3xl font-bold tracking-tight text-[#1C1917]">Dashboard</h1>
+        <h1 className="inline-flex items-center rounded-2xl border border-white/28 bg-white/26 px-4 py-2 text-3xl font-bold tracking-tight text-stone-950 shadow-[0_10px_24px_rgba(15,23,42,0.12)] backdrop-blur-[6px]">
+          Dashboard
+        </h1>
 
         <div className="flex items-center gap-4 w-full md:w-auto">
           <div className="relative flex-1 md:w-[400px]">
@@ -1089,7 +1217,7 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
           {/* Overview Cards */}
           <div className="grid md:grid-cols-2 gap-4" data-tutorial-id="dashboard-stats">
             {/* Customers / Leads Available */}
-            <Card className="rounded-[32px] border border-white/5 shadow-sm hover:shadow-md transition-shadow bg-[#1f1f23] text-[#FAFAF9]">
+            <Card className="doodle-panel rounded-[32px] border border-white/5 shadow-sm hover:shadow-md transition-shadow bg-[#1f1f23] text-[#FAFAF9]">
               <CardContent className="p-8">
                  <div className="flex justify-between items-start mb-4">
                    <div className="flex items-center gap-3">
@@ -1116,7 +1244,7 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
             </Card>
 
           {/* Weekly Closed Deal Revenue */}
-          <Card className="rounded-[32px] border border-white/5 shadow-sm hover:shadow-md transition-shadow bg-[#1f1f23] text-[#FAFAF9]">
+          <Card className="doodle-panel rounded-[32px] border border-white/5 shadow-sm hover:shadow-md transition-shadow bg-[#1f1f23] text-[#FAFAF9]">
               <CardContent className="p-8">
                  <div className="flex justify-between items-start mb-4">
                    <div className="flex items-center gap-3">
@@ -1195,11 +1323,14 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
           </div>
 
           {/* New Customers / Leads Avatars */}
-          <div className="bg-transparent space-y-4" data-tutorial-id="dashboard-new-leads">
-            <h3 className="font-semibold text-stone-700">
+          <div
+            className="space-y-4 rounded-2xl bg-[#171626]/55 p-4 shadow-[0_10px_24px_rgba(12,10,24,0.28)] backdrop-blur-[2px]"
+            data-tutorial-id="dashboard-new-leads"
+          >
+            <h3 className="text-lg font-extrabold text-[#ffe4d2] drop-shadow-[0_1px_1px_rgba(0,0,0,0.45)]">
               {isLeadsLoading ? 'Loading leads…' : `${effectiveGuest ? '0' : newLeadsToday} new leads today!`}
             </h3>
-            <p className="text-sm text-stone-500">Send a welcome message to all new potential clients.</p>
+            <p className="text-sm font-semibold text-[#f5cbb2]">Send a welcome message to all new potential clients.</p>
 
             <div className="flex items-center gap-4 flex-wrap">
                {isLeadsLoading ? (
@@ -1215,13 +1346,13 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
                      key={i}
                      type="button"
                      onClick={openAuth}
-                     className="flex flex-col items-center gap-2 rounded-xl p-1 transition hover:bg-stone-100"
+                     className="flex flex-col items-center gap-2 rounded-xl p-1 transition hover:bg-white/10"
                    >
                      <Avatar className="h-16 w-16 border-4 border-white shadow-sm">
                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i}`} />
                        <AvatarFallback>U{i}</AvatarFallback>
                      </Avatar>
-                     <span className="text-xs font-medium text-stone-600">Lead {i}</span>
+                     <span className="text-xs font-semibold text-[#f2d7c6]">Lead {i}</span>
                    </button>
                  ))
                ) : (
@@ -1233,13 +1364,13 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
                      key={i}
                      type="button"
                      onClick={() => router.push(`/logs?leadId=${lead.id}`)}
-                     className="group flex flex-col items-center gap-2 rounded-xl p-1 transition hover:bg-stone-100"
+                     className="group flex flex-col items-center gap-2 rounded-xl p-1 transition hover:bg-white/10"
                    >
                      <Avatar className="h-16 w-16 border-4 border-white shadow-sm">
                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${lead.businessName || lead.name}`} />
                        <AvatarFallback>{(lead.businessName || lead.name || 'L').charAt(0)}</AvatarFallback>
                      </Avatar>
-                     <span className="text-xs font-medium text-stone-600 w-16 truncate text-center group-hover:text-stone-800" title={lead.businessName || lead.name}>
+                     <span className="text-xs font-semibold text-[#f2d7c6] w-16 truncate text-center group-hover:text-[#fff1e8]" title={lead.businessName || lead.name}>
                         {lead.businessName || lead.name}
                      </span>
                    </button>
@@ -1255,13 +1386,13 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
                  </Button>
                )}
                {!isLeadsLoading && (
-                 <span className="text-sm font-medium text-stone-500 ml-2 cursor-pointer" onClick={() => !effectiveGuest && router.push('/leads')}>View all</span>
+                 <span className="text-sm font-semibold text-[#f5cbb2] ml-2 cursor-pointer hover:text-[#ffe9db]" onClick={() => !effectiveGuest && router.push('/leads')}>View all</span>
                )}
             </div>
           </div>
 
           {/* Product View - Blurred Preview */}
-          <Card data-tutorial-id="dashboard-pipeline" className="rounded-[32px] border border-white/5 shadow-sm flex-1 min-h-0 bg-[#1f1f23] text-[#FAFAF9] overflow-hidden flex flex-col">
+          <Card data-tutorial-id="dashboard-pipeline" className="doodle-panel rounded-[32px] border border-white/5 shadow-sm flex-1 min-h-0 bg-[#1f1f23] text-[#FAFAF9] overflow-hidden flex flex-col">
             <CardContent className="p-6 flex flex-col h-full overflow-hidden">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-bold">Lead pipeline</h3>
@@ -1331,7 +1462,7 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
                             {isClosedDeal ? 'Closed Deal' : 'Deal Lost'}
                           </div>
                         )}
-                        <div className="bg-[#F5F5F4] rounded-2xl p-4 h-full border border-transparent hover:border-stone-200 transition-all text-[#1C1917] overflow-hidden">
+                        <div className="doodle-paper bg-[#F5F5F4] rounded-2xl p-4 h-full border border-transparent hover:border-stone-200 transition-all text-[#1C1917] overflow-hidden">
                           <div className="flex items-center gap-3 mb-3">
                             <div className="h-10 w-10 rounded-full bg-[#E7E5E4] flex items-center justify-center text-stone-600 font-bold">
                               {(lead.businessName || lead.name || 'L').charAt(0)}
@@ -1418,19 +1549,22 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
 
         {/* Right Column */}
         <div className="col-span-12 lg:col-span-4 space-y-8">
-           {/* Popular Products */}
-           <Card data-tutorial-id="dashboard-products" className="rounded-[32px] border border-white/5 shadow-sm h-full bg-[#1f1f23] text-[#FAFAF9]">
+           {/* Quick Bundles */}
+           <Card data-tutorial-id="dashboard-products" className="doodle-panel rounded-[32px] border border-white/5 shadow-sm h-full bg-[#1f1f23] text-[#FAFAF9]">
              <CardContent className="p-8">
                <div className="flex justify-between items-center mb-6">
-                 <h3 className="text-xl font-bold">Popular products</h3>
+                 <h3 className="text-xl font-bold">Quick bundles</h3>
                </div>
+               <p className="text-xs text-stone-300 mb-5">
+                 If you want a quick purchase, click a bundle below.
+               </p>
 
                <div className="space-y-6">
                  {PACKAGES.map((pkg) => (
                    <div
                      key={pkg.id}
                      className="flex items-center justify-between group cursor-pointer"
-                     onClick={() => router.push(`/products?pkg=${pkg.id}`)}
+                     onClick={() => handleQuickBundleCheckout(pkg)}
                    >
                      <div className="flex items-center gap-4">
                        <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${pkg.color}`}>
@@ -1451,6 +1585,9 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
                  ))}
                </div>
 
+               <p className="text-xs text-stone-400 mt-7 mb-3">
+                 Need custom amount? Click here.
+               </p>
                <Button 
                 variant="outline" 
                 className="w-full mt-8 rounded-full h-12 border-stone-700 text-stone-400 hover:bg-stone-800 hover:text-stone-200"

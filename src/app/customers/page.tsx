@@ -10,6 +10,15 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useRouter } from 'next/navigation';
 import { 
   Search, 
@@ -28,7 +37,7 @@ import {
   DollarSign,
   Clock
 } from 'lucide-react';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { actorColorClass, getRoleCapabilities } from '@/lib/team-role';
@@ -152,6 +161,10 @@ function LeadsPageContent() {
   const [teamRole, setTeamRole] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isTeamContext, setIsTeamContext] = useState(false);
+  const [statusFilters, setStatusFilters] = useState<string[]>([]);
+  const [showOnlyScheduled, setShowOnlyScheduled] = useState(false);
+  const [showHighValueOnly, setShowHighValueOnly] = useState(false);
+  const [ownerFilter, setOwnerFilter] = useState<'all' | 'mine' | 'team'>('all');
   const { isMineScope } = useLeadScope();
 
   // Debounce effect
@@ -229,6 +242,31 @@ function LeadsPageContent() {
     return Number.isNaN(parsed) ? NaN : parsed;
   };
 
+  const parseMoney = (value: any) => {
+    const parsed = parseFloat(String(value ?? '$0').replace(/[$,]/g, ''));
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  const computeTimeToClose = (lead: any) => {
+    if (!(lead.status === 'Closed' || lead.status === 'Closed Deal')) return '--:--:--';
+    const closedAt = parseTime(lead.closedAt);
+    const openedAt = parseTime(lead.openedAt);
+    let start = openedAt;
+    if (!Number.isFinite(start) && lead.history?.length) {
+      const earliest = lead.history
+        .map((h: any) => parseTime(h.timestamp || h.date))
+        .filter((t: number) => Number.isFinite(t))
+        .sort((a: number, b: number) => a - b)[0];
+      start = earliest;
+    }
+    let end = closedAt;
+    if (!Number.isFinite(end) && lead.history?.length) {
+      const closeLog = lead.history.find((h: any) => h.result === 'Closed Deal' || h.result === 'Deal Lost');
+      end = parseTime(closeLog?.timestamp || closeLog?.date);
+    }
+    return Number.isFinite(start) && Number.isFinite(end) ? formatDuration(end - start) : '--:--:--';
+  };
+
   const stats = useMemo(() => {
     // Create a quick summary without iterating multiple times if possible
     let closedCount = 0;
@@ -296,6 +334,49 @@ function LeadsPageContent() {
     };
   }, [leads]);
 
+  const pipelineUtilizationPct = useMemo(() => {
+    if (leads.length === 0) return 0;
+    return Math.round((stats.activeCount / leads.length) * 100);
+  }, [leads.length, stats.activeCount]);
+
+  const revenueMomentum = useMemo(() => {
+    const closedSeries = leads
+      .map((lead) => {
+        const status = String(lead.status || '').toLowerCase();
+        const leadStatus = String(lead.leadStatus || '').toLowerCase();
+        const isClosed =
+          status === 'closed' ||
+          status === 'closed deal' ||
+          status === 'sale made' ||
+          leadStatus === 'sale-made' ||
+          leadStatus === 'closed-won';
+        if (!isClosed) return null;
+
+        const amount = parseFloat(String(lead.value || '$0').replace(/[$,]/g, '')) || 0;
+        const closedAt = parseTime(lead.closedAt);
+        return {
+          amount,
+          closedAt: Number.isFinite(closedAt) ? closedAt : 0,
+        };
+      })
+      .filter(Boolean)
+      .sort((a: any, b: any) => b.closedAt - a.closedAt)
+      .slice(0, 5)
+      .reverse() as Array<{ amount: number; closedAt: number }>;
+
+    const maxAmount = Math.max(0, ...closedSeries.map((x) => x.amount));
+    const bars = closedSeries.map((x) => {
+      if (maxAmount <= 0) return 10;
+      return Math.max(10, Math.round((x.amount / maxAmount) * 100));
+    });
+
+    return {
+      bars,
+      points: closedSeries.length,
+      total: closedSeries.reduce((acc, x) => acc + x.amount, 0),
+    };
+  }, [leads]);
+
   const handleCloseDeal = () => {
     if (!teamCanEdit) {
       toast({
@@ -332,18 +413,195 @@ function LeadsPageContent() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
-  // Memoize filtered leads to avoid re-calculation on every render
   const filteredLeads = useMemo(() => {
-    if (!debouncedSearch) return leads;
-    
-    const lowerSearch = debouncedSearch.toLowerCase();
-    return leads.filter(lead => 
-      (lead.name || lead.businessName || '').toLowerCase().includes(lowerSearch) || 
-      (lead.company || lead.businessName || '').toLowerCase().includes(lowerSearch)
-    );
-  }, [leads, debouncedSearch]);
+    const lowerSearch = debouncedSearch.trim().toLowerCase();
+    return leads.filter((lead) => {
+      if (lowerSearch) {
+        const searchHit =
+          (lead.name || lead.businessName || '').toLowerCase().includes(lowerSearch) ||
+          (lead.company || lead.businessName || '').toLowerCase().includes(lowerSearch);
+        if (!searchHit) return false;
+      }
+
+      if (statusFilters.length > 0) {
+        const leadStatus = String(lead.status || '').trim();
+        if (!statusFilters.includes(leadStatus)) return false;
+      }
+
+      if (showOnlyScheduled && (!lead.scheduledDate || lead.scheduledDate === '-')) return false;
+      if (showHighValueOnly && parseMoney(lead.value) < 100) return false;
+
+      if (isTeamContext && ownerFilter !== 'all') {
+        const isMine = lead.ownerUserId && currentUserId && lead.ownerUserId === currentUserId;
+        if (ownerFilter === 'mine' && !isMine) return false;
+        if (ownerFilter === 'team' && isMine) return false;
+      }
+
+      return true;
+    });
+  }, [
+    leads,
+    debouncedSearch,
+    statusFilters,
+    showOnlyScheduled,
+    showHighValueOnly,
+    ownerFilter,
+    isTeamContext,
+    currentUserId,
+  ]);
+
+  const availableStatuses = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          leads
+            .map((lead) => String(lead.status || '').trim())
+            .filter((status) => status.length > 0)
+        )
+      ).sort((a, b) => a.localeCompare(b)),
+    [leads]
+  );
+
+  const activeFilterCount =
+    statusFilters.length +
+    (showOnlyScheduled ? 1 : 0) +
+    (showHighValueOnly ? 1 : 0) +
+    (isTeamContext && ownerFilter !== 'all' ? 1 : 0);
+
+  const resetFilters = () => {
+    setStatusFilters([]);
+    setShowOnlyScheduled(false);
+    setShowHighValueOnly(false);
+    setOwnerFilter('all');
+  };
+
+  const activeFilterChips = useMemo(() => {
+    const chips: Array<{ key: string; label: string; clear: () => void }> = [];
+    statusFilters.forEach((status) => {
+      chips.push({
+        key: `status:${status}`,
+        label: `Status: ${status}`,
+        clear: () => setStatusFilters((prev) => prev.filter((s) => s !== status)),
+      });
+    });
+    if (showOnlyScheduled) {
+      chips.push({
+        key: 'scheduled',
+        label: 'Scheduled only',
+        clear: () => setShowOnlyScheduled(false),
+      });
+    }
+    if (showHighValueOnly) {
+      chips.push({
+        key: 'high-value',
+        label: 'High value ($100+)',
+        clear: () => setShowHighValueOnly(false),
+      });
+    }
+    if (isTeamContext && ownerFilter !== 'all') {
+      chips.push({
+        key: 'owner',
+        label: ownerFilter === 'mine' ? 'Owner: Mine' : 'Owner: Team',
+        clear: () => setOwnerFilter('all'),
+      });
+    }
+    return chips;
+  }, [statusFilters, showOnlyScheduled, showHighValueOnly, isTeamContext, ownerFilter]);
 
   const canCloseFromLeadsPage = teamCanEdit && teamRole !== 'viewer';
+
+  const exportRows = useMemo(
+    () =>
+      filteredLeads.map((lead) => ({
+        company: lead.company || lead.businessName || lead.name || '',
+        contact: lead.contactName || '',
+        email: lead.email || '',
+        phone: lead.phone || '',
+        status: lead.status || '',
+        value: lead.value || '$0',
+        schedule: lead.scheduledDate || '-',
+        timeToClose: computeTimeToClose(lead),
+        lastContact: lead.lastContact || 'Never',
+      })),
+    [filteredLeads]
+  );
+
+  const downloadBlob = (content: string, filename: string, type: string) => {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const exportAsCsv = () => {
+    const headers = ['Company', 'Contact', 'Email', 'Phone', 'Status', 'Value', 'Schedule', 'Time To Close', 'Last Contact'];
+    const quote = (value: string) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+    const rows = exportRows.map((row) =>
+      [
+        row.company,
+        row.contact,
+        row.email,
+        row.phone,
+        row.status,
+        row.value,
+        row.schedule,
+        row.timeToClose,
+        row.lastContact,
+      ]
+        .map(quote)
+        .join(',')
+    );
+    downloadBlob([headers.join(','), ...rows].join('\n'), `leads-export-${Date.now()}.csv`, 'text/csv;charset=utf-8;');
+    toast({ title: 'Exported CSV', description: `${exportRows.length} leads exported.` });
+  };
+
+  const exportAsJson = () => {
+    downloadBlob(JSON.stringify(exportRows, null, 2), `leads-export-${Date.now()}.json`, 'application/json;charset=utf-8;');
+    toast({ title: 'Exported JSON', description: `${exportRows.length} leads exported.` });
+  };
+
+  const exportAsTxt = () => {
+    const lines = exportRows.map(
+      (r, idx) =>
+        `${idx + 1}. ${r.company}\n   Status: ${r.status}\n   Value: ${r.value}\n   Contact: ${r.contact || r.email || r.phone || '-'}\n   Schedule: ${r.schedule}\n   Time To Close: ${r.timeToClose}\n`
+    );
+    downloadBlob(lines.join('\n'), `leads-export-${Date.now()}.txt`, 'text/plain;charset=utf-8;');
+    toast({ title: 'Exported TXT', description: `${exportRows.length} leads exported.` });
+  };
+
+  const exportAsDoc = () => {
+    const rowsHtml = exportRows
+      .map(
+        (r) =>
+          `<tr><td>${r.company}</td><td>${r.contact}</td><td>${r.email}</td><td>${r.phone}</td><td>${r.status}</td><td>${r.value}</td><td>${r.schedule}</td><td>${r.timeToClose}</td><td>${r.lastContact}</td></tr>`
+      )
+      .join('');
+    const html = `<html><head><meta charset="utf-8"><title>Leads Export</title></head><body><h2>Leads Export</h2><table border="1" cellspacing="0" cellpadding="6"><thead><tr><th>Company</th><th>Contact</th><th>Email</th><th>Phone</th><th>Status</th><th>Value</th><th>Schedule</th><th>Time To Close</th><th>Last Contact</th></tr></thead><tbody>${rowsHtml}</tbody></table></body></html>`;
+    downloadBlob(html, `leads-export-${Date.now()}.doc`, 'application/msword');
+    toast({ title: 'Exported DOC', description: `${exportRows.length} leads exported.` });
+  };
+
+  const exportAsPdf = () => {
+    const rowsHtml = exportRows
+      .map((r) => `<tr><td>${r.company}</td><td>${r.status}</td><td>${r.value}</td><td>${r.schedule}</td><td>${r.timeToClose}</td></tr>`)
+      .join('');
+    const html = `<html><head><title>Leads Export</title><style>body{font-family:Arial,sans-serif;padding:20px;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:8px;text-align:left;}th{background:#f4f4f4;}</style></head><body><h2>Leads Export</h2><p>Total rows: ${exportRows.length}</p><table><thead><tr><th>Company</th><th>Status</th><th>Value</th><th>Schedule</th><th>Time To Close</th></tr></thead><tbody>${rowsHtml}</tbody></table></body></html>`;
+    const popup = window.open('', '_blank');
+    if (!popup) {
+      toast({ title: 'Popup blocked', description: 'Enable popups to export PDF.', variant: 'destructive' });
+      return;
+    }
+    popup.document.write(html);
+    popup.document.close();
+    popup.focus();
+    popup.print();
+    toast({ title: 'Opened PDF print view', description: 'Choose "Save as PDF" in print.' });
+  };
 
   const totalPages = Math.ceil(filteredLeads.length / itemsPerPage);
   const paginatedLeads = filteredLeads.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -362,24 +620,91 @@ function LeadsPageContent() {
   }, [searchTerm]);
 
   return (
-    <div className="p-8 space-y-8 app-shell-bg app-shell-text min-h-screen select-none">
+    <div className="shop-doodle-theme p-8 space-y-8 app-shell-text min-h-screen select-none">
       <TooltipProvider delayDuration={200}>
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-4xl font-black tracking-tight text-stone-900 uppercase">Leads</h1>
-          <p className="text-stone-700 font-medium mt-1">Manage your high-intent pipeline and accelerate conversions.</p>
+        <div className="leads-header-panel rounded-2xl border border-white/28 bg-white/26 px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.12)] backdrop-blur-[6px]">
+          <h1 className="pattern-readable-title text-4xl font-black tracking-tight uppercase drop-shadow-[0_1px_1px_rgba(0,0,0,0.12)]">Leads</h1>
+          <p className="pattern-readable-subtitle text-lg font-extrabold text-slate-700 mt-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.12)]">Manage your high-intent pipeline and accelerate conversions.</p>
         </div>
         <div className="flex gap-3">
           <NotificationBell />
-          <Button variant="outline" className="bg-white border-stone-200 text-stone-600 hover:bg-stone-50">
-            <Filter className="w-4 h-4 mr-2" />
-            Filter
-          </Button>
-          <Button className="bg-stone-900 text-white hover:bg-stone-800">
-            <ArrowUpRight className="w-4 h-4 mr-2" />
-            Export CSV
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="bg-white border-stone-200 text-stone-700 hover:bg-stone-50">
+                <Filter className="w-4 h-4 mr-2" />
+                Filter
+                {activeFilterCount > 0 && (
+                  <Badge className="ml-2 h-5 min-w-5 rounded-full border-0 bg-stone-900 px-1.5 text-[10px] text-white">
+                    {activeFilterCount}
+                  </Badge>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-72">
+              <DropdownMenuLabel>Filter Leads</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={resetFilters}
+                className="mb-1 font-bold text-red-600 focus:bg-red-50 focus:text-red-700"
+              >
+                Clear filters
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-xs text-stone-500">Status</DropdownMenuLabel>
+              {availableStatuses.map((status) => (
+                <DropdownMenuCheckboxItem
+                  key={status}
+                  checked={statusFilters.includes(status)}
+                  onCheckedChange={(checked) =>
+                    setStatusFilters((prev) => (checked ? [...prev, status] : prev.filter((s) => s !== status)))
+                  }
+                >
+                  {status}
+                </DropdownMenuCheckboxItem>
+              ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuCheckboxItem checked={showOnlyScheduled} onCheckedChange={(checked) => setShowOnlyScheduled(Boolean(checked))}>
+                Scheduled only
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem checked={showHighValueOnly} onCheckedChange={(checked) => setShowHighValueOnly(Boolean(checked))}>
+                High value ($100+)
+              </DropdownMenuCheckboxItem>
+              {isTeamContext && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-xs text-stone-500">Owner</DropdownMenuLabel>
+                  <DropdownMenuCheckboxItem checked={ownerFilter === 'all'} onCheckedChange={() => setOwnerFilter('all')}>
+                    All owners
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem checked={ownerFilter === 'mine'} onCheckedChange={() => setOwnerFilter('mine')}>
+                    Mine only
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem checked={ownerFilter === 'team'} onCheckedChange={() => setOwnerFilter('team')}>
+                    Team only
+                  </DropdownMenuCheckboxItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="bg-stone-900 text-white hover:bg-stone-800">
+                <ArrowUpRight className="w-4 h-4 mr-2" />
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuLabel>Export Format</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={exportAsCsv}>CSV (.csv)</DropdownMenuItem>
+              <DropdownMenuItem onClick={exportAsPdf}>PDF (Print)</DropdownMenuItem>
+              <DropdownMenuItem onClick={exportAsDoc}>DOC (.doc)</DropdownMenuItem>
+              <DropdownMenuItem onClick={exportAsJson}>JSON (.json)</DropdownMenuItem>
+              <DropdownMenuItem onClick={exportAsTxt}>TXT (.txt)</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           {teamRole === 'viewer' && (
             <Badge className="bg-amber-100 text-amber-700 border-0">Viewer Mode</Badge>
           )}
@@ -388,68 +713,194 @@ function LeadsPageContent() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6" data-tutorial-id="leads-stats">
-        <Card className="bg-white p-8 rounded-[2.5rem] border-none shadow-sm relative overflow-hidden group transition-all hover:shadow-md">
-          <div className="absolute right-6 top-6 p-3 bg-stone-50 rounded-2xl text-stone-300 group-hover:text-stone-900 transition-all group-hover:rotate-12">
-            <Calculator className="w-5 h-5" />
-          </div>
-          <p className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">Projected Revenue</p>
-          <p className="text-4xl font-black text-stone-900 mt-2 tracking-tighter">
-            ${stats.projectedRevenue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})}
-          </p>
-          <div className="flex items-center mt-6 text-[10px] font-black gap-2">
-            <span className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-xl uppercase tracking-widest">
-              Avg: ${stats.averageDealValue.toLocaleString(undefined, {maximumFractionDigits: 0})}
-            </span>
-            <span className="text-stone-400 uppercase tracking-widest">From {stats.closedCount} deals</span>
-          </div>
+        <Card className="doodle-panel rounded-[2.5rem] border border-white/10 shadow-[0_10px_24px_rgba(15,23,42,0.24)] bg-[#1f1f23] text-[#FAFAF9] overflow-hidden">
+          <CardContent className="p-8">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-white/10 rounded-full">
+                <Calculator className="h-5 w-5 text-stone-300" />
+              </div>
+              <p className="text-[10px] font-black text-stone-300 uppercase tracking-[0.2em]">Projected Revenue</p>
+            </div>
+            <p className="text-5xl font-black tracking-tight">
+              ${stats.projectedRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+            </p>
+            <div className="flex items-center mt-5 text-[11px] font-black gap-2">
+              <span className="bg-[#2a2f3a] text-[#9fb4ff] px-3 py-1.5 rounded-xl uppercase tracking-widest text-[11px] leading-none">
+                Avg: ${stats.averageDealValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </span>
+              <span className="text-stone-400 uppercase tracking-widest">From {stats.closedCount} deals</span>
+            </div>
+            <div className="mt-5 pt-4 border-t border-white/10 flex items-center justify-between gap-3">
+              <div className="text-[10px] font-black uppercase tracking-[0.16em] text-stone-400">Revenue Momentum</div>
+              <div className="flex items-end gap-1.5 h-8">
+                {revenueMomentum.bars.map((h, i) => (
+                  <span key={i} className="w-1.5 rounded-full bg-[#6f86ff]/70" style={{ height: `${h}%` }} />
+                ))}
+              </div>
+            </div>
+            <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.14em] text-stone-400">
+              {revenueMomentum.points > 0
+                ? `Last ${revenueMomentum.points} closed deals total $${revenueMomentum.total.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+                : 'No closed deals yet'}
+            </p>
+          </CardContent>
         </Card>
 
-        <Card className="bg-white p-8 rounded-[2.5rem] border-none shadow-sm relative overflow-hidden group transition-all hover:shadow-md">
-          <div className="absolute right-6 top-6 p-3 bg-stone-50 rounded-2xl text-stone-300 group-hover:text-stone-900 transition-all group-hover:scale-110">
-            <Target className="w-5 h-5" />
-          </div>
-          <p className="text-[10px] font-black text-stone-700 uppercase tracking-[0.2em]">Active Pipeline</p>
-          <p className="text-4xl font-black text-stone-900 mt-2 tracking-tighter">{stats.activeCount}</p>
-          <div className="flex flex-col gap-2 mt-6">
-            <div className="text-[10px] font-black text-emerald-600 bg-emerald-50 w-fit px-3 py-1.5 rounded-xl uppercase tracking-widest">
-              High intent leads
+        <Card className="doodle-panel rounded-[2.5rem] border border-white/10 shadow-[0_10px_24px_rgba(15,23,42,0.24)] bg-[#1f1f23] text-[#FAFAF9] overflow-hidden">
+          <CardContent className="p-8">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-white/10 rounded-full">
+                <Target className="h-5 w-5 text-stone-300" />
+              </div>
+              <p className="text-[10px] font-black text-stone-300 uppercase tracking-[0.2em]">Active Pipeline</p>
             </div>
-            <div className="text-[10px] font-black text-stone-500 bg-stone-100 w-fit px-3 py-1.5 rounded-xl uppercase tracking-widest">
-              Avg Close: {formatDuration(stats.avgCloseMs)}
+            <p className="text-5xl font-black tracking-tight">{stats.activeCount}</p>
+            <div className="flex flex-col gap-2 mt-5">
+              <div className="text-[11px] leading-none font-black text-emerald-200 bg-emerald-900/45 w-fit px-3 py-1.5 rounded-xl uppercase tracking-widest">
+                High intent leads
+              </div>
+              <div className="text-[11px] leading-none font-black text-stone-300 bg-[#2a2f3a] w-fit px-3 py-1.5 rounded-xl uppercase tracking-widest">
+                Avg Close: {formatDuration(stats.avgCloseMs)}
+              </div>
             </div>
-          </div>
+            <div className="mt-5 pt-4 border-t border-white/10">
+              <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.16em] text-stone-400">
+                <span>Pipeline Utilization</span>
+                <span>{pipelineUtilizationPct}%</span>
+              </div>
+              <div className="mt-2 h-2 rounded-full bg-[#2a2f3a] overflow-hidden">
+                <div
+                  className="h-full bg-emerald-400/80 rounded-full transition-all"
+                  style={{ width: `${pipelineUtilizationPct}%` }}
+                />
+              </div>
+            </div>
+          </CardContent>
         </Card>
 
-        <Card className="bg-white p-8 rounded-[2.5rem] border-none shadow-sm relative overflow-hidden group transition-all hover:shadow-md">
-          <div className="absolute right-6 top-6 p-3 bg-stone-900 rounded-2xl text-white transition-all group-hover:-rotate-12 shadow-lg shadow-black/20">
-            <DollarSign className="w-5 h-5" />
-          </div>
-          <p className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">Closed Value</p>
-          <p className="text-4xl font-black text-stone-900 mt-2 tracking-tighter">${stats.totalClosedValue.toLocaleString()}</p>
-          <div className="flex items-center mt-6 text-[10px] font-black text-stone-900 bg-stone-100 w-fit px-3 py-1.5 rounded-xl uppercase tracking-widest">
-             Closing Rate: {leads.length > 0 ? ((stats.closedCount / leads.length) * 100).toFixed(0) : 0}%
-          </div>
+        <Card className="doodle-panel rounded-[2.5rem] border border-white/10 shadow-[0_10px_24px_rgba(15,23,42,0.24)] bg-[#1f1f23] text-[#FAFAF9] overflow-hidden">
+          <CardContent className="p-8">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-white/10 rounded-full">
+                <DollarSign className="h-5 w-5 text-stone-300" />
+              </div>
+              <p className="text-[10px] font-black text-stone-300 uppercase tracking-[0.2em]">Closed Value</p>
+            </div>
+            <p className="text-5xl font-black tracking-tight">${stats.totalClosedValue.toLocaleString()}</p>
+            <div className="flex items-center mt-5 text-[11px] leading-none font-black text-stone-200 bg-[#2a2f3a] w-fit px-3 py-1.5 rounded-xl uppercase tracking-widest">
+              Closing Rate: {leads.length > 0 ? ((stats.closedCount / leads.length) * 100).toFixed(0) : 0}%
+            </div>
+            <div className="mt-5 pt-4 border-t border-white/10 grid grid-cols-2 gap-3">
+              <div className="rounded-xl bg-[#2a2f3a] px-3 py-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-stone-400">Won Deals</p>
+                <p className="text-lg font-black text-emerald-200 mt-1">{stats.closedCount}</p>
+              </div>
+              <div className="rounded-xl bg-[#2a2f3a] px-3 py-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-stone-400">Pipeline Total</p>
+                <p className="text-lg font-black text-stone-100 mt-1">{leads.length}</p>
+              </div>
+            </div>
+          </CardContent>
         </Card>
       </div>
 
       {/* Main Table Card */}
-      <div className="bg-white rounded-[2.5rem] border-none shadow-sm overflow-hidden" data-tutorial-id="leads-table">
+      <div className="bg-white rounded-[2.5rem] border border-white/70 shadow-[0_6px_18px_rgba(15,23,42,0.10)] overflow-hidden transition-all duration-200 hover:shadow-[0_10px_24px_rgba(15,23,42,0.13)]" data-tutorial-id="leads-table">
         {/* Table Controls */}
-        <div className="p-8 border-b border-stone-50 flex items-center gap-6">
-          <div className="relative flex-1 max-w-md group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-300 group-focus-within:text-stone-900 transition-colors" />
-            <Input 
-              placeholder="Search by company or contact..." 
-              className="pl-12 bg-stone-50 border-none focus:bg-white focus:ring-2 focus:ring-stone-100 transition-all h-14 rounded-2xl font-bold text-stone-900 placeholder:text-stone-300 shadow-inner"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+        <div className="p-8 border-b border-stone-50">
+          <div className="flex items-center gap-6">
+            <div className="relative flex-1 max-w-md group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-300 group-focus-within:text-stone-900 transition-colors" />
+              <Input 
+                placeholder="Search by company or contact..." 
+                className="pl-12 bg-stone-50 border-none focus:bg-white focus:ring-2 focus:ring-stone-100 transition-all h-14 rounded-2xl font-bold text-stone-900 placeholder:text-stone-300 shadow-inner"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="h-14 w-14 rounded-2xl border-stone-100 text-stone-400 hover:text-stone-900 hover:bg-stone-50 transition-all relative">
+                    <Filter className="w-5 h-5" />
+                    {activeFilterCount > 0 && (
+                      <span className="absolute -right-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-stone-900 px-1 text-[10px] font-black text-white">
+                        {activeFilterCount}
+                      </span>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-64 rounded-2xl p-1">
+                  <DropdownMenuLabel className="text-xs font-black uppercase tracking-[0.16em] text-stone-500">
+                    Quick Filters
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuCheckboxItem checked={showOnlyScheduled} onCheckedChange={(checked) => setShowOnlyScheduled(Boolean(checked))}>
+                    Scheduled only
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem checked={showHighValueOnly} onCheckedChange={(checked) => setShowHighValueOnly(Boolean(checked))}>
+                    High value ($100+)
+                  </DropdownMenuCheckboxItem>
+                  {isTeamContext && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel className="text-xs text-stone-500">Owner</DropdownMenuLabel>
+                      <DropdownMenuCheckboxItem checked={ownerFilter === 'all'} onCheckedChange={() => setOwnerFilter('all')}>
+                        All owners
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem checked={ownerFilter === 'mine'} onCheckedChange={() => setOwnerFilter('mine')}>
+                        Mine only
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem checked={ownerFilter === 'team'} onCheckedChange={() => setOwnerFilter('team')}>
+                        Team only
+                      </DropdownMenuCheckboxItem>
+                    </>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-xs text-stone-500">Status</DropdownMenuLabel>
+                  {availableStatuses.slice(0, 8).map((status) => (
+                    <DropdownMenuCheckboxItem
+                      key={`quick-${status}`}
+                      checked={statusFilters.includes(status)}
+                      onCheckedChange={(checked) =>
+                        setStatusFilters((prev) => (checked ? [...prev, status] : prev.filter((s) => s !== status)))
+                      }
+                    >
+                      {status}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={resetFilters} className="font-bold text-red-600 focus:bg-red-50 focus:text-red-700">
+                    Clear all filters
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
-          <div className="flex gap-2">
-             <Button variant="outline" className="h-14 w-14 rounded-2xl border-stone-100 text-stone-400 hover:text-stone-900 hover:bg-stone-50 transition-all">
-                <Filter className="w-5 h-5" />
-             </Button>
-          </div>
+          {activeFilterChips.length > 0 && (
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-stone-500">Active Filters</span>
+              {activeFilterChips.map((chip) => (
+                <button
+                  key={chip.key}
+                  type="button"
+                  onClick={chip.clear}
+                  className="inline-flex items-center gap-1 rounded-full border border-stone-200 bg-stone-100 px-3 py-1 text-[11px] font-bold text-stone-700 hover:bg-stone-200"
+                  title="Click to remove this filter"
+                >
+                  <span>{chip.label}</span>
+                  <XCircle className="h-3.5 w-3.5 text-stone-500" />
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="inline-flex items-center rounded-full bg-red-50 px-3 py-1 text-[11px] font-black text-red-600 hover:bg-red-100"
+              >
+                Clear all
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Table */}
@@ -516,28 +967,7 @@ function LeadsPageContent() {
                 </TableCell>
                 <TableCell className="font-black text-stone-900 text-lg tracking-tighter">{lead.value}</TableCell>
                 <TableCell className="text-center">
-                  <span className="text-xs font-black text-stone-500">
-                    {lead.status === 'Closed' || lead.status === 'Closed Deal'
-                      ? (() => {
-                          const closedAt = parseTime(lead.closedAt);
-                          const openedAt = parseTime(lead.openedAt);
-                          let start = openedAt;
-                          if (!Number.isFinite(start) && lead.history?.length) {
-                            const earliest = lead.history
-                              .map((h: any) => parseTime(h.timestamp || h.date))
-                              .filter((t: number) => Number.isFinite(t))
-                              .sort((a: number, b: number) => a - b)[0];
-                            start = earliest;
-                          }
-                          let end = closedAt;
-                          if (!Number.isFinite(end) && lead.history?.length) {
-                            const closeLog = lead.history.find((h: any) => h.result === 'Closed Deal' || h.result === 'Deal Lost');
-                            end = parseTime(closeLog?.timestamp || closeLog?.date);
-                          }
-                          return Number.isFinite(start) && Number.isFinite(end) ? formatDuration(end - start) : '--:--:--';
-                        })()
-                      : '--:--:--'}
-                  </span>
+                  <span className="text-xs font-black text-stone-500">{computeTimeToClose(lead)}</span>
                 </TableCell>
                 <TableCell className="text-right pr-6">
                   <div className="flex items-center justify-end gap-1">
@@ -717,7 +1147,7 @@ function LeadsPageContent() {
 
 export default function RootLeadsPage() {
   return (
-    <div className="flex min-h-screen app-shell-bg app-shell-text">
+    <div className="flex min-h-screen platform-pattern-bg app-shell-text">
       {/* Sidebar with high z-index to stay on top */}
       <div className="hidden md:block fixed left-0 top-0 h-full z-50">
         <Sidebar />

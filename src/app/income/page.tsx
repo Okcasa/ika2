@@ -21,7 +21,12 @@ import {
   Wallet,
   Filter,
   History as HistoryIcon,
-  Target
+  Target,
+  Gauge,
+  CircleDollarSign,
+  CheckCircle2,
+  Sparkles,
+  Flag
 } from 'lucide-react';
 import { NotificationBell } from '@/components/notification-bell';
 import { supabase } from '@/lib/supabase';
@@ -32,6 +37,48 @@ import { useLeadScope } from '@/hooks/use-lead-scope';
 const LEADS_STORAGE_KEY = 'ika_leads_data';
 const REVENUE_GOAL_KEY = 'ika_revenue_goal';
 const MAX_HISTORY_ITEMS_PER_LEAD = 60;
+const COMPLETED_TRANSACTION_STATUSES = new Set(['completed', 'paid', 'billed']);
+
+const formatUsdAmount = (amount: number | null) => {
+  if (!Number.isFinite(Number(amount))) return null;
+  return new Intl.NumberFormat(undefined, {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number(amount));
+};
+
+const extractTransactionAmount = (tx: any): number | null => {
+  const rawCandidates = [
+    tx?.amount,
+    tx?.total,
+    tx?.grand_total,
+    tx?.details?.totals?.total,
+    tx?.payload?.details?.totals?.total,
+    tx?.payload?.data?.details?.totals?.total,
+  ];
+
+  for (const candidate of rawCandidates) {
+    const parsed = Number(candidate);
+    if (!Number.isFinite(parsed)) continue;
+    if (Number.isInteger(parsed) && Math.abs(parsed) >= 100) {
+      return parsed / 100;
+    }
+    return parsed;
+  }
+  return null;
+};
+
+const extractTransactionLabel = (tx: any) => {
+  const productName =
+    tx?.payload?.data?.details?.line_items?.[0]?.product?.name ||
+    tx?.payload?.details?.line_items?.[0]?.product?.name ||
+    tx?.payload?.data?.items?.[0]?.price?.name ||
+    tx?.payload?.items?.[0]?.price?.name;
+  if (typeof productName === 'string' && productName.trim().length > 0) return productName.trim();
+  return 'Lead package purchase';
+};
 
 function IncomePageContent() {
   const [leads, setLeads] = useState<any[]>([]);
@@ -45,6 +92,7 @@ function IncomePageContent() {
   const [teamRole, setTeamRole] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isTeamContext, setIsTeamContext] = useState(false);
+  const [paymentEvents, setPaymentEvents] = useState<any[]>([]);
   const { isMineScope } = useLeadScope();
 
   useEffect(() => {
@@ -55,6 +103,7 @@ function IncomePageContent() {
         if (session) {
           if (mounted) setCurrentUserId(session.user.id);
           let resolvedTeamId: string | null = null;
+          let scopedUserIds: string[] = [session.user.id];
           try {
             const teamRes = await fetch('/api/team/overview', {
               method: 'GET',
@@ -67,6 +116,16 @@ function IncomePageContent() {
             if (viewerOwnMode) {
               resolvedTeamId = null;
             }
+            const memberIds = [
+              ...new Set(
+                (Array.isArray(teamJson?.members) ? teamJson.members : [])
+                  .map((member: any) => String(member?.user_id || '').trim())
+                  .filter((id: string) => id.length > 0)
+              ),
+            ] as string[];
+            scopedUserIds = resolvedTeamId && !viewerOwnMode
+              ? (memberIds.length > 0 ? memberIds : [session.user.id])
+              : [session.user.id];
             if (mounted) {
               setTeamCanEdit(viewerOwnMode ? true : caps.canEdit);
               setTeamRole(caps.role);
@@ -101,17 +160,62 @@ function IncomePageContent() {
             }));
             setLeads(mapped);
           }
+
+          const { data: fulfillmentRows, error: fulfillmentErr } = await supabase
+            .from('paddle_fulfillments')
+            .select('id, transaction_id, user_id, lead_count, package_id, created_at')
+            .in('user_id', scopedUserIds)
+            .order('created_at', { ascending: false })
+            .limit(400);
+
+          if (!fulfillmentErr) {
+            const txIds = Array.from(
+              new Set(
+                (fulfillmentRows || [])
+                  .map((row: any) => String(row?.transaction_id || '').trim())
+                  .filter((id: string) => id.length > 0)
+              )
+            );
+
+            let txById = new Map<string, any>();
+            if (txIds.length > 0) {
+              const { data: txRows } = await supabase
+                .from('paddle_transactions')
+                .select('id, status, payload, created_at, updated_at')
+                .in('id', txIds);
+              txById = new Map((txRows || []).map((row: any) => [String(row?.id || ''), row]));
+            }
+
+            const merged = (fulfillmentRows || [])
+              .map((row: any) => {
+                const txId = String(row?.transaction_id || '').trim();
+                const tx = txId ? txById.get(txId) : null;
+                const txStatus = String(tx?.status || '').toLowerCase();
+                return {
+                  ...row,
+                  tx,
+                  txStatus,
+                  amount: extractTransactionAmount(tx),
+                  occurredAt: row?.created_at || tx?.updated_at || tx?.created_at || null,
+                };
+              })
+              .filter((row: any) => COMPLETED_TRANSACTION_STATUSES.has(String(row?.txStatus || '')));
+
+            if (mounted) setPaymentEvents(merged);
+          }
         } else {
           const saved = localStorage.getItem(LEADS_STORAGE_KEY);
           if (saved && mounted) {
             setLeads(JSON.parse(saved));
           }
+          if (mounted) setPaymentEvents([]);
         }
       } catch {
         const saved = localStorage.getItem(LEADS_STORAGE_KEY);
         if (saved && mounted) {
           setLeads(JSON.parse(saved));
         }
+        if (mounted) setPaymentEvents([]);
       } finally {
         if (mounted) setIsLoadingLeads(false);
       }
@@ -143,87 +247,9 @@ function IncomePageContent() {
     return parsed >= cutoff;
   };
 
-  const closedEvents = useMemo(() => {
-    const events: Array<{
-      id: string;
-      company: string;
-      amount: number;
-      amountLabel: string;
-      closedAt: any;
-      contact: string;
-      ownerUserId: string | null;
-    }> = [];
-
-    leads.forEach((l) => {
-      const amount = parseFloat(String(l.value || '$0').replace(/[$,]/g, '')) || 0;
-      const company = l.businessName || l.name || 'Unknown Company';
-      const contact = l.phone || l.email || 'N/A';
-      const ownerUserId = l.ownerUserId ?? null;
-
-      const historyClosed = (Array.isArray(l.history) ? l.history : [])
-        .filter((h: any) => h?.result === 'Closed Deal' && inSelectedWindow(h?.timestamp || h?.date))
-        .map((h: any, idx: number) => ({
-          id: `${l.id}-h-${idx}-${h?.timestamp || h?.date || Date.now()}`,
-          company,
-          amount,
-          amountLabel: l.value || `$${amount.toLocaleString()}`,
-          closedAt: h?.timestamp || h?.date,
-          contact,
-          ownerUserId,
-        }));
-
-      if (historyClosed.length > 0) {
-        events.push(...historyClosed);
-        return;
-      }
-
-      const status = String(l.status || '').toLowerCase();
-      const leadStatus = String(l.leadStatus || '').toLowerCase();
-      const isClosedLead =
-        status === 'closed' ||
-        status === 'closed deal' ||
-        status === 'sale made' ||
-        leadStatus === 'sale-made' ||
-        leadStatus === 'closed-won';
-      if (isClosedLead && inSelectedWindow(l.closedAt)) {
-        events.push({
-          id: `${l.id}-fallback`,
-          company,
-          amount,
-          amountLabel: l.value || `$${amount.toLocaleString()}`,
-          closedAt: l.closedAt,
-          contact,
-          ownerUserId,
-        });
-      }
-    });
-
-    return events;
-  }, [leads, periodDays]);
-
-  const lostEvents = useMemo(() => {
-    const events: Array<{ at: any }> = [];
-
-    leads.forEach((l) => {
-      const historyLost = (Array.isArray(l.history) ? l.history : [])
-        .filter((h: any) => (h?.result === 'Deal Lost' || h?.result === 'Not Interested') && inSelectedWindow(h?.timestamp || h?.date))
-        .map((h: any) => ({ at: h?.timestamp || h?.date }));
-
-      if (historyLost.length > 0) {
-        events.push(...historyLost);
-        return;
-      }
-
-      const status = String(l.status || '').toLowerCase();
-      const leadStatus = String(l.leadStatus || '').toLowerCase();
-      const isLost = status === 'deal lost' || status === 'lost' || leadStatus === 'closed-lost' || leadStatus === 'not-interested';
-      if (isLost && inSelectedWindow(l.closedAt)) {
-        events.push({ at: l.closedAt });
-      }
-    });
-
-    return events;
-  }, [leads, periodDays]);
+  const scopedPayments = useMemo(() => {
+    return paymentEvents.filter((event: any) => inSelectedWindow(event?.occurredAt));
+  }, [paymentEvents, periodDays]);
 
   const chartData = useMemo(() => {
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -239,33 +265,27 @@ function IncomePageContent() {
       'Sun': { revenue: 0, closed: 0, lost: 0 }
     };
 
-    closedEvents.forEach((e) => {
-      if (!e.closedAt) return;
-      const dayName = format(new Date(e.closedAt), 'EEE');
+    scopedPayments.forEach((e: any) => {
+      if (!e?.occurredAt) return;
+      const dayName = format(new Date(e.occurredAt), 'EEE');
       if (dataMap[dayName]) {
-        dataMap[dayName].revenue += e.amount;
+        dataMap[dayName].revenue += Number(e?.amount) || 0;
         dataMap[dayName].closed += 1;
       }
-    });
-
-    lostEvents.forEach((e) => {
-      if (!e.at) return;
-      const dayName = format(new Date(e.at), 'EEE');
-      if (dataMap[dayName]) dataMap[dayName].lost += 1;
     });
 
     return days.map(name => ({
       name,
       ...dataMap[name]
     }));
-  }, [closedEvents, lostEvents]);
+  }, [scopedPayments]);
 
   const stats = useMemo(() => {
-    const totalRevenue = closedEvents.reduce((acc, e) => acc + (e.amount || 0), 0);
+    const totalRevenue = scopedPayments.reduce((acc, e: any) => acc + (Number(e?.amount) || 0), 0);
     return {
       totalRevenue,
     };
-  }, [closedEvents]);
+  }, [scopedPayments]);
 
   const goalProgress = useMemo(() => {
     if (!goal || goal <= 0) return 0;
@@ -273,15 +293,38 @@ function IncomePageContent() {
   }, [stats.totalRevenue, goal]);
 
   const recentClosedDeals = useMemo(() => {
-    return [...closedEvents]
+    return [...scopedPayments]
       .sort((a, b) => {
-        const ta = a.closedAt ? new Date(a.closedAt).getTime() : 0;
-        const tb = b.closedAt ? new Date(b.closedAt).getTime() : 0;
+        const ta = a?.occurredAt ? new Date(a.occurredAt).getTime() : 0;
+        const tb = b?.occurredAt ? new Date(b.occurredAt).getTime() : 0;
         return tb - ta;
       })
       .slice(0, 10)
-      .map((e) => ({ ...e, status: 'Paid' }));
-  }, [closedEvents]);
+      .map((e: any) => {
+        const amount = Number(e?.amount);
+        return {
+          id: String(e?.id || `${e?.transaction_id || 'tx'}-${e?.occurredAt || Date.now()}`),
+          company: extractTransactionLabel(e?.tx),
+          amount: Number.isFinite(amount) ? amount : 0,
+          amountLabel: formatUsdAmount(Number.isFinite(amount) ? amount : null) || '$0.00',
+          closedAt: e?.occurredAt,
+          contact: String(e?.transaction_id || 'Transaction'),
+          ownerUserId: e?.user_id || null,
+          status: 'Paid',
+        };
+      });
+  }, [scopedPayments]);
+
+  const dashboardInsights = useMemo(() => {
+    const closedCount = recentClosedDeals.length;
+    const avgDeal = closedCount > 0 ? stats.totalRevenue / closedCount : 0;
+    const goalRemaining = Math.max(0, goal - stats.totalRevenue);
+    return {
+      closedCount,
+      avgDeal,
+      goalRemaining,
+    };
+  }, [recentClosedDeals.length, stats.totalRevenue, goal]);
 
   const handleSaveGoal = async () => {
     if (!teamCanEdit) return;
@@ -295,12 +338,12 @@ function IncomePageContent() {
   };
 
   return (
-    <div className="p-8 space-y-8 app-shell-bg app-shell-text min-h-screen font-poppins">
+    <div className="shop-doodle-theme p-8 space-y-8 app-shell-text min-h-screen font-poppins">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-4xl font-extrabold tracking-tight text-stone-900">Income Overview</h1>
-          <p className="text-base text-stone-700 mt-1 font-semibold">Real-time performance analytics and revenue tracking.</p>
+        <div className="rounded-2xl border border-white/28 bg-white/26 px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.12)] backdrop-blur-[6px]">
+          <h1 className="text-4xl font-extrabold tracking-tight text-stone-950 drop-shadow-[0_2px_6px_rgba(255,255,255,0.45)]">Income Overview</h1>
+          <p className="text-base text-stone-800 mt-1 font-semibold drop-shadow-[0_1px_4px_rgba(255,255,255,0.35)]">Real-time performance analytics and revenue tracking.</p>
         </div>
         <div className="flex gap-3">
           {teamRole === 'viewer' && (
@@ -320,45 +363,50 @@ function IncomePageContent() {
 
       {/* Main Stats Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-tutorial-id="income-summary">
-        <Card className="rounded-3xl border border-stone-200 shadow-sm bg-white overflow-hidden">
+        <Card className="doodle-panel rounded-3xl border border-white/10 shadow-[0_10px_24px_rgba(15,23,42,0.24)] bg-[#1f1f23] text-[#FAFAF9] overflow-hidden">
           <CardContent className="p-6">
-            <div className="flex justify-between items-start">
-              <div className="p-2 bg-stone-50 rounded-lg text-stone-400">
-                 <Wallet className="w-5 h-5" />
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/10 rounded-full text-stone-300">
+                  <Wallet className="w-5 h-5" />
+                </div>
+                <p className="text-[10px] font-black text-stone-300 uppercase tracking-[0.2em]">Total Revenue</p>
               </div>
-              <Badge variant="outline" className="text-emerald-600 bg-emerald-50 border-emerald-100 flex items-center">
+              <Badge variant="outline" className="text-emerald-200 bg-emerald-900/35 border-emerald-700/50 flex items-center">
                  <ArrowUpRight className="w-3 h-3 mr-1" /> +12.5%
               </Badge>
             </div>
-            <p className="text-sm font-extrabold text-stone-400 uppercase tracking-widest mt-4">Total Revenue</p>
-            <p className="text-4xl font-extrabold text-stone-900 mt-1">
+            <p className="text-5xl font-extrabold text-[#FAFAF9] mt-1 tracking-tight">
               {isLoadingLeads ? 'Loading...' : `$${stats.totalRevenue.toLocaleString()}`}
             </p>
           </CardContent>
         </Card>
 
-        <Card className="rounded-3xl border border-stone-200 shadow-sm bg-white overflow-hidden">
+        <Card className="doodle-panel rounded-3xl border border-white/10 shadow-[0_10px_24px_rgba(15,23,42,0.24)] bg-[#1f1f23] text-[#FAFAF9] overflow-hidden">
           <CardContent className="p-6 space-y-5">
             <div className="flex items-center justify-between">
-              <div className="p-2 bg-violet-50 rounded-lg text-violet-600">
-                <Target className="w-5 h-5" />
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/10 rounded-full text-violet-200">
+                  <Target className="w-5 h-5" />
+                </div>
+                <p className="text-[10px] font-black text-stone-300 uppercase tracking-[0.2em]">Revenue Goal</p>
               </div>
-              <Badge variant="outline" className="text-violet-700 bg-violet-50 border-violet-100">
+              <Badge variant="outline" className="text-violet-200 bg-violet-900/35 border-violet-700/50">
                 Target: ${goal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </Badge>
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs font-extrabold uppercase tracking-widest text-stone-400">
+              <div className="flex items-center justify-between text-xs font-extrabold uppercase tracking-widest text-stone-300">
                 <span>Progress</span>
                 <span>{goalProgress.toFixed(1)}%</span>
               </div>
               {isGoalLoading ? (
-                <div className="h-3 w-full rounded-full bg-stone-100 overflow-hidden">
-                  <div className="h-full w-1/3 animate-pulse bg-violet-300 rounded-full" />
+                <div className="h-3 w-full rounded-full bg-[#2a2f3a] overflow-hidden">
+                  <div className="h-full w-1/3 animate-pulse bg-violet-500 rounded-full" />
                 </div>
               ) : (
-                <div className="h-3 w-full rounded-full bg-stone-100 overflow-hidden">
+                <div className="h-3 w-full rounded-full bg-[#2a2f3a] overflow-hidden">
                   <div
                     className="h-full bg-violet-600 rounded-full transition-all duration-500"
                     style={{ width: `${goalProgress}%` }}
@@ -374,7 +422,7 @@ function IncomePageContent() {
                 value={goalInput}
                 onChange={(e) => setGoalInput(e.target.value)}
                 disabled={!teamCanEdit}
-                className="h-11 flex-1 rounded-xl border border-stone-200 bg-stone-50 px-3 text-base font-semibold text-stone-900 outline-none focus:ring-2 focus:ring-violet-500"
+                className="h-11 flex-1 rounded-xl border border-white/15 bg-[#2a2f3a] px-3 text-base font-semibold text-[#FAFAF9] outline-none focus:ring-2 focus:ring-violet-500"
                 placeholder="Set revenue goal"
               />
               <Button
@@ -384,6 +432,60 @@ function IncomePageContent() {
               >
                 {isGoalSaving ? 'Saving...' : 'Save Goal'}
               </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Insight Strip */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5" data-tutorial-id="income-insights">
+        <Card className="doodle-panel rounded-3xl border border-white/10 shadow-[0_10px_24px_rgba(15,23,42,0.24)] bg-[#1f1f23] text-[#FAFAF9] overflow-hidden">
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between">
+              <div className="space-y-2">
+                <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-stone-300">Closed Deals</p>
+                <p className="text-3xl font-extrabold text-[#FAFAF9]">{dashboardInsights.closedCount}</p>
+                <p className="text-sm font-semibold text-stone-300">
+                  {periodDays === 0 ? 'Across all time' : `In the last ${periodDays} days`}
+                </p>
+              </div>
+              <div className="rounded-xl bg-emerald-900/45 p-2.5 text-emerald-200">
+                <CheckCircle2 className="h-5 w-5" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="doodle-panel rounded-3xl border border-white/10 shadow-[0_10px_24px_rgba(15,23,42,0.24)] bg-[#1f1f23] text-[#FAFAF9] overflow-hidden">
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between">
+              <div className="space-y-2">
+                <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-stone-300">Average Deal</p>
+                <p className="text-3xl font-extrabold text-[#FAFAF9]">
+                  {formatUsdAmount(dashboardInsights.avgDeal) || '$0.00'}
+                </p>
+                <p className="text-sm font-semibold text-stone-300">Per completed checkout</p>
+              </div>
+              <div className="rounded-xl bg-violet-900/45 p-2.5 text-violet-200">
+                <CircleDollarSign className="h-5 w-5" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="doodle-panel rounded-3xl border border-white/10 shadow-[0_10px_24px_rgba(15,23,42,0.24)] bg-[#1f1f23] text-[#FAFAF9] overflow-hidden">
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between">
+              <div className="space-y-2">
+                <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-stone-300">Goal Remaining</p>
+                <p className="text-3xl font-extrabold text-[#FAFAF9]">
+                  {formatUsdAmount(dashboardInsights.goalRemaining) || '$0.00'}
+                </p>
+                <p className="text-sm font-semibold text-stone-300">To hit this target cycle</p>
+              </div>
+              <div className="rounded-xl bg-amber-900/45 p-2.5 text-amber-200">
+                <Flag className="h-5 w-5" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -401,6 +503,15 @@ function IncomePageContent() {
               <Button variant="ghost" size="sm" className="rounded-full text-stone-900 hover:text-stone-900 hover:bg-stone-100 font-semibold select-none">
                  <Filter className="w-4 h-4 mr-2" /> Filter
               </Button>
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <Badge className="border-0 bg-stone-900 text-white">Revenue</Badge>
+              <Badge className="border-0 bg-emerald-600 text-white">Closed Deals</Badge>
+              <Badge className="border-0 bg-red-500 text-white">Lost / Disinterested</Badge>
+              <Badge variant="outline" className="border-stone-300 text-stone-700">
+                <Gauge className="mr-1 h-3.5 w-3.5" />
+                {goalProgress.toFixed(1)}% to goal
+              </Badge>
             </div>
           </CardHeader>
           <CardContent className="p-8">
@@ -475,9 +586,15 @@ function IncomePageContent() {
                   ))}
 
                   {recentClosedDeals.length === 0 && (
-                   <div className="text-center py-12 text-stone-600">
-                      <HistoryIcon className="w-10 h-10 mx-auto mb-2 opacity-10" />
-                      <p className="text-sm">No closed deals found yet.</p>
+                   <div className="rounded-2xl border border-stone-200 bg-stone-50 p-6 text-stone-700">
+                      <div className="text-center pb-5">
+                        <HistoryIcon className="w-10 h-10 mx-auto mb-2 opacity-20" />
+                        <p className="text-sm font-semibold">No closed deals found yet.</p>
+                      </div>
+                      <div className="space-y-2 text-xs font-semibold text-stone-600">
+                        <p className="flex items-center gap-2"><Sparkles className="h-3.5 w-3.5 text-violet-600" /> Close your first lead to populate this feed.</p>
+                        <p className="flex items-center gap-2"><Sparkles className="h-3.5 w-3.5 text-violet-600" /> Revenue chart and averages update instantly after checkout.</p>
+                      </div>
                    </div>
                   )}
                 </div>
@@ -495,7 +612,7 @@ function IncomePageContent() {
 
 export default function RootIncomePage() {
   return (
-    <div className="flex min-h-screen app-shell-bg app-shell-text">
+    <div className="flex min-h-screen platform-pattern-bg income-pattern-dim app-shell-text">
       <div className="hidden md:block fixed left-0 top-0 h-full z-50">
         <Sidebar />
       </div>

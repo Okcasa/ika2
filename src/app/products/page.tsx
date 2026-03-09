@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, useEffect, useRef } from 'react';
+import { Suspense, useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Sidebar } from '@/components/sidebar';
 import { Button } from '@/components/ui/button';
@@ -72,6 +72,39 @@ function ProductPageContent() {
   const [quantities, setQuantities] = useState<{ [key: string]: number }>({
     standard: 30,
   });
+
+  const bundleIdByName: Record<string, string> = {
+    'Starter Pack': 'starter',
+    'Standard Pack': 'standard',
+    'Growth Pack': 'growth',
+    'Pro Bundle': 'pro',
+    'Enterprise': 'enterprise',
+  };
+
+  const quickBundles = useMemo(() => {
+    const defaultOrder = PACKAGES.filter((p) => p.id !== 'standard');
+    if (purchaseHistory.length === 0) return defaultOrder;
+
+    const purchaseCountById: Record<string, number> = {};
+    for (const item of purchaseHistory) {
+      const pkgId = bundleIdByName[item.pack];
+      if (!pkgId) continue;
+      purchaseCountById[pkgId] = (purchaseCountById[pkgId] || 0) + 1;
+    }
+
+    const defaultRank: Record<string, number> = {};
+    defaultOrder.forEach((pkg, idx) => {
+      defaultRank[pkg.id] = idx;
+    });
+
+    return [...defaultOrder].sort((a, b) => {
+      const aCount = purchaseCountById[a.id] || 0;
+      const bCount = purchaseCountById[b.id] || 0;
+      if (aCount !== bCount) return bCount - aCount;
+      return (defaultRank[a.id] || 0) - (defaultRank[b.id] || 0);
+    });
+  }, [purchaseHistory]);
+  const topPopularBundle = quickBundles[0] || PACKAGES.find((p) => p.id === 'standard') || PACKAGES[0];
   const currentLeads = quantities.standard || 30;
   const currentPrice = getBundlePrice(currentLeads);
   const currentPriceLabel = `$${currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -460,9 +493,11 @@ function ProductPageContent() {
     ));
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto app-shell-bg app-shell-text h-screen overflow-y-auto select-none flex flex-col gap-8">
+    <div className="p-8 max-w-[1600px] mx-auto app-shell-text h-screen overflow-y-auto select-none flex flex-col gap-8">
       <header className="flex flex-col md:flex-row justify-between items-center gap-4">
-        <h1 className="text-3xl font-bold tracking-tight text-[#1C1917]">Marketplace</h1>
+        <h1 className="inline-flex items-center rounded-2xl border border-white/28 bg-white/26 px-4 py-2 text-3xl font-bold tracking-tight text-stone-950 shadow-[0_10px_24px_rgba(15,23,42,0.12)] backdrop-blur-[6px]">
+          Marketplace
+        </h1>
 
         <div className="flex items-center gap-4 w-full md:w-auto">
           <div className="flex gap-2">
@@ -475,10 +510,10 @@ function ProductPageContent() {
         <div className="col-span-12 lg:col-span-8 space-y-6 min-h-0 flex flex-col">
           <div className="grid md:grid-cols-2 gap-4" data-tutorial-id="products-overview">
             <Card
-              id="pkg-standard"
+              id={`pkg-${topPopularBundle.id}`}
               className={cn(
                 "rounded-[32px] shadow-sm bg-[#1C1917] text-[#FAFAF9] transition-all border border-stone-700/80",
-                highlightPkg === 'standard' && "ring-4 ring-violet-300/80"
+                highlightPkg === topPopularBundle.id && "ring-4 ring-violet-300/80"
               )}
             >
               <CardContent className="p-8">
@@ -487,16 +522,18 @@ function ProductPageContent() {
                      <div className="p-2 bg-white/15 rounded-full">
                        <Mail className="h-5 w-5 text-stone-100" />
                      </div>
-                     <span className="font-semibold text-stone-100">Standard Pack</span>
+                     <span className="font-semibold text-stone-100">{topPopularBundle.name}</span>
                    </div>
                  </div>
                  <div className="flex items-baseline gap-4">
-                   <span className="text-5xl font-bold tracking-tight">$3.50</span>
+                   <span className="text-5xl font-bold tracking-tight">
+                     ${topPopularBundle.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                   </span>
                    <Badge variant="secondary" className="bg-[#E5E4E2] text-[#1C1917] hover:bg-[#E5E4E2] hover:text-[#1C1917] px-2 py-1 uppercase text-[10px] font-bold">
-                     30 Leads
+                     {topPopularBundle.leads} Leads
                    </Badge>
                  </div>
-                 <p className="text-sm text-stone-300 mt-2">High Intent Lead Injection</p>
+                 <p className="text-sm text-stone-300 mt-2">Most bought bundle right now</p>
               </CardContent>
             </Card>
 
@@ -543,8 +580,8 @@ function ProductPageContent() {
                             className={cn(
                               "h-12 min-w-[104px] rounded-full px-5 border-2 text-lg font-black",
                               quantities.standard === n
-                                ? "border-violet-500 text-violet-600 bg-white shadow-[0_0_0_3px_rgba(139,92,246,0.12)]"
-                                : "border-stone-200 text-stone-600 bg-stone-50 hover:bg-stone-100"
+                                ? "border-violet-500 text-violet-700 bg-white shadow-[0_0_0_3px_rgba(139,92,246,0.12)] hover:bg-violet-50 hover:text-violet-700"
+                                : "border-stone-200 text-stone-700 bg-stone-50 hover:bg-stone-100 hover:text-stone-800"
                             )}
                             onClick={() => handleQuantityChange('standard', n)}
                           >
@@ -566,7 +603,7 @@ function ProductPageContent() {
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="h-11 w-11 rounded-full text-stone-700 hover:bg-stone-200 text-3xl font-black"
+                          className="h-11 w-11 rounded-full text-stone-700 hover:bg-stone-200 hover:text-stone-900 text-3xl font-black"
                           onPointerDown={(e) => {
                             e.preventDefault();
                             startQuantityHold(-1);
@@ -599,7 +636,7 @@ function ProductPageContent() {
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="h-11 w-11 rounded-full text-stone-700 hover:bg-stone-200 text-3xl font-black"
+                          className="h-11 w-11 rounded-full text-stone-700 hover:bg-stone-200 hover:text-stone-900 text-3xl font-black"
                           onPointerDown={(e) => {
                             e.preventDefault();
                             startQuantityHold(1);
@@ -725,20 +762,19 @@ function ProductPageContent() {
             <Card className="rounded-[40px] border-none shadow-sm h-full min-h-0 bg-[#1C1917] text-[#FAFAF9]" data-tutorial-id="products-bundles">
               <CardContent className="p-10 flex flex-col h-full">
                 <div className="flex justify-between items-center mb-8">
-                  <h3 className="text-xl font-black">Quick Bundles</h3>
+                  <h3 className="text-xl font-black">Popular Bundles</h3>
                   <Sparkles className="h-5 w-5 text-yellow-400" />
                 </div>
 
                 <div className="space-y-8 flex-1">
-                  {PACKAGES.filter(p => p.id !== 'standard').map((pkg) => (
+                  {quickBundles.map((pkg) => (
                     <div
                         id={`pkg-${pkg.id}`}
                         key={pkg.id} 
                         className={cn(
-                          "flex items-center justify-between group cursor-pointer rounded-2xl px-2 py-2 transition-all",
+                          "flex items-center justify-between rounded-2xl px-2 py-2 transition-all",
                           highlightPkg === pkg.id && "bg-violet-500/10 ring-1 ring-violet-400/40"
                         )}
-                        onClick={() => handlePurchase(pkg.id)}
                     >
                       <div className="flex items-center gap-5">
                         <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center transition-all group-hover:scale-110", pkg.color)}>
@@ -785,13 +821,13 @@ function ProductPageContent() {
 
 export default function RootProductsPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen app-shell-bg app-shell-text" />}>
-      <div className="flex min-h-screen app-shell-bg app-shell-text">
+    <Suspense fallback={<div className="min-h-screen platform-pattern-bg app-shell-text" />}>
+      <div className="flex min-h-screen platform-pattern-bg app-shell-text">
         <div className="hidden md:block fixed left-0 top-0 h-full z-50">
           <Sidebar />
         </div>
         <main 
-          className="flex-1 p-0 min-h-screen relative z-0 transition-[margin] duration-75"
+          className="platform-pattern-bg flex-1 p-0 min-h-screen relative z-0 transition-[margin] duration-75"
           style={{ marginLeft: 'var(--sidebar-width, 256px)' }}
         >
           <ProductPageContent />

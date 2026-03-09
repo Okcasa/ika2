@@ -9,7 +9,6 @@ import {
   Users,
   Store,
   CheckSquare,
-  Moon,
   LogOut,
   GripVertical,
   Settings,
@@ -19,7 +18,10 @@ import {
   Shield,
   Puzzle,
   LifeBuoy,
-  X
+  X,
+  Sun,
+  Moon,
+  ArrowDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -48,6 +50,9 @@ export function Sidebar() {
   const [userRole, setUserRole] = useState('Member');
   const [userEmail, setUserEmail] = useState('');
   const [currentUserId, setCurrentUserId] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [profileBio, setProfileBio] = useState('');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [teamNameInput, setTeamNameInput] = useState('My Team');
   const [inviteRole, setInviteRole] = useState<'viewer' | 'editor' | 'admin'>('viewer');
@@ -55,8 +60,11 @@ export function Sidebar() {
   const [inviteCode, setInviteCode] = useState('');
   const [joinCodeInput, setJoinCodeInput] = useState('');
   const [teamBusy, setTeamBusy] = useState(false);
+  const [patternMode, setPatternMode] = useState<'light' | 'dark'>('light');
+  const [showLogsThemeHint, setShowLogsThemeHint] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const { overview, refresh, capabilities: teamCaps } = useTeamOverview();
+  const isLogsPage = pathname === '/logs';
 
   const startResizing = useCallback((mouseDownEvent: React.MouseEvent) => {
     setIsResizing(true);
@@ -99,8 +107,39 @@ export function Sidebar() {
   }, []);
 
   useEffect(() => {
-    document.documentElement.classList.remove('dark');
-    localStorage.setItem('leadsorter_theme', 'light');
+    if (isLogsPage) {
+      const savedLogsMode = sessionStorage.getItem('ika_logs_pattern_mode');
+      const nextMode: 'light' | 'dark' = savedLogsMode === 'light' ? 'light' : 'dark';
+      setPatternMode(nextMode);
+      document.documentElement.setAttribute('data-pattern-mode', nextMode);
+      return;
+    }
+
+    setPatternMode('light');
+    document.documentElement.setAttribute('data-pattern-mode', 'light');
+    sessionStorage.removeItem('ika_logs_pattern_mode');
+  }, [isLogsPage]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-pattern-mode', patternMode);
+    if (isLogsPage) {
+      sessionStorage.setItem('ika_logs_pattern_mode', patternMode);
+    }
+  }, [patternMode, isLogsPage]);
+
+  useEffect(() => {
+    if (!isLogsPage) {
+      setShowLogsThemeHint(false);
+      return;
+    }
+    const hintSeen = localStorage.getItem('ika_logs_theme_hint_seen');
+    setShowLogsThemeHint(!hintSeen);
+  }, [isLogsPage]);
+
+  useEffect(() => {
+    return () => {
+      document.documentElement.setAttribute('data-pattern-mode', 'light');
+    };
   }, []);
 
   useEffect(() => {
@@ -114,8 +153,19 @@ export function Sidebar() {
           session.user.user_metadata?.name ||
           (session.user.email ? session.user.email.split('@')[0] : '');
         if (metaName) setUserName(metaName);
+        const metaDisplayName = session.user.user_metadata?.display_name;
+        if (typeof metaDisplayName === 'string') setDisplayName(metaDisplayName);
+        const metaBio = session.user.user_metadata?.bio;
+        if (typeof metaBio === 'string') setProfileBio(metaBio);
         if (session.user.email) setUserEmail(session.user.email);
         setCurrentUserId(session.user.id);
+
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('full_name')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+        if (profile?.full_name) setUserName(profile.full_name);
       } catch {
         // ignore
       }
@@ -281,10 +331,62 @@ export function Sidebar() {
     router.refresh();
   };
 
+  const handleSaveProfile = useCallback(async () => {
+    if (!currentUserId) {
+      toast({
+        title: 'Sign in required',
+        description: 'Please sign in again to save your profile.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsSavingProfile(true);
+    const nextFullName = userName.trim();
+    const nextDisplayName = displayName.trim();
+    const nextBio = profileBio.trim();
+
+    try {
+      const { error: profileErr } = await supabase.from('user_profiles').upsert({
+        user_id: currentUserId,
+        full_name: nextFullName || null,
+      });
+      if (profileErr) throw profileErr;
+
+      const { error: authErr } = await supabase.auth.updateUser({
+        data: {
+          full_name: nextFullName || null,
+          display_name: nextDisplayName || null,
+          bio: nextBio || null,
+        },
+      });
+      if (authErr) throw authErr;
+
+      toast({
+        title: 'Profile saved',
+        description: 'Your account settings were saved to Supabase.',
+      });
+    } catch (e: any) {
+      toast({
+        title: 'Save failed',
+        description: e?.message || 'Could not save profile updates.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSavingProfile(false);
+    }
+  }, [currentUserId, displayName, profileBio, toast, userName]);
+
+  const isPatternDark = patternMode === 'dark';
+  const dismissLogsThemeHint = () => {
+    localStorage.setItem('ika_logs_theme_hint_seen', '1');
+    setShowLogsThemeHint(false);
+  };
+
   return (
     <div 
       ref={sidebarRef}
-      className="h-screen flex flex-col p-6 fixed left-0 top-0 hidden md:flex z-50 group border-r font-inter bg-[var(--app-sidebar-bg)] border-[color:var(--app-sidebar-border)]"
+      className="sidebar-doodle-bg sidebar-elevated-right h-screen flex flex-col p-6 fixed left-0 top-0 hidden md:flex z-50 group font-inter"
       style={{ width: width }}
     >
       {/* Resizer Handle */}
@@ -301,15 +403,107 @@ export function Sidebar() {
             <LayoutGrid className="h-6 w-6" />
         </div>
         {width > 220 && (
-           <span className="font-bungee text-2xl text-[var(--app-sidebar-title)] truncate">Ika Platform</span>
+           <span
+             className={cn(
+               "font-bungee text-2xl truncate",
+               isPatternDark
+                 ? "text-stone-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)] [text-shadow:0_0_1px_rgba(0,0,0,0.75)]"
+                 : "text-[var(--app-sidebar-title)]"
+             )}
+           >
+             Ika Platform
+           </span>
         )}
       </Link>
 
-      <div className="px-2 mb-5 text-[11px] font-semibold text-[var(--app-sidebar-muted)] uppercase tracking-[0.32em] truncate">
+      <div className={cn(
+        "mb-3 inline-flex w-fit max-w-full items-center rounded-full px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.2em] truncate border backdrop-blur-sm",
+        isPatternDark
+          ? "text-white border-[#3b3a52] bg-[#1a1928] shadow-[0_6px_14px_rgba(0,0,0,0.45)]"
+          : "text-white border-[#344666] bg-[#2f4467] shadow-[0_6px_14px_rgba(15,23,42,0.22)]"
+      )}>
         Main Menu
       </div>
 
-      <nav className="space-y-1 flex-1 overflow-x-hidden">
+      {isLogsPage && (
+        <div className={cn(
+          "mb-4 rounded-2xl border p-2 backdrop-blur-sm",
+          isPatternDark ? "border-white/20 bg-black/25" : "border-stone-300/70 bg-white/62"
+        )}>
+          {showLogsThemeHint && (
+            <div className={cn(
+              "relative mb-4 ml-auto w-fit max-w-[240px] rounded-xl border px-2.5 py-2 text-[11px] font-semibold shadow-[0_6px_18px_rgba(8,145,178,0.2)]",
+              isPatternDark
+                ? "border-cyan-300/70 bg-cyan-500/12 text-cyan-100"
+                : "border-cyan-500/55 bg-cyan-100/80 text-cyan-900"
+            )}>
+              <div className={cn(
+                "absolute -bottom-[7px] right-10 h-3.5 w-3.5 rotate-45 border-b border-r",
+                isPatternDark ? "border-cyan-300/70 bg-cyan-500/12" : "border-cyan-500/55 bg-cyan-100/80"
+              )} />
+              <ArrowDown className={cn(
+                "absolute -bottom-7 right-[34px] h-4 w-4 animate-bounce",
+                isPatternDark ? "text-cyan-200" : "text-cyan-700"
+              )} />
+              <div className="flex items-start gap-2 pr-3">
+                <span>You can change the Logs colors here.</span>
+                <button
+                  type="button"
+                  aria-label="Dismiss color tip"
+                  onClick={dismissLogsThemeHint}
+                  className="ml-auto rounded px-1 text-cyan-100/80 hover:bg-cyan-500/15 hover:text-cyan-50"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          )}
+          <div className={cn("px-1 pb-2 text-[10px] font-bold uppercase tracking-[0.22em]", isPatternDark ? "text-stone-200" : "text-stone-700")}>
+            Logs Theme
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              className={cn(
+                "h-9 rounded-xl text-xs font-bold",
+                patternMode === 'light'
+                  ? "bg-white text-stone-900 shadow-sm hover:bg-white"
+                  : isPatternDark
+                    ? "text-stone-300 hover:bg-white/10 hover:text-white"
+                    : "text-stone-600 hover:bg-white/80 hover:text-stone-900"
+              )}
+              onClick={() => setPatternMode('light')}
+            >
+              <Sun className="mr-1.5 h-3.5 w-3.5" />
+              Light
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className={cn(
+                "h-9 rounded-xl text-xs font-bold",
+                patternMode === 'dark'
+                  ? "bg-[#171626] text-stone-100 shadow-sm hover:bg-[#171626]"
+                  : isPatternDark
+                    ? "text-stone-300 hover:bg-white/10 hover:text-white"
+                    : "text-stone-600 hover:bg-white/80 hover:text-stone-900"
+              )}
+              onClick={() => setPatternMode('dark')}
+            >
+              <Moon className="mr-1.5 h-3.5 w-3.5" />
+              Dark
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <nav className={cn(
+        "space-y-1 flex-1 overflow-x-hidden rounded-2xl border p-2 backdrop-blur-sm",
+        isPatternDark
+          ? "border-white/18 bg-black/28 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+          : "border-stone-300/70 bg-white/62 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
+      )}>
         {sidebarItems.map((item) => {
           const isActive = (pathname === '/shop' && item.label === 'Dashboard') || pathname === item.href;
 
@@ -321,11 +515,16 @@ export function Sidebar() {
               className={cn(
                 "flex items-center px-4 py-2.5 rounded-2xl text-[13px] font-semibold tracking-wide transition-all duration-200 whitespace-nowrap relative",
                 isActive
-                  ? "bg-white text-[#1C1917] shadow-[0_8px_18px_rgba(15,23,42,0.12)]"
-                  : "text-stone-500 hover:bg-white/60 hover:text-[#1C1917]"
+                  ? "bg-white text-[#1C1917] shadow-[0_8px_18px_rgba(15,23,42,0.14)]"
+                  : isPatternDark
+                    ? "text-stone-100 hover:bg-white/12 hover:text-white"
+                    : "text-stone-800 hover:bg-white/78 hover:text-[#1C1917]"
               )}
             >
-              <item.icon className={cn("h-4.5 w-4.5 min-w-[1.125rem] mr-3", isActive ? "text-[#1C1917]" : "text-stone-400")} />
+              <item.icon className={cn(
+                "h-4.5 w-4.5 min-w-[1.125rem] mr-3",
+                isActive ? "text-[#1C1917]" : isPatternDark ? "text-stone-200" : "text-stone-700"
+              )} />
               <span className="truncate opacity-100 transition-opacity duration-200">
                 {item.label}
               </span>
@@ -388,7 +587,12 @@ export function Sidebar() {
                 </div>
                 <div className="space-y-2">
                   <label className="inline-flex rounded-full bg-stone-200/80 px-2.5 py-1 text-xs font-semibold text-stone-600">Display Name</label>
-                  <Input className="h-10 rounded-2xl text-sm bg-white text-stone-900 placeholder:text-stone-400 border border-stone-200 focus-visible:ring-2 focus-visible:ring-violet-200 focus-visible:border-violet-300" placeholder="e.g. ika-admin" />
+                  <Input
+                    className="h-10 rounded-2xl text-sm bg-white text-stone-900 placeholder:text-stone-400 border border-stone-200 focus-visible:ring-2 focus-visible:ring-violet-200 focus-visible:border-violet-300"
+                    placeholder="e.g. ika-admin"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <label className="inline-flex rounded-full bg-stone-200/80 px-2.5 py-1 text-xs font-semibold text-stone-600">Email Address</label>
@@ -400,11 +604,26 @@ export function Sidebar() {
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <label className="inline-flex rounded-full bg-stone-200/80 px-2.5 py-1 text-xs font-semibold text-stone-600">Bio</label>
-                  <Textarea placeholder="Tell us about yourself..." className="min-h-[96px] rounded-2xl text-sm bg-white text-stone-900 placeholder:text-stone-400 border border-stone-200 focus-visible:ring-2 focus-visible:ring-violet-200 focus-visible:border-violet-300" />
+                  <Textarea
+                    placeholder="Tell us about yourself..."
+                    className="min-h-[96px] rounded-2xl text-sm bg-white text-stone-900 placeholder:text-stone-400 border border-stone-200 focus-visible:ring-2 focus-visible:ring-violet-200 focus-visible:border-violet-300"
+                    value={profileBio}
+                    onChange={(e) => setProfileBio(e.target.value)}
+                  />
                 </div>
                 <p className="text-xs text-stone-400 md:col-span-2">
                   Brief description for your profile. URLs are hyperlinked.
                 </p>
+                <div className="md:col-span-2 flex justify-end">
+                  <Button
+                    type="button"
+                    onClick={handleSaveProfile}
+                    disabled={isSavingProfile}
+                    className="h-10 rounded-2xl bg-violet-600 text-white hover:bg-violet-700 px-5 text-sm font-bold"
+                  >
+                    {isSavingProfile ? 'Saving...' : 'Save Profile'}
+                  </Button>
+                </div>
               </div>
 
               <div className="mt-6 border-t border-stone-200 pt-4">

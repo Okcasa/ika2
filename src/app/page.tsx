@@ -1,6 +1,20 @@
 export default function LandingPage() {
   const pipelineLetters = Array.from('PIPELINE');
   const conversionsLetters = Array.from('REVENUE');
+  const heroActions = [
+    {
+      label: 'Open Platform',
+      href: '/shop',
+      variant: 'primary' as const,
+    },
+    {
+      label: 'View Bundles',
+      href: '/bundles',
+      variant: 'secondary' as const,
+    },
+  ].filter((action) => Boolean(action.href));
+
+  const hasSingleHeroAction = heroActions.length === 1;
 
   return (
     <div className="relative flex h-screen flex-col overflow-hidden bg-[#0b1020] text-white">
@@ -101,15 +115,25 @@ export default function LandingPage() {
                 </span>
               ))}
             </h3>
-            <div className="mt-8 flex items-center gap-4">
-              <a className="flex items-center gap-2 rounded-full bg-white px-6 py-3 font-bold text-slate-900 shadow-lg hover:bg-gray-100" href="#">
-                Developer Hub
-              </a>
-              <a className="flex items-center gap-2 rounded-full border border-white/10 bg-black px-6 py-3 font-bold text-white shadow-lg hover:bg-slate-900" href="#">
-                <span className="text-lg"></span>
-                GitHub
-              </a>
-            </div>
+            {heroActions.length > 0 && (
+              <div
+                className={`mt-8 flex w-full items-center ${hasSingleHeroAction ? 'justify-end' : 'justify-end gap-4'}`}
+              >
+                {heroActions.map((action) => (
+                  <a
+                    key={action.label}
+                    className={`inline-flex items-center justify-center rounded-full px-6 py-3 text-center font-bold shadow-lg transition-colors ${
+                      action.variant === 'primary'
+                        ? 'bg-white text-slate-900 hover:bg-gray-100'
+                        : 'border border-white/25 bg-white/10 text-white hover:bg-white/20'
+                    } ${hasSingleHeroAction ? 'w-auto' : 'min-w-[180px]'}`}
+                    href={action.href}
+                  >
+                    {action.label}
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
