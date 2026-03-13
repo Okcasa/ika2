@@ -178,8 +178,8 @@ export default function BundlesPreviewPage() {
                             className={cn(
                               "h-12 min-w-[104px] rounded-full px-5 border-2 text-lg font-black",
                               quantities.standard === n
-                                ? "border-violet-500 text-violet-600 bg-white shadow-[0_0_0_3px_rgba(139,92,246,0.12)]"
-                                : "border-stone-200 text-stone-600 bg-stone-50 hover:bg-stone-100"
+                                ? "border-violet-500 text-violet-700 bg-white shadow-[0_0_0_3px_rgba(139,92,246,0.12)] hover:bg-violet-50 hover:text-violet-700"
+                                : "border-stone-200 text-stone-700 bg-stone-50 hover:bg-stone-100 hover:text-stone-800"
                             )}
                             onClick={() => handleQuantityChange(n)}
                           >
@@ -201,7 +201,7 @@ export default function BundlesPreviewPage() {
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="h-11 w-11 rounded-full text-stone-700 hover:bg-stone-200 text-3xl font-black"
+                          className="h-11 w-11 rounded-full text-stone-700 hover:bg-stone-200 hover:text-stone-900 text-3xl font-black"
                           onClick={() => handleQuantityChange((quantities.standard || 5) - 1)}
                         >
                           -
@@ -226,7 +226,7 @@ export default function BundlesPreviewPage() {
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="h-11 w-11 rounded-full text-stone-700 hover:bg-stone-200 text-3xl font-black"
+                          className="h-11 w-11 rounded-full text-stone-700 hover:bg-stone-200 hover:text-stone-900 text-3xl font-black"
                           onClick={() => handleQuantityChange((quantities.standard || 5) + 1)}
                         >
                           +

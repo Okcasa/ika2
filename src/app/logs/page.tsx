@@ -1885,12 +1885,14 @@ function LogsPageContent() {
         </AlertDialog>
         </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-stone-400 p-8 text-center">
-            <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-6 shadow-sm border border-stone-100">
+          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+            <div className="pattern-readable-panel flex flex-col items-center justify-center px-8 py-10 max-w-sm">
+            <div className="w-24 h-24 bg-white/90 rounded-full flex items-center justify-center mb-6 shadow-sm border border-stone-200/80">
               <User className="w-10 h-10 text-stone-300" />
             </div>
-            <h2 className="text-xl font-bold text-stone-600">Select a Lead</h2>
-            <p className="max-w-xs mt-2 text-stone-400">Choose a lead from the list on the left to view details and log interactions.</p>
+            <h2 className="pattern-readable-title text-xl font-bold">Select a Lead</h2>
+            <p className="pattern-readable-subtitle max-w-xs mt-2">Choose a lead from the list on the left to view details and log interactions.</p>
+            </div>
           </div>
         )}
       </div>
@@ -1905,7 +1907,7 @@ export default function RootLogsPage() {
         <div className="hidden md:block fixed left-0 top-0 h-full z-50">
           <Sidebar />
         </div>
-        <main 
+        <main
           className="flex-1 p-0 min-h-screen relative z-0 transition-[margin] duration-75"
           style={{ marginLeft: 'var(--sidebar-width, 256px)' }}
         >

@@ -1,4 +1,9 @@
+'use client';
+
+import { useState, type CSSProperties } from 'react';
+
 export default function LandingPage() {
+  const [mouseFx, setMouseFx] = useState({ x: 50, y: 50, active: 0 });
   const pipelineLetters = Array.from('PIPELINE');
   const conversionsLetters = Array.from('REVENUE');
   const heroActions = [
@@ -17,20 +22,39 @@ export default function LandingPage() {
   const hasSingleHeroAction = heroActions.length === 1;
 
   return (
-    <div className="relative flex h-screen flex-col overflow-hidden bg-[#0b1020] text-white">
-      <div className="absolute inset-0 -z-10 bg-[radial-gradient(1200px_600px_at_50%_-10%,#6d28d9_0%,#4c1d95_35%,#1e3a8a_65%,#0b1020_100%)]" />
+    <div
+      className="relative flex h-screen flex-col overflow-hidden bg-[#0b1020] text-white"
+      onMouseMove={(event) => {
+        const bounds = event.currentTarget.getBoundingClientRect();
+        const x = ((event.clientX - bounds.left) / bounds.width) * 100;
+        const y = ((event.clientY - bounds.top) / bounds.height) * 100;
+        setMouseFx({ x, y, active: 1 });
+      }}
+      onMouseLeave={() => setMouseFx((prev) => ({ ...prev, active: 0 }))}
+      style={
+        {
+          '--mx': `${mouseFx.x}%`,
+          '--my': `${mouseFx.y}%`,
+          '--mop': mouseFx.active,
+        } as CSSProperties
+      }
+    >
+      <div className="absolute inset-0 z-0 bg-[#05060f]" />
+      <div className="absolute inset-0 z-[1] opacity-55 bg-[radial-gradient(1200px_600px_at_50%_-10%,#6d28d9_0%,#4c1d95_35%,#1e3a8a_65%,#0b1020_100%)]" />
+      <div className="landing-rain-bg pointer-events-none absolute inset-0 z-[2] opacity-90" aria-hidden="true" />
+      <div className="landing-rain-interactive pointer-events-none absolute inset-0 z-[2]" aria-hidden="true" />
       <div
-        className="absolute inset-0 -z-10 opacity-40"
+        className="absolute inset-0 z-[3] opacity-20"
         style={{
           backgroundImage:
             "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.12) 1px, transparent 0)",
           backgroundSize: "20px 20px",
         }}
       />
-      <div className="absolute -top-24 -left-32 h-[520px] w-[520px] rounded-full bg-purple-600/40 blur-[120px]" />
-      <div className="absolute -bottom-40 -right-32 h-[620px] w-[620px] rounded-full bg-blue-600/40 blur-[140px]" />
+      <div className="absolute z-[4] -top-24 -left-32 h-[520px] w-[520px] rounded-full bg-purple-600/30 blur-[120px]" />
+      <div className="absolute z-[4] -bottom-40 -right-32 h-[620px] w-[620px] rounded-full bg-blue-600/30 blur-[140px]" />
 
-      <nav className="mx-auto flex w-full items-center justify-between px-10 pt-6">
+      <nav className="relative z-10 mx-auto flex w-full items-center justify-between px-10 pt-6">
         <div className="flex items-center gap-0">
           <img
             src="/icon-512.png"
@@ -53,7 +77,7 @@ export default function LandingPage() {
         </button>
       </nav>
 
-      <main className="mx-auto flex w-full flex-1 flex-col items-center px-10 pb-0 pt-16">
+      <main className="relative z-10 mx-auto flex w-full flex-1 flex-col items-center px-10 pb-0 pt-16">
         <div className="w-full max-w-7xl">
         <div className="grid w-full grid-cols-1 items-center gap-12 lg:grid-cols-2">
           <div className="space-y-6">
@@ -61,7 +85,7 @@ export default function LandingPage() {
               <h1 className="font-geliat pointer-events-none absolute -left-4 -top-12 select-none text-6xl tracking-tight text-white/10 md:-left-8 md:-top-16 md:text-8xl">
                 GENERATE
               </h1>
-              <h2 className="font-geliat relative z-10 text-5xl leading-tight md:text-7xl">
+              <h2 className="font-geliat relative z-10 text-5xl leading-tight drop-shadow-[0_3px_14px_rgba(0,0,0,0.75)] md:text-7xl">
                 CONNECT
                 <br />
                 <span className="bg-gradient-to-r from-blue-300 to-purple-300 bg-clip-text text-transparent">
@@ -69,7 +93,7 @@ export default function LandingPage() {
                 </span>
               </h2>
             </div>
-            <p className="max-w-xl text-xl font-medium leading-relaxed text-blue-100/90 md:text-2xl">
+            <p className="max-w-xl rounded-2xl border border-white/10 bg-black/30 p-4 text-xl font-medium leading-relaxed text-blue-50/95 backdrop-blur-[2px] drop-shadow-[0_2px_10px_rgba(0,0,0,0.7)] md:text-2xl">
               A dedicated platform for <span className="font-semibold text-white">lead generation</span> and
               <span className="font-semibold text-white"> business growth</span>. We supply
               <span className="font-semibold text-white"> consistent lead bundles</span> to help you keep your
@@ -80,7 +104,7 @@ export default function LandingPage() {
           </div>
 
           <div className="relative hidden flex-col items-end space-y-4 text-right lg:flex">
-            <h3 className="font-geliat select-none text-6xl tracking-tight text-white/15 md:text-8xl">
+            <h3 className="font-geliat select-none text-6xl tracking-tight text-white/20 drop-shadow-[0_3px_12px_rgba(0,0,0,0.85)] md:text-8xl">
               {pipelineLetters.map((letter, index) => (
                 <span
                   key={`p-${index}`}
@@ -104,7 +128,7 @@ export default function LandingPage() {
               </div>
               <h4 className="font-geliat text-6xl tracking-[0.2em]">LEADS</h4>
             </div>
-            <h3 className="font-geliat select-none text-6xl tracking-tight text-white/15 md:text-8xl">
+            <h3 className="font-geliat select-none text-6xl tracking-tight text-white/20 drop-shadow-[0_3px_12px_rgba(0,0,0,0.85)] md:text-8xl">
               {conversionsLetters.map((letter, index) => (
                 <span
                   key={`c-${index}`}
@@ -120,17 +144,23 @@ export default function LandingPage() {
                 className={`mt-8 flex w-full items-center ${hasSingleHeroAction ? 'justify-end' : 'justify-end gap-4'}`}
               >
                 {heroActions.map((action) => (
-                  <a
-                    key={action.label}
-                    className={`inline-flex items-center justify-center rounded-full px-6 py-3 text-center font-bold shadow-lg transition-colors ${
-                      action.variant === 'primary'
-                        ? 'bg-white text-slate-900 hover:bg-gray-100'
-                        : 'border border-white/25 bg-white/10 text-white hover:bg-white/20'
-                    } ${hasSingleHeroAction ? 'w-auto' : 'min-w-[180px]'}`}
-                    href={action.href}
-                  >
-                    {action.label}
-                  </a>
+                  <div key={action.label} className="relative">
+                    {action.label === 'View Bundles' && (
+                      <span className="absolute -top-3 right-3 rounded-full border border-cyan-300/40 bg-cyan-400/20 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-cyan-100">
+                        Check Out Prices
+                      </span>
+                    )}
+                    <a
+                      className={`inline-flex items-center justify-center rounded-full px-6 py-3 text-center font-bold shadow-lg transition-colors ${
+                        action.variant === 'primary'
+                          ? 'bg-white text-slate-900 hover:bg-gray-100'
+                          : 'border border-white/25 bg-white/10 text-white hover:bg-white/20'
+                      } ${hasSingleHeroAction ? 'w-auto' : 'min-w-[180px]'}`}
+                      href={action.href}
+                    >
+                      {action.label}
+                    </a>
+                  </div>
                 ))}
               </div>
             )}
