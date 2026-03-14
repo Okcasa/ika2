@@ -1,9 +1,4 @@
-'use client';
-
-import { useState, type CSSProperties } from 'react';
-
 export default function LandingPage() {
-  const [mouseFx, setMouseFx] = useState({ x: 50, y: 50, active: 0 });
   const pipelineLetters = Array.from('PIPELINE');
   const conversionsLetters = Array.from('REVENUE');
   const heroActions = [
@@ -22,27 +17,9 @@ export default function LandingPage() {
   const hasSingleHeroAction = heroActions.length === 1;
 
   return (
-    <div
-      className="relative flex h-screen flex-col overflow-hidden bg-[#0b1020] text-white"
-      onMouseMove={(event) => {
-        const bounds = event.currentTarget.getBoundingClientRect();
-        const x = ((event.clientX - bounds.left) / bounds.width) * 100;
-        const y = ((event.clientY - bounds.top) / bounds.height) * 100;
-        setMouseFx({ x, y, active: 1 });
-      }}
-      onMouseLeave={() => setMouseFx((prev) => ({ ...prev, active: 0 }))}
-      style={
-        {
-          '--mx': `${mouseFx.x}%`,
-          '--my': `${mouseFx.y}%`,
-          '--mop': mouseFx.active,
-        } as CSSProperties
-      }
-    >
+    <div className="relative flex h-screen flex-col overflow-hidden bg-[#0b1020] text-white">
       <div className="absolute inset-0 z-0 bg-[#05060f]" />
       <div className="absolute inset-0 z-[1] opacity-55 bg-[radial-gradient(1200px_600px_at_50%_-10%,#6d28d9_0%,#4c1d95_35%,#1e3a8a_65%,#0b1020_100%)]" />
-      <div className="landing-rain-bg pointer-events-none absolute inset-0 z-[2] opacity-90" aria-hidden="true" />
-      <div className="landing-rain-interactive pointer-events-none absolute inset-0 z-[2]" aria-hidden="true" />
       <div
         className="absolute inset-0 z-[3] opacity-20"
         style={{
