@@ -1305,7 +1305,7 @@ function LogsPageContent() {
   };
 
   return (
-    <div className="flex h-screen app-shell-bg app-shell-text overflow-hidden">
+    <div className="flex h-screen app-shell-bg app-shell-text platform-pattern-bg overflow-hidden">
       {/* List View (Left Panel) */}
       <div data-tutorial-id="logs-lead-list" className={`w-full md:w-[420px] border-r border-stone-200 bg-white flex flex-col transition-all duration-300 ${selectedLeadId ? 'hidden md:flex' : 'flex'}`}>
         
@@ -1545,7 +1545,7 @@ function LogsPageContent() {
       </div>
 
       {/* Detail View (Right Panel) */}
-      <div data-tutorial-id="logs-workspace" className={`flex-1 flex flex-col h-full app-shell-bg overflow-hidden ${!selectedLeadId ? 'hidden md:flex' : 'flex'}`}>
+      <div data-tutorial-id="logs-workspace" className={`flex-1 flex flex-col h-full app-shell-bg platform-pattern-bg overflow-hidden ${!selectedLeadId ? 'hidden md:flex' : 'flex'}`}>
         {activeLead ? (
           <>
           <div className="p-6 max-w-5xl mx-auto w-full space-y-6 h-full overflow-hidden animate-in fade-in slide-in-from-right-4 duration-500">
@@ -1903,7 +1903,7 @@ function LogsPageContent() {
 export default function RootLogsPage() {
   return (
     <Suspense fallback={<div className="min-h-screen app-shell-bg app-shell-text" />}>
-      <div className="flex min-h-screen app-shell-bg app-shell-text">
+      <div className="flex min-h-screen app-shell-bg app-shell-text platform-pattern-bg">
         <div className="hidden md:block fixed left-0 top-0 h-full z-50">
           <Sidebar />
         </div>
