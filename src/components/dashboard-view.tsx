@@ -24,7 +24,7 @@ const PACKAGES = [
     id: 'starter',
     name: 'Starter Pack',
     count: 30,
-    price: 3.5,
+    price: 5.7,
     originalPrice: 29,
     description: '30 Leads',
     color: 'bg-blue-100 text-blue-600',
@@ -35,7 +35,7 @@ const PACKAGES = [
     id: 'growth',
     name: 'Growth Pack',
     count: 90,
-    price: 7,
+    price: 17.1,
     originalPrice: 49,
     description: '90 Leads',
     color: 'bg-purple-100 text-purple-600',
@@ -46,7 +46,7 @@ const PACKAGES = [
     id: 'pro',
     name: 'Pro Bundle',
     count: 180,
-    price: 15.35,
+    price: 34.2,
     originalPrice: 99,
     description: '180 Leads',
     color: 'bg-orange-100 text-orange-600',
@@ -57,7 +57,7 @@ const PACKAGES = [
     id: 'enterprise',
     name: 'Enterprise',
     count: 280,
-    price: 30,
+    price: 53.2,
     originalPrice: 299,
     description: '280 Leads',
     color: 'bg-green-100 text-green-600',
@@ -65,6 +65,13 @@ const PACKAGES = [
     status: 'Active'
   },
 ];
+
+const DASHBOARD_CHECKOUT_BASE_URL =
+  process.env.NEXT_PUBLIC_PADDLE_CHECKOUT_URL ||
+  'https://paddle-webhook-live.okcasa27.workers.dev/';
+const DASHBOARD_CHECKOUT_ORIGIN =
+  process.env.NEXT_PUBLIC_PADDLE_CHECKOUT_ORIGIN ||
+  'https://paddle-webhook-live.okcasa27.workers.dev';
 
 interface DashboardViewProps {
   isGuest?: boolean;
@@ -127,6 +134,9 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
   const seenNotificationIdsRef = useRef<Set<string>>(new Set());
   const dismissedNotificationIdsRef = useRef<Set<string>>(new Set());
   const teamLeadIdsRef = useRef<Set<string>>(new Set());
+  const quickCheckoutPopupRef = useRef<Window | null>(null);
+  const quickCheckoutWatchRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pendingQuickCheckoutRef = useRef<{ checkoutSessionId: string } | null>(null);
   const effectiveGuest = isGuest || !isAuthed;
   const openAuth = () => {
     if (onAuthRequest) {
@@ -146,6 +156,15 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
     return () => {
       if (typeof document !== 'undefined' && document.body) {
         document.body.style.overflow = '';
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (quickCheckoutWatchRef.current) {
+        clearInterval(quickCheckoutWatchRef.current);
+        quickCheckoutWatchRef.current = null;
       }
     };
   }, []);
@@ -846,6 +865,113 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
     }
   }
 
+  const handleQuickBundleCheckout = async (pkg: typeof PACKAGES[0]) => {
+    if (pkg.status === 'Offline') return;
+
+    if (effectiveGuest) {
+      openAuth();
+      return;
+    }
+
+    if (teamRole === 'viewer') {
+      toast({
+        title: 'Read-only access',
+        description: 'Viewer role can view/export only.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      onAuthRequest?.();
+      return;
+    }
+
+    const packageId = pkg.id === 'starter' ? 'standard' : pkg.id;
+    const checkoutSessionId =
+      (typeof crypto !== 'undefined' && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+    const params = new URLSearchParams({
+      uid: session.user.id,
+      leads: String(pkg.count),
+      pkg: packageId,
+      price: pkg.price.toFixed(2),
+      origin: window.location.origin,
+      ck: checkoutSessionId,
+    });
+
+    const popupUrl = `${DASHBOARD_CHECKOUT_BASE_URL.replace(/\/$/, '')}/?${params.toString()}`;
+    const popupName = 'dashboard_quick_checkout';
+    const width = 1000;
+    const height = 720;
+    const left = Math.max(0, Math.floor((window.screen.width - width) / 2));
+    const top = Math.max(0, Math.floor((window.screen.height - height) / 2));
+    const popupFeatures = `popup=yes,width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`;
+    const popup = window.open(popupUrl, popupName, popupFeatures);
+
+    if (!popup) {
+      toast({
+        title: 'Popup blocked',
+        description: 'Allow popups and retry checkout.',
+        variant: 'destructive',
+      });
+      pendingQuickCheckoutRef.current = null;
+      return;
+    }
+
+    quickCheckoutPopupRef.current = popup;
+    pendingQuickCheckoutRef.current = { checkoutSessionId };
+
+    if (quickCheckoutWatchRef.current) {
+      clearInterval(quickCheckoutWatchRef.current);
+      quickCheckoutWatchRef.current = null;
+    }
+
+    quickCheckoutWatchRef.current = setInterval(() => {
+      const activePopup = quickCheckoutPopupRef.current;
+      if (!activePopup || activePopup.closed) {
+        if (quickCheckoutWatchRef.current) {
+          clearInterval(quickCheckoutWatchRef.current);
+          quickCheckoutWatchRef.current = null;
+        }
+        if (pendingQuickCheckoutRef.current) {
+          pendingQuickCheckoutRef.current = null;
+          toast({
+            title: 'Purchase not completed',
+            description: 'No payment was captured. You can try checkout again.',
+          });
+        }
+      }
+    }, 900);
+  };
+
+  useEffect(() => {
+    const successTypes = new Set(['paddle:transaction.closed', 'paddle:transaction.completed']);
+
+    const onQuickCheckoutMessage = (event: MessageEvent) => {
+      if (event.origin !== DASHBOARD_CHECKOUT_ORIGIN && event.origin !== window.location.origin) return;
+      const data = event.data || {};
+      const messageType = String(data?.type || data?.eventType || '');
+      if (!successTypes.has(messageType)) return;
+      if (!pendingQuickCheckoutRef.current) return;
+
+      pendingQuickCheckoutRef.current = null;
+      if (quickCheckoutWatchRef.current) {
+        clearInterval(quickCheckoutWatchRef.current);
+        quickCheckoutWatchRef.current = null;
+      }
+      try {
+        quickCheckoutPopupRef.current?.close();
+      } catch {}
+    };
+
+    window.addEventListener('message', onQuickCheckoutMessage);
+    return () => window.removeEventListener('message', onQuickCheckoutMessage);
+  }, []);
+
   const unreadCount = useMemo(
     () => notifications.reduce((acc, item) => acc + (item.read ? 0 : 1), 0),
     [notifications]
@@ -870,10 +996,79 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
   }, [notifications]);
 
   return (
-    <div className="flex flex-col gap-4 max-w-[1600px] mx-auto h-full overflow-hidden">
+    <div className="shop-doodle-theme flex flex-col gap-4 max-w-[1600px] mx-auto h-full overflow-hidden px-2 md:px-3 py-4 md:py-5">
+      <style jsx global>{`
+        .keycap-button {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          height: 40px;
+          padding: 0 16px;
+          border-radius: 14px;
+          background: linear-gradient(180deg, #282828, #202020);
+          box-shadow:
+            inset -8px 0 8px rgba(0, 0, 0, 0.15),
+            inset 0 -8px 8px rgba(0, 0, 0, 0.25),
+            0 0 0 2px rgba(0, 0, 0, 0.75),
+            10px 20px 25px rgba(0, 0, 0, 0.4);
+          overflow: hidden;
+          transition: transform 0.12s ease-in-out, box-shadow 0.12s ease-in;
+          user-select: none;
+          -webkit-tap-highlight-color: transparent;
+        }
+        .keycap-button::before {
+          content: "";
+          position: absolute;
+          top: 3px;
+          left: 4px;
+          bottom: 9px;
+          right: 9px;
+          background: linear-gradient(90deg, #232323, #4a4a4a);
+          border-radius: 12px;
+          box-shadow:
+            -10px -10px 10px rgba(255, 255, 255, 0.25),
+            10px 5px 10px rgba(0, 0, 0, 0.15);
+          border-left: 1px solid #0004;
+          border-bottom: 1px solid #0004;
+          border-top: 1px solid #0009;
+          transition: all 0.12s ease-in-out;
+        }
+        .keycap-button > * {
+          position: relative;
+          z-index: 1;
+          color: #e9e9e9;
+        }
+        .keycap-button:active {
+          transform: translateY(4px) !important;
+          box-shadow:
+            inset -7px 0 7px rgba(0, 0, 0, 0.2),
+            inset 0 -7px 7px rgba(0, 0, 0, 0.24),
+            0 0 0 2px rgba(0, 0, 0, 0.45),
+            4px 9px 14px rgba(0, 0, 0, 0.38);
+        }
+        .keycap-button:active::before {
+          top: 6px;
+          left: 6px;
+          bottom: 6px;
+          right: 6px;
+          box-shadow:
+            -4px -4px 4px rgba(255, 255, 255, 0.12),
+            4px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .keycap-icon-button {
+          width: 40px;
+          height: 40px;
+          padding: 0;
+          border-radius: 14px;
+        }
+      `}</style>
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-        <h1 className="text-3xl font-bold tracking-tight text-[#1C1917]">Dashboard</h1>
+        <h1 className="inline-flex items-center rounded-2xl border border-white/28 bg-white/26 px-4 py-2 text-3xl font-bold tracking-tight text-stone-950 shadow-[0_10px_24px_rgba(15,23,42,0.12)] backdrop-blur-[6px]">
+          Dashboard
+        </h1>
 
         <div className="flex items-center gap-4 w-full md:w-auto">
           <div className="relative flex-1 md:w-[400px]">
@@ -897,9 +1092,9 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="relative rounded-full h-10 w-10 bg-white shadow-sm hover:bg-blue-50 hover:text-blue-700 focus-visible:ring-0 focus-visible:ring-offset-0"
+                  className="keycap-button keycap-icon-button relative border-0 bg-transparent hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
                 >
-                  <Bell className="h-4 w-4 text-stone-600" />
+                  <Bell className="h-4 w-4" />
                   {unreadCount > 0 && (
                     <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
                       {unreadCount > 9 ? '9+' : unreadCount}
@@ -971,14 +1166,17 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
               </PopoverContent>
             </Popover>
             
-            <div className="flex items-center gap-3 bg-white pl-1 pr-1 py-1 rounded-full shadow-sm border border-stone-100 ml-2 group transition-all hover:border-stone-300">
+            <div className="flex items-center gap-3 bg-transparent ml-2">
                 <Dialog open={isHelpDialogOpen} onOpenChange={setIsHelpDialogOpen}>
                     <DialogTrigger asChild>
-                        <Avatar className="h-8 w-8 border border-stone-50 shadow-sm cursor-pointer transition-transform hover:scale-110 active:scale-95">
-                            <AvatarFallback className="bg-stone-900 text-stone-200">
-                                <Info className="h-4 w-4" />
-                            </AvatarFallback>
-                        </Avatar>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          className="keycap-button keycap-icon-button border-0 bg-transparent hover:bg-transparent"
+                        >
+                          <Info className="h-4 w-4" />
+                        </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-[420px] rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
                         <DialogHeader className="sr-only">
@@ -1058,23 +1256,23 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
                     <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="h-8 px-4 text-xs font-bold bg-stone-900 text-white hover:bg-stone-800 rounded-full transition-all flex items-center gap-2"
+                        className="keycap-button h-9 px-4 text-xs font-bold uppercase tracking-widest border-0 bg-transparent hover:bg-transparent flex items-center gap-2"
                         onClick={openAuth}
                     >
-                        Sign In
+                        <span className="text-[11px] font-black tracking-widest">Sign In</span>
                     </Button>
                 ) : (
                     <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="h-8 px-3 text-[10px] font-bold uppercase tracking-widest text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-all flex items-center"
+                        className="keycap-button h-9 px-3 text-[10px] font-bold uppercase tracking-widest border-0 bg-transparent hover:bg-transparent flex items-center"
                         onClick={async () => {
                             await supabase.auth.signOut();
                             window.location.href = '/';
                         }}
                     >
                         <LogOut className="h-3 w-3 mr-2" />
-                        Sign Out
+                        <span className="text-[10px] font-black tracking-widest">Sign Out</span>
                     </Button>
                 )}
             </div>
@@ -1089,7 +1287,7 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
           {/* Overview Cards */}
           <div className="grid md:grid-cols-2 gap-4" data-tutorial-id="dashboard-stats">
             {/* Customers / Leads Available */}
-            <Card className="rounded-[32px] border border-white/5 shadow-sm hover:shadow-md transition-shadow bg-[#1f1f23] text-[#FAFAF9]">
+            <Card className="doodle-panel rounded-[32px] border border-white/5 shadow-sm hover:shadow-md transition-shadow bg-[#1f1f23] text-[#FAFAF9]">
               <CardContent className="p-8">
                  <div className="flex justify-between items-start mb-4">
                    <div className="flex items-center gap-3">
@@ -1116,7 +1314,7 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
             </Card>
 
           {/* Weekly Closed Deal Revenue */}
-          <Card className="rounded-[32px] border border-white/5 shadow-sm hover:shadow-md transition-shadow bg-[#1f1f23] text-[#FAFAF9]">
+          <Card className="doodle-panel rounded-[32px] border border-white/5 shadow-sm hover:shadow-md transition-shadow bg-[#1f1f23] text-[#FAFAF9]">
               <CardContent className="p-8">
                  <div className="flex justify-between items-start mb-4">
                    <div className="flex items-center gap-3">
@@ -1195,11 +1393,19 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
           </div>
 
           {/* New Customers / Leads Avatars */}
-          <div className="bg-transparent space-y-4" data-tutorial-id="dashboard-new-leads">
-            <h3 className="font-semibold text-stone-700">
-              {isLeadsLoading ? 'Loading leads…' : `${effectiveGuest ? '0' : newLeadsToday} new leads today!`}
-            </h3>
-            <p className="text-sm text-stone-500">Send a welcome message to all new potential clients.</p>
+          <div
+            className="space-y-4 rounded-2xl bg-[#171626]/55 p-4 shadow-[0_10px_24px_rgba(12,10,24,0.28)] backdrop-blur-[2px]"
+            data-tutorial-id="dashboard-new-leads"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h3 className="text-lg font-extrabold text-[#ffe4d2] drop-shadow-[0_1px_1px_rgba(0,0,0,0.45)]">
+                {isLeadsLoading ? 'Loading leads…' : `${effectiveGuest ? '0' : newLeadsToday} new leads today!`}
+              </h3>
+              <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#ffe4d2]">
+                These leads are from local businesses you can call
+              </span>
+            </div>
+            <p className="text-base font-semibold text-[#f5cbb2]">Send a welcome message to all new potential clients.</p>
 
             <div className="flex items-center gap-4 flex-wrap">
                {isLeadsLoading ? (
@@ -1215,13 +1421,13 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
                      key={i}
                      type="button"
                      onClick={openAuth}
-                     className="flex flex-col items-center gap-2 rounded-xl p-1 transition hover:bg-stone-100"
+                     className="flex flex-col items-center gap-2 rounded-xl p-1 transition hover:bg-white/10"
                    >
                      <Avatar className="h-16 w-16 border-4 border-white shadow-sm">
                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i}`} />
                        <AvatarFallback>U{i}</AvatarFallback>
                      </Avatar>
-                     <span className="text-xs font-medium text-stone-600">Lead {i}</span>
+                     <span className="text-xs font-semibold text-[#f2d7c6]">Lead {i}</span>
                    </button>
                  ))
                ) : (
@@ -1233,13 +1439,13 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
                      key={i}
                      type="button"
                      onClick={() => router.push(`/logs?leadId=${lead.id}`)}
-                     className="group flex flex-col items-center gap-2 rounded-xl p-1 transition hover:bg-stone-100"
+                     className="group flex flex-col items-center gap-2 rounded-xl p-1 transition hover:bg-white/10"
                    >
                      <Avatar className="h-16 w-16 border-4 border-white shadow-sm">
                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${lead.businessName || lead.name}`} />
                        <AvatarFallback>{(lead.businessName || lead.name || 'L').charAt(0)}</AvatarFallback>
                      </Avatar>
-                     <span className="text-xs font-medium text-stone-600 w-16 truncate text-center group-hover:text-stone-800" title={lead.businessName || lead.name}>
+                     <span className="text-xs font-semibold text-[#f2d7c6] w-16 truncate text-center group-hover:text-[#fff1e8]" title={lead.businessName || lead.name}>
                         {lead.businessName || lead.name}
                      </span>
                    </button>
@@ -1249,19 +1455,28 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
                  <Button
                     size="icon"
                     className="h-16 w-16 rounded-full bg-white text-[#1C1917] shadow-sm hover:bg-stone-50 border ml-2"
-                    onClick={() => !effectiveGuest && router.push('/leads')}
+                    onClick={() => !effectiveGuest && router.push('/logs')}
                  >
                    <ArrowRight className="h-6 w-6" />
                  </Button>
                )}
                {!isLeadsLoading && (
-                 <span className="text-sm font-medium text-stone-500 ml-2 cursor-pointer" onClick={() => !effectiveGuest && router.push('/leads')}>View all</span>
+                 <Button
+                   type="button"
+                   size="sm"
+                   className="keycap-button h-9 px-4 border-0 bg-transparent hover:bg-transparent"
+                   onClick={() => !effectiveGuest && router.push('/logs')}
+                 >
+                   <span className="text-[11px] font-black uppercase tracking-widest text-[#e9e9e9]">
+                     View all
+                   </span>
+                 </Button>
                )}
             </div>
           </div>
 
           {/* Product View - Blurred Preview */}
-          <Card data-tutorial-id="dashboard-pipeline" className="rounded-[32px] border border-white/5 shadow-sm flex-1 min-h-0 bg-[#1f1f23] text-[#FAFAF9] overflow-hidden flex flex-col">
+          <Card data-tutorial-id="dashboard-pipeline" className="doodle-panel rounded-[32px] border border-white/5 shadow-sm flex-1 min-h-0 bg-[#1f1f23] text-[#FAFAF9] overflow-hidden flex flex-col">
             <CardContent className="p-6 flex flex-col h-full overflow-hidden">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-bold">Lead pipeline</h3>
@@ -1331,7 +1546,7 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
                             {isClosedDeal ? 'Closed Deal' : 'Deal Lost'}
                           </div>
                         )}
-                        <div className="bg-[#F5F5F4] rounded-2xl p-4 h-full border border-transparent hover:border-stone-200 transition-all text-[#1C1917] overflow-hidden">
+                        <div className="doodle-paper bg-[#F5F5F4] rounded-2xl p-4 h-full border border-transparent hover:border-stone-200 transition-all text-[#1C1917] overflow-hidden">
                           <div className="flex items-center gap-3 mb-3">
                             <div className="h-10 w-10 rounded-full bg-[#E7E5E4] flex items-center justify-center text-stone-600 font-bold">
                               {(lead.businessName || lead.name || 'L').charAt(0)}
@@ -1418,19 +1633,22 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
 
         {/* Right Column */}
         <div className="col-span-12 lg:col-span-4 space-y-8">
-           {/* Popular Products */}
-           <Card data-tutorial-id="dashboard-products" className="rounded-[32px] border border-white/5 shadow-sm h-full bg-[#1f1f23] text-[#FAFAF9]">
+           {/* Quick Bundles */}
+           <Card data-tutorial-id="dashboard-products" className="doodle-panel rounded-[32px] border border-white/5 shadow-sm h-full bg-[#1f1f23] text-[#FAFAF9]">
              <CardContent className="p-8">
                <div className="flex justify-between items-center mb-6">
-                 <h3 className="text-xl font-bold">Popular products</h3>
+                 <h3 className="text-xl font-bold">Quick bundles</h3>
                </div>
+               <p className="text-xs text-stone-300 mb-5">
+                 If you want a quick purchase, click a bundle below.
+               </p>
 
                <div className="space-y-6">
                  {PACKAGES.map((pkg) => (
                    <div
                      key={pkg.id}
                      className="flex items-center justify-between group cursor-pointer"
-                     onClick={() => router.push(`/products?pkg=${pkg.id}`)}
+                     onClick={() => handleQuickBundleCheckout(pkg)}
                    >
                      <div className="flex items-center gap-4">
                        <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${pkg.color}`}>
@@ -1451,6 +1669,9 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
                  ))}
                </div>
 
+               <p className="text-xs text-stone-400 mt-7 mb-3">
+                 Need custom amount? Click here.
+               </p>
                <Button 
                 variant="outline" 
                 className="w-full mt-8 rounded-full h-12 border-stone-700 text-stone-400 hover:bg-stone-800 hover:text-stone-200"

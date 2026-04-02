@@ -21,7 +21,12 @@ import {
   Wallet,
   Filter,
   History as HistoryIcon,
-  Target
+  Target,
+  Gauge,
+  CircleDollarSign,
+  CheckCircle2,
+  Sparkles,
+  Flag
 } from 'lucide-react';
 import { NotificationBell } from '@/components/notification-bell';
 import { supabase } from '@/lib/supabase';
@@ -310,6 +315,17 @@ function IncomePageContent() {
       });
   }, [scopedPayments]);
 
+  const dashboardInsights = useMemo(() => {
+    const closedCount = recentClosedDeals.length;
+    const avgDeal = closedCount > 0 ? stats.totalRevenue / closedCount : 0;
+    const goalRemaining = Math.max(0, goal - stats.totalRevenue);
+    return {
+      closedCount,
+      avgDeal,
+      goalRemaining,
+    };
+  }, [recentClosedDeals.length, stats.totalRevenue, goal]);
+
   const handleSaveGoal = async () => {
     if (!teamCanEdit) return;
     const next = parseFloat(goalInput);
@@ -322,70 +338,144 @@ function IncomePageContent() {
   };
 
   return (
-    <div className="p-8 space-y-8 app-shell-bg app-shell-text min-h-screen font-poppins">
+    <div className="shop-doodle-theme p-8 space-y-8 app-shell-text min-h-screen font-poppins">
+      <style jsx global>{`
+        .keycap-button {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          height: 44px;
+          padding: 0 18px;
+          border-radius: 14px;
+          background: linear-gradient(180deg, #282828, #202020);
+          box-shadow:
+            inset -8px 0 8px rgba(0, 0, 0, 0.15),
+            inset 0 -8px 8px rgba(0, 0, 0, 0.25),
+            0 0 0 2px rgba(0, 0, 0, 0.75),
+            10px 20px 25px rgba(0, 0, 0, 0.4);
+          overflow: hidden;
+          transition: transform 0.12s ease-in-out, box-shadow 0.12s ease-in;
+          user-select: none;
+          -webkit-tap-highlight-color: transparent;
+        }
+        .keycap-button::before {
+          content: "";
+          position: absolute;
+          top: 3px;
+          left: 4px;
+          bottom: 10px;
+          right: 10px;
+          background: linear-gradient(90deg, #232323, #4a4a4a);
+          border-radius: 12px;
+          box-shadow:
+            -10px -10px 10px rgba(255, 255, 255, 0.25),
+            10px 5px 10px rgba(0, 0, 0, 0.15);
+          border-left: 1px solid #0004;
+          border-bottom: 1px solid #0004;
+          border-top: 1px solid #0009;
+          transition: all 0.12s ease-in-out;
+        }
+        .keycap-button > * {
+          position: relative;
+          z-index: 1;
+          color: #e9e9e9;
+        }
+        .keycap-button:active {
+          transform: translateY(5px) !important;
+          box-shadow:
+            inset -7px 0 7px rgba(0, 0, 0, 0.2),
+            inset 0 -7px 7px rgba(0, 0, 0, 0.24),
+            0 0 0 2px rgba(0, 0, 0, 0.45),
+            4px 9px 14px rgba(0, 0, 0, 0.38);
+        }
+        .keycap-button:active::before {
+          top: 7px;
+          left: 6px;
+          bottom: 6px;
+          right: 6px;
+          box-shadow:
+            -4px -4px 4px rgba(255, 255, 255, 0.12),
+            4px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .keycap-label {
+          font-weight: 700;
+          font-size: 12px;
+          letter-spacing: 0.04em;
+          color: #e9e9e9;
+        }
+      `}</style>
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-4xl font-extrabold tracking-tight text-stone-900">Income Overview</h1>
-          <p className="text-base text-stone-700 mt-1 font-semibold">Real-time performance analytics and revenue tracking.</p>
+        <div className="rounded-2xl border border-white/28 bg-white/26 px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.12)] backdrop-blur-[6px]">
+          <h1 className="text-4xl font-extrabold tracking-tight text-stone-950 drop-shadow-[0_2px_6px_rgba(255,255,255,0.45)]">Income Overview</h1>
+          <p className="text-base text-stone-800 mt-1 font-semibold drop-shadow-[0_1px_4px_rgba(255,255,255,0.35)]">Real-time performance analytics and revenue tracking.</p>
         </div>
         <div className="flex gap-3">
           {teamRole === 'viewer' && (
             <Badge className="bg-amber-100 text-amber-700 border-0">Viewer Mode</Badge>
           )}
-          <NotificationBell />
+          <NotificationBell buttonClassName="keycap-button keycap-icon-button border-0 bg-transparent hover:bg-transparent" />
           <Button
             variant="outline"
-            className="bg-white border-stone-300 text-stone-900 hover:bg-stone-100 hover:text-stone-900 rounded-xl h-11 font-semibold select-none"
+            className="keycap-button border-0 bg-transparent hover:bg-transparent"
             onClick={() => setPeriodDays((prev) => (prev === 7 ? 30 : prev === 30 ? 0 : 7))}
           >
-             <Calendar className="w-4 h-4 mr-2" />
-             {periodDays === 7 ? 'Last 7 Days' : periodDays === 30 ? 'Last 30 Days' : 'All Time'}
+            <Calendar className="w-4 h-4" />
+            <span className="keycap-label">
+              {periodDays === 7 ? 'Last 7 Days' : periodDays === 30 ? 'Last 30 Days' : 'All Time'}
+            </span>
           </Button>
         </div>
       </div>
 
       {/* Main Stats Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-tutorial-id="income-summary">
-        <Card className="rounded-3xl border border-stone-200 shadow-sm bg-white overflow-hidden">
+        <Card className="doodle-panel rounded-3xl border border-white/10 shadow-[0_10px_24px_rgba(15,23,42,0.24)] bg-[#1f1f23] text-[#FAFAF9] overflow-hidden">
           <CardContent className="p-6">
-            <div className="flex justify-between items-start">
-              <div className="p-2 bg-stone-50 rounded-lg text-stone-400">
-                 <Wallet className="w-5 h-5" />
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/10 rounded-full text-stone-300">
+                  <Wallet className="w-5 h-5" />
+                </div>
+                <p className="text-[10px] font-black text-stone-300 uppercase tracking-[0.2em]">Total Revenue</p>
               </div>
-              <Badge variant="outline" className="text-emerald-600 bg-emerald-50 border-emerald-100 flex items-center">
+              <Badge variant="outline" className="text-emerald-200 bg-emerald-900/35 border-emerald-700/50 flex items-center">
                  <ArrowUpRight className="w-3 h-3 mr-1" /> +12.5%
               </Badge>
             </div>
-            <p className="text-sm font-extrabold text-stone-400 uppercase tracking-widest mt-4">Total Revenue</p>
-            <p className="text-4xl font-extrabold text-stone-900 mt-1">
+            <p className="text-5xl font-extrabold text-[#FAFAF9] mt-1 tracking-tight">
               {isLoadingLeads ? 'Loading...' : `$${stats.totalRevenue.toLocaleString()}`}
             </p>
           </CardContent>
         </Card>
 
-        <Card className="rounded-3xl border border-stone-200 shadow-sm bg-white overflow-hidden">
+        <Card className="doodle-panel rounded-3xl border border-white/10 shadow-[0_10px_24px_rgba(15,23,42,0.24)] bg-[#1f1f23] text-[#FAFAF9] overflow-hidden">
           <CardContent className="p-6 space-y-5">
             <div className="flex items-center justify-between">
-              <div className="p-2 bg-violet-50 rounded-lg text-violet-600">
-                <Target className="w-5 h-5" />
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/10 rounded-full text-violet-200">
+                  <Target className="w-5 h-5" />
+                </div>
+                <p className="text-[10px] font-black text-stone-300 uppercase tracking-[0.2em]">Revenue Goal</p>
               </div>
-              <Badge variant="outline" className="text-violet-700 bg-violet-50 border-violet-100">
+              <Badge variant="outline" className="text-violet-200 bg-violet-900/35 border-violet-700/50">
                 Target: ${goal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </Badge>
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs font-extrabold uppercase tracking-widest text-stone-400">
+              <div className="flex items-center justify-between text-xs font-extrabold uppercase tracking-widest text-stone-300">
                 <span>Progress</span>
                 <span>{goalProgress.toFixed(1)}%</span>
               </div>
               {isGoalLoading ? (
-                <div className="h-3 w-full rounded-full bg-stone-100 overflow-hidden">
-                  <div className="h-full w-1/3 animate-pulse bg-violet-300 rounded-full" />
+                <div className="h-3 w-full rounded-full bg-[#2a2f3a] overflow-hidden">
+                  <div className="h-full w-1/3 animate-pulse bg-violet-500 rounded-full" />
                 </div>
               ) : (
-                <div className="h-3 w-full rounded-full bg-stone-100 overflow-hidden">
+                <div className="h-3 w-full rounded-full bg-[#2a2f3a] overflow-hidden">
                   <div
                     className="h-full bg-violet-600 rounded-full transition-all duration-500"
                     style={{ width: `${goalProgress}%` }}
@@ -401,7 +491,7 @@ function IncomePageContent() {
                 value={goalInput}
                 onChange={(e) => setGoalInput(e.target.value)}
                 disabled={!teamCanEdit}
-                className="h-11 flex-1 rounded-xl border border-stone-200 bg-stone-50 px-3 text-base font-semibold text-stone-900 outline-none focus:ring-2 focus:ring-violet-500"
+                className="h-11 flex-1 rounded-xl border border-white/15 bg-[#2a2f3a] px-3 text-base font-semibold text-[#FAFAF9] outline-none focus:ring-2 focus:ring-violet-500"
                 placeholder="Set revenue goal"
               />
               <Button
@@ -411,6 +501,60 @@ function IncomePageContent() {
               >
                 {isGoalSaving ? 'Saving...' : 'Save Goal'}
               </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Insight Strip */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5" data-tutorial-id="income-insights">
+        <Card className="doodle-panel rounded-3xl border border-white/10 shadow-[0_10px_24px_rgba(15,23,42,0.24)] bg-[#1f1f23] text-[#FAFAF9] overflow-hidden">
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between">
+              <div className="space-y-2">
+                <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-stone-300">Closed Deals</p>
+                <p className="text-3xl font-extrabold text-[#FAFAF9]">{dashboardInsights.closedCount}</p>
+                <p className="text-sm font-semibold text-stone-300">
+                  {periodDays === 0 ? 'Across all time' : `In the last ${periodDays} days`}
+                </p>
+              </div>
+              <div className="rounded-xl bg-emerald-900/45 p-2.5 text-emerald-200">
+                <CheckCircle2 className="h-5 w-5" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="doodle-panel rounded-3xl border border-white/10 shadow-[0_10px_24px_rgba(15,23,42,0.24)] bg-[#1f1f23] text-[#FAFAF9] overflow-hidden">
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between">
+              <div className="space-y-2">
+                <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-stone-300">Average Deal</p>
+                <p className="text-3xl font-extrabold text-[#FAFAF9]">
+                  {formatUsdAmount(dashboardInsights.avgDeal) || '$0.00'}
+                </p>
+                <p className="text-sm font-semibold text-stone-300">Per completed checkout</p>
+              </div>
+              <div className="rounded-xl bg-violet-900/45 p-2.5 text-violet-200">
+                <CircleDollarSign className="h-5 w-5" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="doodle-panel rounded-3xl border border-white/10 shadow-[0_10px_24px_rgba(15,23,42,0.24)] bg-[#1f1f23] text-[#FAFAF9] overflow-hidden">
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between">
+              <div className="space-y-2">
+                <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-stone-300">Goal Remaining</p>
+                <p className="text-3xl font-extrabold text-[#FAFAF9]">
+                  {formatUsdAmount(dashboardInsights.goalRemaining) || '$0.00'}
+                </p>
+                <p className="text-sm font-semibold text-stone-300">To hit this target cycle</p>
+              </div>
+              <div className="rounded-xl bg-amber-900/45 p-2.5 text-amber-200">
+                <Flag className="h-5 w-5" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -428,6 +572,15 @@ function IncomePageContent() {
               <Button variant="ghost" size="sm" className="rounded-full text-stone-900 hover:text-stone-900 hover:bg-stone-100 font-semibold select-none">
                  <Filter className="w-4 h-4 mr-2" /> Filter
               </Button>
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <Badge className="border-0 bg-stone-900 text-white">Revenue</Badge>
+              <Badge className="border-0 bg-emerald-600 text-white">Closed Deals</Badge>
+              <Badge className="border-0 bg-red-500 text-white">Lost / Disinterested</Badge>
+              <Badge variant="outline" className="border-stone-300 text-stone-700">
+                <Gauge className="mr-1 h-3.5 w-3.5" />
+                {goalProgress.toFixed(1)}% to goal
+              </Badge>
             </div>
           </CardHeader>
           <CardContent className="p-8">
@@ -502,9 +655,15 @@ function IncomePageContent() {
                   ))}
 
                   {recentClosedDeals.length === 0 && (
-                   <div className="text-center py-12 text-stone-600">
-                      <HistoryIcon className="w-10 h-10 mx-auto mb-2 opacity-10" />
-                      <p className="text-sm">No closed deals found yet.</p>
+                   <div className="rounded-2xl border border-stone-200 bg-stone-50 p-6 text-stone-700">
+                      <div className="text-center pb-5">
+                        <HistoryIcon className="w-10 h-10 mx-auto mb-2 opacity-20" />
+                        <p className="text-sm font-semibold">No closed deals found yet.</p>
+                      </div>
+                      <div className="space-y-2 text-xs font-semibold text-stone-600">
+                        <p className="flex items-center gap-2"><Sparkles className="h-3.5 w-3.5 text-violet-600" /> Close your first lead to populate this feed.</p>
+                        <p className="flex items-center gap-2"><Sparkles className="h-3.5 w-3.5 text-violet-600" /> Revenue chart and averages update instantly after checkout.</p>
+                      </div>
                    </div>
                   )}
                 </div>
@@ -522,7 +681,7 @@ function IncomePageContent() {
 
 export default function RootIncomePage() {
   return (
-    <div className="flex min-h-screen app-shell-bg app-shell-text">
+    <div className="flex min-h-screen platform-pattern-bg income-pattern-dim app-shell-text">
       <div className="hidden md:block fixed left-0 top-0 h-full z-50">
         <Sidebar />
       </div>

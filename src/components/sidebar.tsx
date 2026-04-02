@@ -18,7 +18,10 @@ import {
   Shield,
   Puzzle,
   LifeBuoy,
-  X
+  X,
+  Sun,
+  Moon,
+  ArrowDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -47,6 +50,9 @@ export function Sidebar() {
   const [userRole, setUserRole] = useState('Member');
   const [userEmail, setUserEmail] = useState('');
   const [currentUserId, setCurrentUserId] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [profileBio, setProfileBio] = useState('');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [teamNameInput, setTeamNameInput] = useState('My Team');
   const [inviteRole, setInviteRole] = useState<'viewer' | 'editor' | 'admin'>('viewer');
@@ -54,8 +60,12 @@ export function Sidebar() {
   const [inviteCode, setInviteCode] = useState('');
   const [joinCodeInput, setJoinCodeInput] = useState('');
   const [teamBusy, setTeamBusy] = useState(false);
+  const [patternMode, setPatternMode] = useState<'light' | 'dark'>('light');
+  const [showLogsThemeHint, setShowLogsThemeHint] = useState(false);
+  const [isNavLoading, setIsNavLoading] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const { overview, refresh, capabilities: teamCaps } = useTeamOverview();
+  const isLogsPage = pathname === '/logs';
 
   const startResizing = useCallback((mouseDownEvent: React.MouseEvent) => {
     setIsResizing(true);
@@ -98,9 +108,54 @@ export function Sidebar() {
   }, []);
 
   useEffect(() => {
-    document.documentElement.classList.remove('dark');
-    localStorage.setItem('leadsorter_theme', 'light');
+    if (isLogsPage) {
+      const savedLogsMode = localStorage.getItem('ika_logs_pattern_mode');
+      const nextMode: 'light' | 'dark' = savedLogsMode === 'light' ? 'light' : 'dark';
+      setPatternMode(nextMode);
+      document.documentElement.setAttribute('data-pattern-mode', nextMode);
+      return;
+    }
+
+    setPatternMode('light');
+    document.documentElement.setAttribute('data-pattern-mode', 'light');
+  }, [isLogsPage]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-pattern-mode', patternMode);
+    if (isLogsPage) {
+      localStorage.setItem('ika_logs_pattern_mode', patternMode);
+    }
+  }, [patternMode, isLogsPage]);
+
+  useEffect(() => {
+    if (!isLogsPage) {
+      setShowLogsThemeHint(false);
+      return;
+    }
+    const hintSeen = localStorage.getItem('ika_logs_theme_hint_seen');
+    setShowLogsThemeHint(!hintSeen);
+  }, [isLogsPage]);
+
+  useEffect(() => {
+    return () => {
+      document.documentElement.setAttribute('data-pattern-mode', 'light');
+    };
   }, []);
+
+  useEffect(() => {
+    setIsNavLoading(false);
+    document.documentElement.classList.remove('nav-loading');
+  }, [pathname]);
+
+  const handleNavClick = useCallback(
+    (href: string) => {
+      const isDashboard = href === '/shop' && pathname === '/shop';
+      if (pathname === href || isDashboard) return;
+      setIsNavLoading(true);
+      document.documentElement.classList.add('nav-loading');
+    },
+    [pathname]
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -113,8 +168,19 @@ export function Sidebar() {
           session.user.user_metadata?.name ||
           (session.user.email ? session.user.email.split('@')[0] : '');
         if (metaName) setUserName(metaName);
+        const metaDisplayName = session.user.user_metadata?.display_name;
+        if (typeof metaDisplayName === 'string') setDisplayName(metaDisplayName);
+        const metaBio = session.user.user_metadata?.bio;
+        if (typeof metaBio === 'string') setProfileBio(metaBio);
         if (session.user.email) setUserEmail(session.user.email);
         setCurrentUserId(session.user.id);
+
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('full_name')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+        if (profile?.full_name) setUserName(profile.full_name);
       } catch {
         // ignore
       }
@@ -280,12 +346,183 @@ export function Sidebar() {
     router.refresh();
   };
 
+  const handleSaveProfile = useCallback(async () => {
+    if (!currentUserId) {
+      toast({
+        title: 'Sign in required',
+        description: 'Please sign in again to save your profile.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsSavingProfile(true);
+    const nextFullName = userName.trim();
+    const nextDisplayName = displayName.trim();
+    const nextBio = profileBio.trim();
+
+    try {
+      const { error: profileErr } = await supabase.from('user_profiles').upsert({
+        user_id: currentUserId,
+        full_name: nextFullName || null,
+      });
+      if (profileErr) throw profileErr;
+
+      const { error: authErr } = await supabase.auth.updateUser({
+        data: {
+          full_name: nextFullName || null,
+          display_name: nextDisplayName || null,
+          bio: nextBio || null,
+        },
+      });
+      if (authErr) throw authErr;
+
+      toast({
+        title: 'Profile saved',
+        description: 'Your account settings were saved to Supabase.',
+      });
+    } catch (e: any) {
+      toast({
+        title: 'Save failed',
+        description: e?.message || 'Could not save profile updates.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSavingProfile(false);
+    }
+  }, [currentUserId, displayName, profileBio, toast, userName]);
+
+  const isPatternDark = patternMode === 'dark';
+  const dismissLogsThemeHint = () => {
+    localStorage.setItem('ika_logs_theme_hint_seen', '1');
+    setShowLogsThemeHint(false);
+  };
+
   return (
     <div 
       ref={sidebarRef}
-      className="h-screen flex flex-col p-6 fixed left-0 top-0 hidden md:flex z-50 group border-r font-inter bg-[var(--app-sidebar-bg)] border-[color:var(--app-sidebar-border)]"
+      className="sidebar-doodle-bg sidebar-elevated-right h-screen flex flex-col p-6 fixed left-0 top-0 hidden md:flex z-50 group font-inter"
       style={{ width: width }}
     >
+      <style jsx global>{`
+        .keycap-gear {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 40px;
+          height: 40px;
+          border-radius: 12px;
+          background: linear-gradient(180deg, #282828, #202020);
+          box-shadow:
+            inset -6px 0 6px rgba(0, 0, 0, 0.15),
+            inset 0 -6px 6px rgba(0, 0, 0, 0.25),
+            0 0 0 2px rgba(0, 0, 0, 0.75),
+            8px 16px 20px rgba(0, 0, 0, 0.35);
+          overflow: hidden;
+          transition: transform 0.12s ease-in-out, box-shadow 0.12s ease-in;
+          user-select: none;
+          -webkit-tap-highlight-color: transparent;
+        }
+        .keycap-gear::before {
+          content: "";
+          position: absolute;
+          top: 3px;
+          left: 4px;
+          bottom: 8px;
+          right: 8px;
+          background: linear-gradient(90deg, #232323, #4a4a4a);
+          border-radius: 10px;
+          box-shadow:
+            -8px -8px 8px rgba(255, 255, 255, 0.2),
+            8px 4px 8px rgba(0, 0, 0, 0.15);
+          border-left: 1px solid #0004;
+          border-bottom: 1px solid #0004;
+          border-top: 1px solid #0009;
+          transition: all 0.12s ease-in-out;
+        }
+        .keycap-gear > * {
+          position: relative;
+          z-index: 1;
+          color: #e9e9e9;
+        }
+        .keycap-gear:active {
+          transform: translateY(4px) !important;
+          box-shadow:
+            inset -5px 0 5px rgba(0, 0, 0, 0.2),
+            inset 0 -5px 5px rgba(0, 0, 0, 0.24),
+            0 0 0 2px rgba(0, 0, 0, 0.45),
+            4px 8px 12px rgba(0, 0, 0, 0.3);
+        }
+        .keycap-gear:active::before {
+          top: 6px;
+          left: 6px;
+          bottom: 6px;
+          right: 6px;
+          box-shadow:
+            -4px -4px 4px rgba(255, 255, 255, 0.12),
+            4px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .keycap-cta {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          height: 40px;
+          padding: 0 18px;
+          border-radius: 14px;
+          background: linear-gradient(180deg, #282828, #202020);
+          box-shadow:
+            inset -8px 0 8px rgba(0, 0, 0, 0.15),
+            inset 0 -8px 8px rgba(0, 0, 0, 0.25),
+            0 0 0 2px rgba(0, 0, 0, 0.75),
+            10px 20px 25px rgba(0, 0, 0, 0.4);
+          overflow: hidden;
+          transition: transform 0.12s ease-in-out, box-shadow 0.12s ease-in;
+          user-select: none;
+          -webkit-tap-highlight-color: transparent;
+        }
+        .keycap-cta::before {
+          content: "";
+          position: absolute;
+          top: 3px;
+          left: 4px;
+          bottom: 9px;
+          right: 9px;
+          background: linear-gradient(90deg, #232323, #4a4a4a);
+          border-radius: 12px;
+          box-shadow:
+            -10px -10px 10px rgba(255, 255, 255, 0.25),
+            10px 5px 10px rgba(0, 0, 0, 0.15);
+          border-left: 1px solid #0004;
+          border-bottom: 1px solid #0004;
+          border-top: 1px solid #0009;
+          transition: all 0.12s ease-in-out;
+        }
+        .keycap-cta > * {
+          position: relative;
+          z-index: 1;
+          color: #e9e9e9;
+        }
+        .keycap-cta:active {
+          transform: translateY(4px) !important;
+          box-shadow:
+            inset -7px 0 7px rgba(0, 0, 0, 0.2),
+            inset 0 -7px 7px rgba(0, 0, 0, 0.24),
+            0 0 0 2px rgba(0, 0, 0, 0.45),
+            4px 9px 14px rgba(0, 0, 0, 0.38);
+        }
+        .keycap-cta:active::before {
+          top: 6px;
+          left: 6px;
+          bottom: 6px;
+          right: 6px;
+          box-shadow:
+            -4px -4px 4px rgba(255, 255, 255, 0.12),
+            4px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+      `}</style>
       {/* Resizer Handle */}
       <div
         className="absolute right-0 top-0 w-4 h-full cursor-col-resize hover:bg-stone-300/30 active:bg-stone-400/50 transition-colors z-50 flex items-center justify-center"
@@ -300,15 +537,107 @@ export function Sidebar() {
             <LayoutGrid className="h-6 w-6" />
         </div>
         {width > 220 && (
-           <span className="font-bungee text-2xl text-[var(--app-sidebar-title)] truncate">Ika Platform</span>
+           <span
+             className={cn(
+               "font-bungee text-2xl truncate",
+               isPatternDark
+                 ? "text-stone-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)] [text-shadow:0_0_1px_rgba(0,0,0,0.75)]"
+                 : "text-[var(--app-sidebar-title)]"
+             )}
+           >
+             Ika Platform
+           </span>
         )}
       </Link>
 
-      <div className="px-2 mb-5 text-[11px] font-semibold text-[var(--app-sidebar-muted)] uppercase tracking-[0.32em] truncate">
+      <div className={cn(
+        "mb-3 inline-flex w-fit max-w-full items-center rounded-full px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.2em] truncate border backdrop-blur-sm",
+        isPatternDark
+          ? "text-white border-[#3b3a52] bg-[#1a1928] shadow-[0_6px_14px_rgba(0,0,0,0.45)]"
+          : "text-white border-[#344666] bg-[#2f4467] shadow-[0_6px_14px_rgba(15,23,42,0.22)]"
+      )}>
         Main Menu
       </div>
 
-      <nav className="space-y-1 flex-1 overflow-x-hidden">
+      {isLogsPage && (
+        <div className={cn(
+          "mb-4 rounded-2xl border p-2 backdrop-blur-sm",
+          isPatternDark ? "border-white/20 bg-black/25" : "border-stone-300/70 bg-white/62"
+        )}>
+          {showLogsThemeHint && (
+            <div className={cn(
+              "relative mb-4 ml-auto w-fit max-w-[240px] rounded-xl border px-2.5 py-2 text-[11px] font-semibold shadow-[0_6px_18px_rgba(8,145,178,0.2)]",
+              isPatternDark
+                ? "border-cyan-300/70 bg-cyan-500/12 text-cyan-100"
+                : "border-cyan-500/55 bg-cyan-100/80 text-cyan-900"
+            )}>
+              <div className={cn(
+                "absolute -bottom-[7px] right-10 h-3.5 w-3.5 rotate-45 border-b border-r",
+                isPatternDark ? "border-cyan-300/70 bg-cyan-500/12" : "border-cyan-500/55 bg-cyan-100/80"
+              )} />
+              <ArrowDown className={cn(
+                "absolute -bottom-7 right-[34px] h-4 w-4 animate-bounce",
+                isPatternDark ? "text-cyan-200" : "text-cyan-700"
+              )} />
+              <div className="flex items-start gap-2 pr-3">
+                <span>You can change the Logs colors here.</span>
+                <button
+                  type="button"
+                  aria-label="Dismiss color tip"
+                  onClick={dismissLogsThemeHint}
+                  className="ml-auto rounded px-1 text-cyan-100/80 hover:bg-cyan-500/15 hover:text-cyan-50"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          )}
+          <div className={cn("px-1 pb-2 text-[10px] font-bold uppercase tracking-[0.22em]", isPatternDark ? "text-stone-200" : "text-stone-700")}>
+            Logs Theme
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              className={cn(
+                "h-9 rounded-xl text-xs font-bold",
+                patternMode === 'light'
+                  ? "bg-white text-stone-900 shadow-sm hover:bg-white"
+                  : isPatternDark
+                    ? "text-stone-300 hover:bg-white/10 hover:text-white"
+                    : "text-stone-600 hover:bg-white/80 hover:text-stone-900"
+              )}
+              onClick={() => setPatternMode('light')}
+            >
+              <Sun className="mr-1.5 h-3.5 w-3.5" />
+              Light
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className={cn(
+                "h-9 rounded-xl text-xs font-bold",
+                patternMode === 'dark'
+                  ? "bg-[#171626] text-stone-100 shadow-sm hover:bg-[#171626]"
+                  : isPatternDark
+                    ? "text-stone-300 hover:bg-white/10 hover:text-white"
+                    : "text-stone-600 hover:bg-white/80 hover:text-stone-900"
+              )}
+              onClick={() => setPatternMode('dark')}
+            >
+              <Moon className="mr-1.5 h-3.5 w-3.5" />
+              Dark
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <nav className={cn(
+        "space-y-1 flex-1 overflow-x-hidden rounded-2xl border p-2 backdrop-blur-sm",
+        isPatternDark
+          ? "border-white/18 bg-black/28 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+          : "border-stone-300/70 bg-white/62 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
+      )}>
         {sidebarItems.map((item) => {
           const isActive = (pathname === '/shop' && item.label === 'Dashboard') || pathname === item.href;
 
@@ -317,14 +646,20 @@ export function Sidebar() {
               key={item.label}
               href={item.href}
               data-tutorial-id={`nav-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+              onClick={() => handleNavClick(item.href)}
               className={cn(
                 "flex items-center px-4 py-2.5 rounded-2xl text-[13px] font-semibold tracking-wide transition-all duration-200 whitespace-nowrap relative",
                 isActive
-                  ? "bg-white text-[#1C1917] shadow-[0_8px_18px_rgba(15,23,42,0.12)]"
-                  : "text-stone-500 hover:bg-white/60 hover:text-[#1C1917]"
+                  ? "bg-white text-[#1C1917] shadow-[0_8px_18px_rgba(15,23,42,0.14)]"
+                  : isPatternDark
+                    ? "text-stone-100 hover:bg-white/12 hover:text-white"
+                    : "text-stone-800 hover:bg-white/78 hover:text-[#1C1917]"
               )}
             >
-              <item.icon className={cn("h-4.5 w-4.5 min-w-[1.125rem] mr-3", isActive ? "text-[#1C1917]" : "text-stone-400")} />
+              <item.icon className={cn(
+                "h-4.5 w-4.5 min-w-[1.125rem] mr-3",
+                isActive ? "text-[#1C1917]" : isPatternDark ? "text-stone-200" : "text-stone-700"
+              )} />
               <span className="truncate opacity-100 transition-opacity duration-200">
                 {item.label}
               </span>
@@ -335,6 +670,15 @@ export function Sidebar() {
           );
         })}
       </nav>
+
+      {isNavLoading && (
+        <div className="fixed inset-x-0 top-3 z-[9999] flex justify-end px-6 pointer-events-none">
+          <div className="flex items-center gap-2 rounded-full bg-black/80 text-white text-xs font-semibold px-3 py-1.5 shadow-[0_8px_20px_rgba(0,0,0,0.2)]">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+            Loading...
+          </div>
+        </div>
+      )}
 
       <div className="mt-auto space-y-4 overflow-x-hidden">
         <div className="backdrop-blur rounded-2xl p-3 shadow-sm border border-stone-200/70 bg-[var(--app-sidebar-card-bg)]">
@@ -350,7 +694,7 @@ export function Sidebar() {
             <Button
               variant="ghost"
               size="icon"
-              className="ml-auto h-9 w-9 rounded-full text-stone-500 hover:text-stone-700 hover:bg-stone-100"
+              className="ml-auto keycap-gear border-0 bg-transparent hover:bg-transparent"
               onClick={() => setSettingsOpen(true)}
             >
               <Settings className="h-4 w-4" />
@@ -383,45 +727,67 @@ export function Sidebar() {
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <label className="inline-flex rounded-full bg-stone-200/80 px-2.5 py-1 text-xs font-semibold text-stone-600">Full Name</label>
-                  <Input className="h-10 rounded-2xl text-sm bg-white text-stone-900 placeholder:text-stone-400 border border-stone-200 focus-visible:ring-2 focus-visible:ring-violet-200 focus-visible:border-violet-300" value={userName} onChange={(e) => setUserName(e.target.value)} />
+                  <Input className="h-10 rounded-2xl text-sm bg-white text-stone-900 placeholder:text-stone-400 hover:text-stone-900 hover:placeholder:text-stone-500 border border-stone-200 focus-visible:ring-2 focus-visible:ring-violet-200 focus-visible:border-violet-300" value={userName} onChange={(e) => setUserName(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <label className="inline-flex rounded-full bg-stone-200/80 px-2.5 py-1 text-xs font-semibold text-stone-600">Display Name</label>
-                  <Input className="h-10 rounded-2xl text-sm bg-white text-stone-900 placeholder:text-stone-400 border border-stone-200 focus-visible:ring-2 focus-visible:ring-violet-200 focus-visible:border-violet-300" placeholder="e.g. ika-admin" />
+                  <Input
+                    className="h-10 rounded-2xl text-sm bg-white text-stone-900 placeholder:text-stone-400 hover:text-stone-900 hover:placeholder:text-stone-500 border border-stone-200 focus-visible:ring-2 focus-visible:ring-violet-200 focus-visible:border-violet-300"
+                    placeholder="e.g. ika-admin"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <label className="inline-flex rounded-full bg-stone-200/80 px-2.5 py-1 text-xs font-semibold text-stone-600">Email Address</label>
                   <Input
-                    className="h-10 rounded-2xl text-sm bg-white text-stone-900 placeholder:text-stone-400 border border-stone-200 focus-visible:ring-2 focus-visible:ring-violet-200 focus-visible:border-violet-300"
+                    className="h-10 rounded-2xl text-sm bg-white text-stone-900 placeholder:text-stone-400 hover:text-stone-900 hover:placeholder:text-stone-500 border border-stone-200 focus-visible:ring-2 focus-visible:ring-violet-200 focus-visible:border-violet-300"
                     value={userEmail || ''}
                     readOnly
                   />
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <label className="inline-flex rounded-full bg-stone-200/80 px-2.5 py-1 text-xs font-semibold text-stone-600">Bio</label>
-                  <Textarea placeholder="Tell us about yourself..." className="min-h-[96px] rounded-2xl text-sm bg-white text-stone-900 placeholder:text-stone-400 border border-stone-200 focus-visible:ring-2 focus-visible:ring-violet-200 focus-visible:border-violet-300" />
+                  <Textarea
+                    placeholder="Tell us about yourself..."
+                    className="min-h-[96px] rounded-2xl text-sm bg-white text-stone-900 placeholder:text-stone-400 hover:text-stone-900 hover:placeholder:text-stone-500 border border-stone-200 focus-visible:ring-2 focus-visible:ring-violet-200 focus-visible:border-violet-300"
+                    value={profileBio}
+                    onChange={(e) => setProfileBio(e.target.value)}
+                  />
                 </div>
                 <p className="text-xs text-stone-400 md:col-span-2">
                   Brief description for your profile. URLs are hyperlinked.
                 </p>
+                <div className="md:col-span-2 flex justify-end">
+                  <Button
+                    type="button"
+                    onClick={handleSaveProfile}
+                    disabled={isSavingProfile}
+                    className="keycap-cta border-0 bg-transparent hover:bg-transparent"
+                  >
+                    <span className="text-[12px] font-black uppercase tracking-widest text-[#e9e9e9]">
+                      {isSavingProfile ? 'Saving...' : 'Save Profile'}
+                    </span>
+                  </Button>
+                </div>
               </div>
 
               <div className="mt-6 border-t border-stone-200 pt-4">
-                <div className="inline-flex rounded-full bg-stone-200 px-3 py-1 text-xs font-semibold text-stone-700">Workspace Role</div>
-                <p className="text-base font-semibold text-stone-500 mt-2">You are currently a {userRole}.</p>
+                  <div className="inline-flex rounded-full bg-stone-200 px-3 py-1 text-sm font-semibold text-stone-700">Workspace Role</div>
+                  <p className="text-base md:text-lg font-semibold text-stone-500 mt-2">You are currently a {userRole}.</p>
               </div>
 
               <div className="mt-6 border-t border-stone-200 pt-4 space-y-4">
                 <div className="flex items-center justify-between">
-                  <div className="inline-flex rounded-full bg-stone-200 px-3 py-1 text-xs font-semibold text-stone-700">Team Access</div>
+                  <div className="inline-flex rounded-full bg-stone-200 px-3 py-1 text-sm font-semibold text-stone-700">Team Access</div>
                   <div className="flex items-center gap-2">
                     {teamCaps.role && (
-                      <span className="text-xs font-semibold rounded-full px-3 py-1 bg-amber-100 text-amber-700">
+                    <span className="text-sm font-semibold rounded-full px-3 py-1 bg-amber-100 text-amber-700">
                         {teamCaps.role}
                       </span>
                     )}
                     {overview?.team?.name && (
-                      <span className="text-xs font-semibold rounded-full px-3 py-1 bg-stone-100 text-stone-700">
+                    <span className="text-sm font-semibold rounded-full px-3 py-1 bg-stone-100 text-stone-700">
                         {overview.team.name}
                       </span>
                     )}
@@ -430,41 +796,45 @@ export function Sidebar() {
 
                 {!overview?.team && (
                   <div className="rounded-2xl border border-stone-200 bg-white p-3 space-y-2.5">
-                    <p className="text-xs text-stone-500">Create a team to invite admins, editors, and viewers.</p>
+                    <p className="text-sm text-stone-600">Create a team to invite admins, editors, and viewers.</p>
                     <Input
                       value={teamNameInput}
                       onChange={(e) => setTeamNameInput(e.target.value)}
-                      className="h-9 rounded-2xl border-stone-200"
+                      className="h-10 rounded-2xl border-stone-200 text-sm text-stone-900 placeholder:text-stone-500 hover:text-stone-900 hover:placeholder:text-stone-500"
                       placeholder="Team name"
                     />
                     <Button
                       onClick={handleCreateTeam}
                       disabled={teamBusy}
-                      className="h-9 rounded-2xl bg-stone-900 text-white hover:bg-stone-800"
+                      className="keycap-cta border-0 bg-transparent hover:bg-transparent"
                     >
-                      {teamBusy ? 'Creating...' : 'Create Team'}
+                      <span className="text-[12px] font-black uppercase tracking-widest text-[#e9e9e9]">
+                        {teamBusy ? 'Creating...' : 'Create Team'}
+                      </span>
                     </Button>
                   </div>
                 )}
 
                 <div className="rounded-2xl border border-stone-200 bg-white p-3 space-y-2.5">
-                  <p className="inline-flex rounded-full bg-stone-200/80 px-2.5 py-1 text-xs font-semibold text-stone-700">Join Team by Code</p>
-                  <p className="text-[11px] text-stone-500">
+                  <p className="inline-flex rounded-full bg-stone-200/80 px-2.5 py-1 text-sm font-semibold text-stone-700">Join Team by Code</p>
+                  <p className="text-sm text-stone-600">
                     Enter a 5-digit code. You can still request to join another team even if you already created one.
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2">
                     <Input
                       value={joinCodeInput}
                       onChange={(e) => setJoinCodeInput(e.target.value.replace(/\D/g, '').slice(0, 5))}
-                      className="h-9 rounded-2xl border-stone-200"
+                      className="h-10 rounded-2xl border-stone-200 text-sm text-stone-900 placeholder:text-stone-500"
                       placeholder="12345"
                     />
                     <Button
                       onClick={handleJoinWithCode}
                       disabled={teamBusy}
-                      className="h-9 rounded-2xl bg-stone-900 text-white hover:bg-stone-800"
+                      className="keycap-cta border-0 bg-transparent hover:bg-transparent"
                     >
-                      Join by Code
+                      <span className="text-[12px] font-black uppercase tracking-widest text-[#e9e9e9]">
+                        Join by Code
+                      </span>
                     </Button>
                   </div>
                 </div>
@@ -473,13 +843,13 @@ export function Sidebar() {
                   <>
                     {teamCaps.canInvite && (
                       <div className="rounded-2xl border border-stone-200 bg-white p-3 space-y-2.5">
-                        <p className="inline-flex rounded-full bg-stone-200/80 px-2.5 py-1 text-xs font-semibold text-stone-700">Invite Member</p>
-                        <p className="text-[11px] text-stone-500">Use team code or share invite link. Email is no longer required.</p>
+                        <p className="inline-flex rounded-full bg-stone-200/80 px-2.5 py-1 text-sm font-semibold text-stone-700">Invite Member</p>
+                        <p className="text-sm text-stone-600">Use team code or share invite link. Email is no longer required.</p>
                         <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2">
                           <select
                             value={inviteRole}
                             onChange={(e) => setInviteRole(e.target.value as any)}
-                            className="h-9 rounded-2xl border border-stone-200 bg-white px-3 text-sm text-stone-800"
+                            className="h-10 rounded-2xl border border-stone-200 bg-white px-3 text-sm text-stone-800 hover:text-stone-900"
                           >
                             <option value="viewer">Viewer</option>
                             <option value="editor">Editor</option>
@@ -488,9 +858,11 @@ export function Sidebar() {
                           <Button
                             onClick={handleInvite}
                             disabled={teamBusy}
-                            className="h-9 rounded-2xl bg-violet-600 text-white hover:bg-violet-700"
+                            className="keycap-cta border-0 bg-transparent hover:bg-transparent"
                           >
-                            Invite
+                            <span className="text-[12px] font-black uppercase tracking-widest text-[#e9e9e9]">
+                              Invite
+                            </span>
                           </Button>
                         </div>
                         {(inviteUrl || inviteCode || overview?.team?.invite_code) && (
@@ -520,29 +892,33 @@ export function Sidebar() {
 
                     {teamCaps.canManageMembers && overview.requests?.filter((r) => r.status === 'pending').length > 0 && (
                       <div className="rounded-2xl border border-stone-200 bg-white p-3 space-y-2">
-                        <p className="inline-flex rounded-full bg-stone-200/80 px-2.5 py-1 text-xs font-semibold text-stone-700">Pending Requests</p>
+                      <p className="inline-flex rounded-full bg-stone-200/80 px-2.5 py-1 text-sm font-semibold text-stone-700">Pending Requests</p>
                         {overview.requests
                           .filter((r) => r.status === 'pending')
                           .map((r) => (
                             <div key={r.id} className="flex items-center gap-2 rounded-xl border border-stone-100 p-2">
                               <div className="min-w-0 flex-1">
                                 <p className="text-sm font-semibold text-stone-900 truncate">{r.full_name || r.user_id}</p>
-                                <p className="text-[11px] text-stone-500 truncate">{r.note || 'No note'}</p>
+                                <p className="text-sm text-stone-500 truncate">{r.note || 'No note'}</p>
                               </div>
                               <Button
                                 onClick={() => handleApprove(r.id)}
                                 disabled={teamBusy}
-                                className="h-8 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 px-3"
+                                className="keycap-cta border-0 bg-transparent hover:bg-transparent px-4"
                               >
-                                Approve
+                                <span className="text-[11px] font-black uppercase tracking-widest text-[#e9e9e9]">
+                                  Approve
+                                </span>
                               </Button>
                               <Button
                                 onClick={() => handleReject(r.id)}
                                 disabled={teamBusy}
                                 variant="outline"
-                                className="h-8 rounded-lg border-red-200 text-red-600 hover:bg-red-50 px-3"
+                                className="keycap-cta border-0 bg-transparent hover:bg-transparent px-4"
                               >
-                                Reject
+                                <span className="text-[11px] font-black uppercase tracking-widest text-[#e9e9e9]">
+                                  Reject
+                                </span>
                               </Button>
                             </div>
                           ))}
@@ -550,7 +926,7 @@ export function Sidebar() {
                     )}
 
                     <div className="rounded-2xl border border-stone-200 bg-white p-3 space-y-2">
-                      <p className="inline-flex rounded-full bg-stone-200/80 px-2.5 py-1 text-xs font-semibold text-stone-700">Members</p>
+                      <p className="inline-flex rounded-full bg-stone-200/80 px-2.5 py-1 text-sm font-semibold text-stone-700">Members</p>
                       {overview.members.map((m) => {
                         const isSelf = m.user_id === currentUserId;
                         const isOwner = String(m.role).toLowerCase() === 'owner';
@@ -558,13 +934,13 @@ export function Sidebar() {
                           <div key={m.id} className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-2 items-center rounded-xl border border-stone-100 p-2">
                             <div className="min-w-0">
                               <p className="text-sm font-semibold text-stone-900 truncate">{m.full_name || m.user_id}</p>
-                              <p className="text-[11px] text-stone-500">{m.role}</p>
+                              <p className="text-sm text-stone-500">{m.role}</p>
                             </div>
                             {teamCaps.canManageMembers && !isOwner && (
                               <select
                                 value={m.role}
                                 onChange={(e) => handleMemberRole(m.id, e.target.value)}
-                                className="h-8 rounded-lg border border-stone-200 bg-white px-2 text-xs text-stone-800"
+                                className="h-10 rounded-lg border border-stone-200 bg-white px-2 text-sm text-stone-800 hover:text-stone-900"
                               >
                                 <option value="viewer">Viewer</option>
                                 <option value="editor">Editor</option>
@@ -576,9 +952,11 @@ export function Sidebar() {
                                 onClick={() => handleRemoveMember(m.id)}
                                 disabled={teamBusy}
                                 variant="outline"
-                                className="h-8 rounded-lg border-red-200 text-red-600 hover:bg-red-50 px-3 text-xs"
+                                className="keycap-cta border-0 bg-transparent hover:bg-transparent px-4"
                               >
-                                Remove
+                                <span className="text-[11px] font-black uppercase tracking-widest text-[#e9e9e9]">
+                                  Remove
+                                </span>
                               </Button>
                             )}
                           </div>

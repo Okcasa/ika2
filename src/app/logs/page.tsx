@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { Suspense, useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams, usePathname } from 'next/navigation';
 import { Sidebar } from '@/components/sidebar';
 import { Button } from '@/components/ui/button';
@@ -337,6 +337,7 @@ function LogsPageContent() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [logToDelete, setLogToDelete] = useState<{leadId: string, logId: string | number} | null>(null);
+  const [isLeadsLoading, setIsLeadsLoading] = useState(true);
   const { toast } = useToast();
   const [timerTick, setTimerTick] = useState(Date.now());
   const [lastReopen, setLastReopen] = useState<{ leadId: string; snapshot: any } | null>(null);
@@ -366,11 +367,13 @@ function LogsPageContent() {
     let mounted = true;
     const loadSupabase = async () => {
       try {
+        if (mounted) setIsLeadsLoading(true);
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
           if (mounted) {
             setLeads(DEFAULT_LEADS);
             setCustomGroups(ensureGroupOrder([...DEFAULT_GROUPS, ...STATUS_GROUPS]));
+            setIsLeadsLoading(false);
           }
           return;
         }
@@ -466,9 +469,11 @@ function LogsPageContent() {
         if (mounted) {
           setCustomGroups(mergedGroups);
           setLeads(normalizedLeads);
+          setIsLeadsLoading(false);
         }
       } catch (e) {
         console.error("Failed to load logs data", e);
+        if (mounted) setIsLeadsLoading(false);
       }
     };
 
@@ -1305,9 +1310,9 @@ function LogsPageContent() {
   };
 
   return (
-    <div className="flex h-screen app-shell-bg app-shell-text overflow-hidden">
+    <div className="flex h-screen app-shell-bg app-shell-text platform-pattern-bg overflow-hidden">
       {/* List View (Left Panel) */}
-      <div data-tutorial-id="logs-lead-list" className={`w-full md:w-[420px] border-r border-stone-200 bg-white flex flex-col transition-all duration-300 ${selectedLeadId ? 'hidden md:flex' : 'flex'}`}>
+      <div data-tutorial-id="logs-lead-list" className={`w-full md:w-[420px] md:ml-3 border-r border-stone-200 bg-white flex flex-col transition-all duration-300 ${selectedLeadId ? 'hidden md:flex' : 'flex'}`}>
         
         {/* Total Count Header */}
         <div className="p-8 pb-4 bg-white sticky top-0 z-10">
@@ -1400,7 +1405,33 @@ function LogsPageContent() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 pb-8 space-y-2">
+        <div className="flex-1 overflow-y-auto px-4 pb-8 space-y-2 relative" aria-busy={isLeadsLoading}>
+          {/** Skeleton overlay while loading and no data yet */}
+          <div className={`absolute inset-0 px-4 pb-8 transition-opacity duration-300 ${isLeadsLoading && paginatedLeads.length === 0 ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+            <div className="space-y-3 pt-2">
+              {Array.from({ length: 6 }).map((_, idx) => (
+                <div
+                  key={`lead-skeleton-${idx}`}
+                  className="relative overflow-hidden rounded-[2rem] border border-stone-200 bg-white p-5 shadow-[0_10px_24px_rgba(15,23,42,0.12)] animate-pulse"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/80 to-transparent animate-[pulse_1.4s_ease-in-out_infinite]" />
+                  <div className="flex items-start gap-4 relative z-10">
+                    <div className="h-12 w-12 rounded-full bg-stone-200" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 w-40 rounded-full bg-stone-200" />
+                      <div className="h-3 w-28 rounded-full bg-stone-200" />
+                      <div className="mt-3 h-3 w-24 rounded-full bg-stone-200" />
+                    </div>
+                  </div>
+                  <div className="mt-4 flex items-center justify-between pl-[52px] relative z-10">
+                    <div className="h-5 w-24 rounded-full bg-stone-200" />
+                    <div className="h-3 w-12 rounded-full bg-stone-200" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className={`transition-all duration-300 ${isLeadsLoading && paginatedLeads.length === 0 ? 'opacity-0 translate-y-1' : 'opacity-100 translate-y-0'}`}>
           {paginatedLeads.map(lead => (
             <div 
               key={lead.id}
@@ -1512,6 +1543,7 @@ function LogsPageContent() {
               </div>
             </div>
           ))}
+          </div>
           
           {/* Pagination Controls */}
           {filteredLeads.length > 0 && (
@@ -1545,7 +1577,7 @@ function LogsPageContent() {
       </div>
 
       {/* Detail View (Right Panel) */}
-      <div data-tutorial-id="logs-workspace" className={`flex-1 flex flex-col h-full app-shell-bg overflow-hidden ${!selectedLeadId ? 'hidden md:flex' : 'flex'}`}>
+      <div data-tutorial-id="logs-workspace" className={`flex-1 flex flex-col h-full app-shell-bg platform-pattern-bg overflow-hidden ${!selectedLeadId ? 'hidden md:flex' : 'flex'}`}>
         {activeLead ? (
           <>
           <div className="p-6 max-w-5xl mx-auto w-full space-y-6 h-full overflow-hidden animate-in fade-in slide-in-from-right-4 duration-500">
@@ -1710,7 +1742,7 @@ function LogsPageContent() {
                           "flex flex-col items-center justify-center p-5 rounded-[2rem] border transition-all duration-300 gap-3 group relative overflow-hidden",
                           selectedConclusion === item.id 
                             ? `${item.color} border-current scale-[1.02] shadow-xl shadow-current/5` 
-                            : "bg-stone-50 border-transparent text-stone-400 hover:bg-white hover:border-stone-100 hover:shadow-md"
+                            : "bg-stone-100/90 border-stone-200 text-stone-600 hover:bg-stone-100 hover:border-stone-300 hover:shadow-md"
                         )}
                       >
                         <item.icon className={cn(
@@ -1885,12 +1917,14 @@ function LogsPageContent() {
         </AlertDialog>
         </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-stone-400 p-8 text-center">
-            <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-6 shadow-sm border border-stone-100">
+          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+            <div className="pattern-readable-panel flex flex-col items-center justify-center px-8 py-10 max-w-sm">
+            <div className="w-24 h-24 bg-white/90 rounded-full flex items-center justify-center mb-6 shadow-sm border border-stone-200/80">
               <User className="w-10 h-10 text-stone-300" />
             </div>
-            <h2 className="text-xl font-bold text-stone-600">Select a Lead</h2>
-            <p className="max-w-xs mt-2 text-stone-400">Choose a lead from the list on the left to view details and log interactions.</p>
+            <h2 className="pattern-readable-title text-xl font-bold">Select a Lead</h2>
+            <p className="pattern-readable-subtitle max-w-xs mt-2">Choose a lead from the list on the left to view details and log interactions.</p>
+            </div>
           </div>
         )}
       </div>
@@ -1900,16 +1934,18 @@ function LogsPageContent() {
 
 export default function RootLogsPage() {
   return (
-    <div className="flex min-h-screen app-shell-bg app-shell-text">
-      <div className="hidden md:block fixed left-0 top-0 h-full z-50">
-        <Sidebar />
+    <Suspense fallback={<div className="min-h-screen app-shell-bg app-shell-text" />}>
+      <div className="flex min-h-screen app-shell-bg app-shell-text platform-pattern-bg">
+        <div className="hidden md:block fixed left-0 top-0 h-full z-50">
+          <Sidebar />
+        </div>
+        <main
+          className="flex-1 p-0 min-h-screen relative z-0 transition-[margin] duration-75"
+          style={{ marginLeft: 'var(--sidebar-width, 256px)' }}
+        >
+          <LogsPageContent />
+        </main>
       </div>
-      <main 
-        className="flex-1 p-0 min-h-screen relative z-0 transition-[margin] duration-75"
-        style={{ marginLeft: 'var(--sidebar-width, 256px)' }}
-      >
-        <LogsPageContent />
-      </main>
-    </div>
+    </Suspense>
   );
 }

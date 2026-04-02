@@ -49,6 +49,11 @@
     --app-sidebar-muted: #78716c;
     --app-sidebar-title: #292524;
     --app-sidebar-card-bg: rgba(255, 255, 255, 0.72);
+    --pattern-c1: #f3eade;
+    --pattern-c2: #aab6d3;
+    --pattern-shadow: #00000012;
+    --pattern-overlay: rgba(17, 24, 39, 0.32);
+    --pattern-lift-gradient: linear-gradient(90deg, #aeb9d3 0%, #9fabc8 60%, #929fbe 100%);
   }
 
   .dark {
@@ -88,6 +93,14 @@
     --app-sidebar-title: #f5f3ff;
     --app-sidebar-card-bg: rgba(255, 255, 255, 0.94);
   }
+
+  html[data-pattern-mode="dark"] {
+    --pattern-c1: #f8b195;
+    --pattern-c2: #355c7d;
+    --pattern-shadow: #00000052;
+    --pattern-overlay: rgba(15, 18, 34, 0.2);
+    --pattern-lift-gradient: linear-gradient(90deg, #2d4469 0%, #203352 60%, #182846 100%);
+  }
 }
 
 @layer base {
@@ -126,6 +139,51 @@
     font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   }
 
+  .highlight-pop {
+    position: relative;
+    display: inline-block;
+    padding: 0 6px;
+    border-radius: 999px;
+    font-weight: 800;
+    color: #0f172a;
+    background: linear-gradient(135deg, rgba(147, 197, 253, 0.9), rgba(196, 181, 253, 0.9));
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.3),
+      0 6px 18px rgba(30, 64, 175, 0.35);
+    animation: highlight-pop 2.2s ease-in-out infinite;
+  }
+  .highlight-pop::after {
+    content: "";
+    position: absolute;
+    inset: -6px -10px;
+    border-radius: 999px;
+    border: 1px solid rgba(147, 197, 253, 0.4);
+    box-shadow: 0 0 20px rgba(147, 197, 253, 0.35);
+    opacity: 0.6;
+    animation: highlight-ring 2.2s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes highlight-pop {
+    0%, 100% {
+      transform: scale(1);
+      filter: brightness(1);
+    }
+    50% {
+      transform: scale(1.04);
+      filter: brightness(1.12);
+    }
+  }
+  @keyframes highlight-ring {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 0.35;
+    }
+    50% {
+      transform: scale(1.08);
+      opacity: 0.7;
+    }
+  }
+
   .font-outfit {
     font-family: "Outfit", ui-sans-serif, system-ui, sans-serif;
     font-optical-sizing: auto;
@@ -141,6 +199,427 @@
     font-family: "Bungee", sans-serif;
     font-weight: 400;
     font-style: normal;
+  }
+
+  .landing-rain-bg {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    --c: #57d6ff;
+    background-color: #000;
+    background-image:
+      radial-gradient(4px 100px at 0px 235px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 235px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 117.5px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 252px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 252px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 126px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 150px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 150px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 75px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 253px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 253px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 126.5px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 204px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 204px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 102px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 134px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 134px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 67px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 179px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 179px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 89.5px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 299px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 299px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 149.5px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 215px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 215px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 107.5px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 281px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 281px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 140.5px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 158px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 158px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 79px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 210px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 210px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 105px, var(--c) 100%, #0000 150%);
+    background-size:
+      300px 235px,
+      300px 235px,
+      300px 235px,
+      300px 252px,
+      300px 252px,
+      300px 252px,
+      300px 150px,
+      300px 150px,
+      300px 150px,
+      300px 253px,
+      300px 253px,
+      300px 253px,
+      300px 204px,
+      300px 204px,
+      300px 204px,
+      300px 134px,
+      300px 134px,
+      300px 134px,
+      300px 179px,
+      300px 179px,
+      300px 179px,
+      300px 299px,
+      300px 299px,
+      300px 299px,
+      300px 215px,
+      300px 215px,
+      300px 215px,
+      300px 281px,
+      300px 281px,
+      300px 281px,
+      300px 158px,
+      300px 158px,
+      300px 158px,
+      300px 210px,
+      300px 210px,
+      300px 210px;
+    animation: landing-rain-fall 600s steps(120) infinite;
+    opacity: 0.85;
+  }
+
+  .landing-rain-bg::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background-image: radial-gradient(circle at 50% 50%, #0000 0, #0000 2px, hsl(0 0 4%) 2px);
+    background-size: 8px 8px;
+    --f: blur(0.6em) brightness(3.5);
+    animation: none;
+    opacity: 0.5;
+  }
+
+  .landing-rain-static {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    --c: #57d6ff;
+    background-color: #000;
+    background-image:
+      radial-gradient(4px 100px at 0px 235px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 235px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 117.5px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 252px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 252px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 126px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 150px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 150px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 75px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 253px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 253px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 126.5px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 204px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 204px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 102px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 134px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 134px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 67px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 179px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 179px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 89.5px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 299px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 299px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 149.5px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 215px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 215px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 107.5px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 281px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 281px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 140.5px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 158px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 158px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 79px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 210px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 210px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 105px, var(--c) 100%, #0000 150%);
+    background-size:
+      300px 235px,
+      300px 235px,
+      300px 235px,
+      300px 252px,
+      300px 252px,
+      300px 252px,
+      300px 150px,
+      300px 150px,
+      300px 150px,
+      300px 253px,
+      300px 253px,
+      300px 253px,
+      300px 204px,
+      300px 204px,
+      300px 204px,
+      300px 134px,
+      300px 134px,
+      300px 134px,
+      300px 179px,
+      300px 179px,
+      300px 179px,
+      300px 299px,
+      300px 299px,
+      300px 299px,
+      300px 215px,
+      300px 215px,
+      300px 215px,
+      300px 281px,
+      300px 281px,
+      300px 281px,
+      300px 158px,
+      300px 158px,
+      300px 158px,
+      300px 210px,
+      300px 210px,
+      300px 210px;
+  }
+
+  .landing-rain-interactive {
+    --mx: 50%;
+    --my: 50%;
+    --mop: 0;
+    background-image:
+      radial-gradient(190px 190px at var(--mx) var(--my), rgba(45, 212, 191, 0.32) 0%, rgba(45, 212, 191, 0.16) 35%, transparent 72%),
+      radial-gradient(95px 95px at var(--mx) var(--my), rgba(14, 165, 233, 0.4) 0%, rgba(14, 165, 233, 0.18) 42%, transparent 75%),
+      radial-gradient(circle at 1px 1px, rgba(74, 222, 128, 0.65) 1px, transparent 0);
+    background-size: auto, auto, 13px 13px;
+    mix-blend-mode: screen;
+    opacity: calc(0.14 + (var(--mop) * 0.72));
+    transition: opacity 200ms ease;
+    animation: landing-cursor-rain 7s linear infinite;
+  }
+
+  .shop-pattern-bg {
+    --pattern-size: 100px;
+    width: 100%;
+    height: 100%;
+    --_g: var(--pattern-c2) 4% 14%, var(--pattern-c1) 14% 24%, var(--pattern-c2) 22% 34%, var(--pattern-c1) 34% 44%, var(--pattern-c2) 44% 56%, var(--pattern-c1) 56% 66%, var(--pattern-c2) 66% 76%, var(--pattern-c1) 76% 86%, var(--pattern-c2) 86% 96%;
+    background:
+      linear-gradient(var(--pattern-overlay), var(--pattern-overlay)),
+      radial-gradient(100% 100% at 100% 0, var(--pattern-c1) 4%, var(--_g), var(--pattern-shadow) 96%, #0000),
+      radial-gradient(100% 100% at 0 100%, #0000, var(--pattern-shadow) 4%, var(--_g), var(--pattern-c1) 96%)
+      var(--pattern-c1);
+    background-size: auto, var(--pattern-size) var(--pattern-size), var(--pattern-size) var(--pattern-size);
+  }
+
+  .platform-pattern-bg {
+    --pattern-size: 100px;
+    width: 100%;
+    height: 100%;
+    --_g: var(--pattern-c2) 4% 14%, var(--pattern-c1) 14% 24%, var(--pattern-c2) 22% 34%, var(--pattern-c1) 34% 44%, var(--pattern-c2) 44% 56%, var(--pattern-c1) 56% 66%, var(--pattern-c2) 66% 76%, var(--pattern-c1) 76% 86%, var(--pattern-c2) 86% 96%;
+    background:
+      linear-gradient(var(--pattern-overlay), var(--pattern-overlay)),
+      radial-gradient(100% 100% at 100% 0, var(--pattern-c1) 4%, var(--_g), var(--pattern-shadow) 96%, #0000),
+      radial-gradient(100% 100% at 0 100%, #0000, var(--pattern-shadow) 4%, var(--_g), var(--pattern-c1) 96%)
+      var(--pattern-c1);
+    background-size: auto, var(--pattern-size) var(--pattern-size), var(--pattern-size) var(--pattern-size);
+  }
+
+  .income-pattern-dim {
+    --pattern-overlay: rgba(17, 24, 39, 0.32);
+  }
+
+  .sidebar-doodle-bg {
+    --pattern-size: 84px;
+    --_g: var(--pattern-c2) 4% 14%, var(--pattern-c1) 14% 24%, var(--pattern-c2) 22% 34%, var(--pattern-c1) 34% 44%, var(--pattern-c2) 44% 56%, var(--pattern-c1) 56% 66%, var(--pattern-c2) 66% 76%, var(--pattern-c1) 76% 86%, var(--pattern-c2) 86% 96%;
+    background:
+      linear-gradient(var(--pattern-overlay), var(--pattern-overlay)),
+      radial-gradient(100% 100% at 100% 0, var(--pattern-c1) 4%, var(--_g), var(--pattern-shadow) 96%, #0000),
+      radial-gradient(100% 100% at 0 100%, #0000, var(--pattern-shadow) 4%, var(--_g), var(--pattern-c1) 96%)
+      var(--pattern-c1);
+    background-size: auto, var(--pattern-size) var(--pattern-size), var(--pattern-size) var(--pattern-size);
+  }
+
+  .sidebar-elevated-right {
+    position: relative;
+    box-shadow:
+      10px 0 24px rgba(10, 14, 28, 0.3),
+      18px 0 30px rgba(10, 14, 28, 0.16),
+      inset -1px 0 0 rgba(26, 39, 60, 0.28);
+  }
+
+  .sidebar-elevated-right::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: -16px;
+    width: 16px;
+    height: 100%;
+    pointer-events: none;
+    background: linear-gradient(90deg, rgba(15, 23, 42, 0.32) 0%, rgba(15, 23, 42, 0.04) 100%);
+    filter: blur(1.2px);
+    opacity: 0.9;
+  }
+
+  .sidebar-elevated-right::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: -8px;
+    width: 8px;
+    height: 100%;
+    pointer-events: none;
+    background: var(--pattern-lift-gradient);
+    opacity: 0.7;
+  }
+
+  .pattern-readable-title {
+    color: #111827;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+  }
+
+  .pattern-readable-subtitle {
+    color: #374151;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+  }
+
+  .pattern-readable-panel {
+    display: inline-block;
+    border-radius: 16px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(4px);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+    padding: 8px 14px;
+  }
+
+  .leads-header-panel {
+    transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease, padding 180ms ease;
+  }
+
+  html[data-pattern-mode="dark"] .pattern-readable-title {
+    color: #f8fafc;
+    text-shadow: 0 2px 14px rgba(0, 0, 0, 0.65);
+  }
+
+  html[data-pattern-mode="dark"] .pattern-readable-subtitle {
+    color: #e5e7eb;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+  }
+
+  html[data-pattern-mode="dark"] .pattern-readable-panel {
+    border-color: rgba(148, 163, 184, 0.28);
+    background: rgba(11, 18, 33, 0.7);
+    box-shadow: 0 16px 28px rgba(0, 0, 0, 0.42);
+  }
+
+  html[data-pattern-mode="dark"] .leads-header-panel {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+    backdrop-filter: none;
+  }
+
+  .shop-doodle-theme .doodle-panel {
+    position: relative;
+    isolation: isolate;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    background-color: #171626 !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 14px 34px rgba(0, 0, 0, 0.32);
+  }
+
+  .shop-doodle-theme .doodle-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(circle at 2px 2px, rgba(248, 177, 149, 0.15) 1.2px, transparent 1.2px),
+      linear-gradient(145deg, rgba(53, 92, 125, 0.22), rgba(42, 35, 67, 0.1));
+    background-size: 12px 12px, 100% 100%;
+    opacity: 0.45;
+  }
+
+  .shop-doodle-theme .doodle-panel > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .shop-doodle-theme .doodle-paper {
+    position: relative;
+    border: 1px solid rgba(24, 24, 32, 0.16);
+    background-color: #f2f1f5 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  }
+
+  .shop-doodle-theme .doodle-paper::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: radial-gradient(circle at 1px 1px, rgba(53, 92, 125, 0.1) 1px, transparent 1px);
+    background-size: 10px 10px;
+    opacity: 0.35;
+  }
+
+  html[data-pattern-mode="dark"] .platform-pattern-bg :is(
+    [class*="rounded-[2.5rem]"][class*="bg-white"],
+    [class*="rounded-3xl"][class*="bg-white"],
+    [class*="rounded-[32px]"][class*="bg-white"],
+    [class*="rounded-[40px]"][class*="bg-white"]
+  ) {
+    position: relative;
+    isolation: isolate;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    background-color: #171626 !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 14px 34px rgba(0, 0, 0, 0.32) !important;
+  }
+
+  html[data-pattern-mode="dark"] .platform-pattern-bg :is(
+    [class*="rounded-[2.5rem]"][class*="bg-white"],
+    [class*="rounded-3xl"][class*="bg-white"],
+    [class*="rounded-[32px]"][class*="bg-white"],
+    [class*="rounded-[40px]"][class*="bg-white"]
+  )::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(circle at 2px 2px, rgba(248, 177, 149, 0.15) 1.2px, transparent 1.2px),
+      linear-gradient(145deg, rgba(53, 92, 125, 0.22), rgba(42, 35, 67, 0.1));
+    background-size: 12px 12px, 100% 100%;
+    opacity: 0.42;
+  }
+
+  html[data-pattern-mode="dark"] .platform-pattern-bg :is(
+    [class*="rounded-[2.5rem]"][class*="bg-white"],
+    [class*="rounded-3xl"][class*="bg-white"],
+    [class*="rounded-[32px]"][class*="bg-white"],
+    [class*="rounded-[40px]"][class*="bg-white"]
+  ) > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  html[data-pattern-mode="dark"] .platform-pattern-bg :is(
+    [class*="rounded-[2.5rem]"][class*="bg-white"],
+    [class*="rounded-3xl"][class*="bg-white"],
+    [class*="rounded-[32px]"][class*="bg-white"],
+    [class*="rounded-[40px]"][class*="bg-white"]
+  ) :is(.text-stone-900, .text-stone-800, .text-stone-700, .text-stone-600) {
+    color: #f3f4f6 !important;
+  }
+
+  html[data-pattern-mode="dark"] .platform-pattern-bg :is(
+    [class*="rounded-[2.5rem]"][class*="bg-white"],
+    [class*="rounded-3xl"][class*="bg-white"],
+    [class*="rounded-[32px]"][class*="bg-white"],
+    [class*="rounded-[40px]"][class*="bg-white"]
+  ) :is(.text-stone-500, .text-stone-400, .text-stone-300) {
+    color: #cbd5e1 !important;
   }
 
   .cyber-card {
@@ -161,6 +640,113 @@
     justify-content: space-between;
     min-height: 280px;
     transition: all 0.3s ease;
+  }
+
+  @keyframes landing-rain-hue {
+    0% {
+      backdrop-filter: var(--f) hue-rotate(0deg);
+    }
+    to {
+      backdrop-filter: var(--f) hue-rotate(360deg);
+    }
+  }
+
+  @keyframes landing-cursor-rain {
+    0% {
+      background-position: 0 0, 0 0, 0 0;
+    }
+    100% {
+      background-position: 0 0, 0 0, 0 24px;
+    }
+  }
+
+  @keyframes landing-rain-fall {
+    0% {
+      background-position:
+        0px 220px,
+        3px 220px,
+        151.5px 337.5px,
+        25px 24px,
+        28px 24px,
+        176.5px 150px,
+        50px 16px,
+        53px 16px,
+        201.5px 91px,
+        75px 224px,
+        78px 224px,
+        226.5px 350.5px,
+        100px 19px,
+        103px 19px,
+        251.5px 121px,
+        125px 120px,
+        128px 120px,
+        276.5px 187px,
+        150px 31px,
+        153px 31px,
+        301.5px 120.5px,
+        175px 235px,
+        178px 235px,
+        326.5px 384.5px,
+        200px 121px,
+        203px 121px,
+        351.5px 228.5px,
+        225px 224px,
+        228px 224px,
+        376.5px 364.5px,
+        250px 26px,
+        253px 26px,
+        401.5px 105px,
+        275px 75px,
+        278px 75px,
+        426.5px 180px;
+    }
+
+    to {
+      background-position:
+        0px 6800px,
+        3px 6800px,
+        151.5px 6917.5px,
+        25px 13632px,
+        28px 13632px,
+        176.5px 13758px,
+        50px 5416px,
+        53px 5416px,
+        201.5px 5491px,
+        75px 17175px,
+        78px 17175px,
+        226.5px 17301.5px,
+        100px 5119px,
+        103px 5119px,
+        251.5px 5221px,
+        125px 8428px,
+        128px 8428px,
+        276.5px 8495px,
+        150px 9876px,
+        153px 9876px,
+        301.5px 9965.5px,
+        175px 13391px,
+        178px 13391px,
+        326.5px 13540.5px,
+        200px 14741px,
+        203px 14741px,
+        351.5px 14848.5px,
+        225px 18770px,
+        228px 18770px,
+        376.5px 18910.5px,
+        250px 5082px,
+        253px 5082px,
+        401.5px 5161px,
+        275px 6375px,
+        278px 6375px,
+        426.5px 6480px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .landing-rain-bg,
+    .landing-rain-interactive {
+      animation: none !important;
+    }
   }
 
   .cyber-corner {

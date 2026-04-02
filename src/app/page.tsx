@@ -1,22 +1,37 @@
 export default function LandingPage() {
   const pipelineLetters = Array.from('PIPELINE');
   const conversionsLetters = Array.from('REVENUE');
+  const heroActions = [
+    {
+      label: 'Open Platform',
+      href: '/shop',
+      variant: 'primary' as const,
+    },
+    {
+      label: 'View Bundles',
+      href: '/bundles',
+      variant: 'secondary' as const,
+    },
+  ].filter((action) => Boolean(action.href));
+
+  const hasSingleHeroAction = heroActions.length === 1;
 
   return (
     <div className="relative flex h-screen flex-col overflow-hidden bg-[#0b1020] text-white">
-      <div className="absolute inset-0 -z-10 bg-[radial-gradient(1200px_600px_at_50%_-10%,#6d28d9_0%,#4c1d95_35%,#1e3a8a_65%,#0b1020_100%)]" />
+      <div className="absolute inset-0 z-0 bg-[#05060f]" />
+      <div className="absolute inset-0 z-[1] opacity-55 bg-[radial-gradient(1200px_600px_at_50%_-10%,#6d28d9_0%,#4c1d95_35%,#1e3a8a_65%,#0b1020_100%)]" />
       <div
-        className="absolute inset-0 -z-10 opacity-40"
+        className="absolute inset-0 z-[3] opacity-20"
         style={{
           backgroundImage:
             "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.12) 1px, transparent 0)",
           backgroundSize: "20px 20px",
         }}
       />
-      <div className="absolute -top-24 -left-32 h-[520px] w-[520px] rounded-full bg-purple-600/40 blur-[120px]" />
-      <div className="absolute -bottom-40 -right-32 h-[620px] w-[620px] rounded-full bg-blue-600/40 blur-[140px]" />
+      <div className="absolute z-[4] -top-24 -left-32 h-[520px] w-[520px] rounded-full bg-purple-600/30 blur-[120px]" />
+      <div className="absolute z-[4] -bottom-40 -right-32 h-[620px] w-[620px] rounded-full bg-blue-600/30 blur-[140px]" />
 
-      <nav className="mx-auto flex w-full items-center justify-between px-10 pt-6">
+      <nav className="relative z-10 mx-auto flex w-full items-center justify-between px-10 pt-6">
         <div className="flex items-center gap-0">
           <img
             src="/icon-512.png"
@@ -39,7 +54,7 @@ export default function LandingPage() {
         </button>
       </nav>
 
-      <main className="mx-auto flex w-full flex-1 flex-col items-center px-10 pb-0 pt-16">
+      <main className="relative z-10 mx-auto flex w-full flex-1 flex-col items-center px-10 pb-0 pt-16">
         <div className="w-full max-w-7xl">
         <div className="grid w-full grid-cols-1 items-center gap-12 lg:grid-cols-2">
           <div className="space-y-6">
@@ -47,7 +62,7 @@ export default function LandingPage() {
               <h1 className="font-geliat pointer-events-none absolute -left-4 -top-12 select-none text-6xl tracking-tight text-white/10 md:-left-8 md:-top-16 md:text-8xl">
                 GENERATE
               </h1>
-              <h2 className="font-geliat relative z-10 text-5xl leading-tight md:text-7xl">
+              <h2 className="font-geliat relative z-10 text-5xl leading-tight drop-shadow-[0_3px_14px_rgba(0,0,0,0.75)] md:text-7xl">
                 CONNECT
                 <br />
                 <span className="bg-gradient-to-r from-blue-300 to-purple-300 bg-clip-text text-transparent">
@@ -55,18 +70,22 @@ export default function LandingPage() {
                 </span>
               </h2>
             </div>
-            <p className="max-w-xl text-xl font-medium leading-relaxed text-blue-100/90 md:text-2xl">
-              A dedicated platform for <span className="font-semibold text-white">lead generation</span> and
+            <p className="max-w-xl rounded-2xl border border-white/10 bg-black/30 p-4 text-xl font-medium leading-relaxed text-blue-50/95 backdrop-blur-[2px] drop-shadow-[0_2px_10px_rgba(0,0,0,0.7)] md:text-2xl">
+              A dedicated platform for <span className="highlight-pop">lead generation</span> and
               <span className="font-semibold text-white"> business growth</span>. We supply
-              <span className="font-semibold text-white"> consistent lead bundles</span> to help you keep your
-              <span className="font-semibold text-white"> sales pipeline full</span> without the hassle of manual sourcing.
+              <span className="highlight-pop">consistent lead bundles</span> to help you keep your
+              <span className="font-semibold text-white"> sales pipeline full</span> without the hassle of{' '}
+              <span className="highlight-pop">manual sourcing</span>.
               Pick your bundle, <span className="font-semibold text-white">access the data instantly</span>, and start
               connecting with <span className="font-semibold text-white">new prospects</span> right away.
             </p>
+            <div className="inline-flex max-w-xl items-center rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold uppercase tracking-wide text-blue-100 shadow-[0_8px_18px_rgba(0,0,0,0.35)] backdrop-blur-sm">
+              These leads are from local businesses you can call.
+            </div>
           </div>
 
           <div className="relative hidden flex-col items-end space-y-4 text-right lg:flex">
-            <h3 className="font-geliat select-none text-6xl tracking-tight text-white/15 md:text-8xl">
+            <h3 className="font-geliat select-none text-6xl tracking-tight text-white/20 drop-shadow-[0_3px_12px_rgba(0,0,0,0.85)] md:text-8xl">
               {pipelineLetters.map((letter, index) => (
                 <span
                   key={`p-${index}`}
@@ -90,7 +109,7 @@ export default function LandingPage() {
               </div>
               <h4 className="font-geliat text-6xl tracking-[0.2em]">LEADS</h4>
             </div>
-            <h3 className="font-geliat select-none text-6xl tracking-tight text-white/15 md:text-8xl">
+            <h3 className="font-geliat select-none text-6xl tracking-tight text-white/20 drop-shadow-[0_3px_12px_rgba(0,0,0,0.85)] md:text-8xl">
               {conversionsLetters.map((letter, index) => (
                 <span
                   key={`c-${index}`}
@@ -101,15 +120,31 @@ export default function LandingPage() {
                 </span>
               ))}
             </h3>
-            <div className="mt-8 flex items-center gap-4">
-              <a className="flex items-center gap-2 rounded-full bg-white px-6 py-3 font-bold text-slate-900 shadow-lg hover:bg-gray-100" href="#">
-                Developer Hub
-              </a>
-              <a className="flex items-center gap-2 rounded-full border border-white/10 bg-black px-6 py-3 font-bold text-white shadow-lg hover:bg-slate-900" href="#">
-                <span className="text-lg"></span>
-                GitHub
-              </a>
-            </div>
+            {heroActions.length > 0 && (
+              <div
+                className={`mt-8 flex w-full items-center ${hasSingleHeroAction ? 'justify-end' : 'justify-end gap-4'}`}
+              >
+                {heroActions.map((action) => (
+                  <div key={action.label} className="relative">
+                    {action.label === 'View Bundles' && (
+                      <span className="absolute -top-3 right-3 rounded-full border border-cyan-300/40 bg-cyan-400/20 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-cyan-100">
+                        Check Out Prices
+                      </span>
+                    )}
+                    <a
+                      className={`inline-flex items-center justify-center rounded-full px-6 py-3 text-center font-bold shadow-lg transition-colors ${
+                        action.variant === 'primary'
+                          ? 'bg-white text-slate-900 hover:bg-gray-100'
+                          : 'border border-white/25 bg-white/10 text-white hover:bg-white/20'
+                      } ${hasSingleHeroAction ? 'w-auto' : 'min-w-[180px]'}`}
+                      href={action.href}
+                    >
+                      {action.label}
+                    </a>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
