@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import './globals.css';
+import { Suspense } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthGate } from "@/components/auth-gate";
 import { AppOverlays } from "@/components/app-overlays";
@@ -36,7 +37,9 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Bungee&display=swap" rel="stylesheet" />
       </head>
       <body className="font-poppins antialiased">
-        <AuthGate>{children}</AuthGate>
+        <Suspense fallback={null}>
+          <AuthGate>{children}</AuthGate>
+        </Suspense>
         <AppOverlays />
         <Toaster />
       </body>
