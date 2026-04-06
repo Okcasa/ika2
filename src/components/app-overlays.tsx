@@ -3,6 +3,7 @@
 import { ProfileNameDialog } from '@/components/profile-name-dialog';
 import { TeamFab } from '@/components/team-fab';
 import { AppTutorial } from '@/components/app-tutorial';
+import { SupportFab } from '@/components/support-fab';
 import { usePathname } from 'next/navigation';
 
 export function AppOverlays() {
@@ -13,6 +14,7 @@ export function AppOverlays() {
     <>
       <ProfileNameDialog />
       {!hideTeamFab && <TeamFab />}
+      <SupportFab />
       <AppTutorial />
     </>
   );

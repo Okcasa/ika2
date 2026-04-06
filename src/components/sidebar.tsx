@@ -18,10 +18,7 @@ import {
   Shield,
   Puzzle,
   LifeBuoy,
-  X,
-  Sun,
-  Moon,
-  ArrowDown
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -61,7 +58,6 @@ export function Sidebar() {
   const [joinCodeInput, setJoinCodeInput] = useState('');
   const [teamBusy, setTeamBusy] = useState(false);
   const [patternMode, setPatternMode] = useState<'light' | 'dark'>('light');
-  const [showLogsThemeHint, setShowLogsThemeHint] = useState(false);
   const [isNavLoading, setIsNavLoading] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const { overview, refresh, capabilities: teamCaps } = useTeamOverview();
@@ -108,32 +104,8 @@ export function Sidebar() {
   }, []);
 
   useEffect(() => {
-    if (isLogsPage) {
-      const savedLogsMode = localStorage.getItem('ika_logs_pattern_mode');
-      const nextMode: 'light' | 'dark' = savedLogsMode === 'light' ? 'light' : 'dark';
-      setPatternMode(nextMode);
-      document.documentElement.setAttribute('data-pattern-mode', nextMode);
-      return;
-    }
-
     setPatternMode('light');
     document.documentElement.setAttribute('data-pattern-mode', 'light');
-  }, [isLogsPage]);
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-pattern-mode', patternMode);
-    if (isLogsPage) {
-      localStorage.setItem('ika_logs_pattern_mode', patternMode);
-    }
-  }, [patternMode, isLogsPage]);
-
-  useEffect(() => {
-    if (!isLogsPage) {
-      setShowLogsThemeHint(false);
-      return;
-    }
-    const hintSeen = localStorage.getItem('ika_logs_theme_hint_seen');
-    setShowLogsThemeHint(!hintSeen);
   }, [isLogsPage]);
 
   useEffect(() => {
@@ -393,11 +365,6 @@ export function Sidebar() {
   }, [currentUserId, displayName, profileBio, toast, userName]);
 
   const isPatternDark = patternMode === 'dark';
-  const dismissLogsThemeHint = () => {
-    localStorage.setItem('ika_logs_theme_hint_seen', '1');
-    setShowLogsThemeHint(false);
-  };
-
   return (
     <div 
       ref={sidebarRef}
@@ -558,79 +525,6 @@ export function Sidebar() {
       )}>
         Main Menu
       </div>
-
-      {isLogsPage && (
-        <div className={cn(
-          "mb-4 rounded-2xl border p-2 backdrop-blur-sm",
-          isPatternDark ? "border-white/20 bg-black/25" : "border-stone-300/70 bg-white/62"
-        )}>
-          {showLogsThemeHint && (
-            <div className={cn(
-              "relative mb-4 ml-auto w-fit max-w-[240px] rounded-xl border px-2.5 py-2 text-[11px] font-semibold shadow-[0_6px_18px_rgba(8,145,178,0.2)]",
-              isPatternDark
-                ? "border-cyan-300/70 bg-cyan-500/12 text-cyan-100"
-                : "border-cyan-500/55 bg-cyan-100/80 text-cyan-900"
-            )}>
-              <div className={cn(
-                "absolute -bottom-[7px] right-10 h-3.5 w-3.5 rotate-45 border-b border-r",
-                isPatternDark ? "border-cyan-300/70 bg-cyan-500/12" : "border-cyan-500/55 bg-cyan-100/80"
-              )} />
-              <ArrowDown className={cn(
-                "absolute -bottom-7 right-[34px] h-4 w-4 animate-bounce",
-                isPatternDark ? "text-cyan-200" : "text-cyan-700"
-              )} />
-              <div className="flex items-start gap-2 pr-3">
-                <span>You can change the Logs colors here.</span>
-                <button
-                  type="button"
-                  aria-label="Dismiss color tip"
-                  onClick={dismissLogsThemeHint}
-                  className="ml-auto rounded px-1 text-cyan-100/80 hover:bg-cyan-500/15 hover:text-cyan-50"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-          )}
-          <div className={cn("px-1 pb-2 text-[10px] font-bold uppercase tracking-[0.22em]", isPatternDark ? "text-stone-200" : "text-stone-700")}>
-            Logs Theme
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              className={cn(
-                "h-9 rounded-xl text-xs font-bold",
-                patternMode === 'light'
-                  ? "bg-white text-stone-900 shadow-sm hover:bg-white"
-                  : isPatternDark
-                    ? "text-stone-300 hover:bg-white/10 hover:text-white"
-                    : "text-stone-600 hover:bg-white/80 hover:text-stone-900"
-              )}
-              onClick={() => setPatternMode('light')}
-            >
-              <Sun className="mr-1.5 h-3.5 w-3.5" />
-              Light
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              className={cn(
-                "h-9 rounded-xl text-xs font-bold",
-                patternMode === 'dark'
-                  ? "bg-[#171626] text-stone-100 shadow-sm hover:bg-[#171626]"
-                  : isPatternDark
-                    ? "text-stone-300 hover:bg-white/10 hover:text-white"
-                    : "text-stone-600 hover:bg-white/80 hover:text-stone-900"
-              )}
-              onClick={() => setPatternMode('dark')}
-            >
-              <Moon className="mr-1.5 h-3.5 w-3.5" />
-              Dark
-            </Button>
-          </div>
-        </div>
-      )}
 
       <nav className={cn(
         "space-y-1 flex-1 overflow-x-hidden rounded-2xl border p-2 backdrop-blur-sm",

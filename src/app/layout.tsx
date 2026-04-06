@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import './globals.css';
-import { Suspense } from 'react';
+import Script from 'next/script';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthGate } from "@/components/auth-gate";
 import { AppOverlays } from "@/components/app-overlays";
@@ -37,9 +37,15 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Bungee&display=swap" rel="stylesheet" />
       </head>
       <body className="font-poppins antialiased">
-        <Suspense fallback={null}>
-          <AuthGate>{children}</AuthGate>
-        </Suspense>
+        <Script
+          id="crisp-chat"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html:
+              'window.$crisp=[];window.CRISP_WEBSITE_ID="730842f6-029a-459a-bb98-fba0bf514de8";(function(){d=document;s=d.createElement("script");s.src="https://client.crisp.chat/l.js";s.async=1;d.getElementsByTagName("head")[0].appendChild(s);})();',
+          }}
+        />
+        <AuthGate>{children}</AuthGate>
         <AppOverlays />
         <Toaster />
       </body>

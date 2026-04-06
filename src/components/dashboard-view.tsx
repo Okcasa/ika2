@@ -1401,9 +1401,6 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
               <h3 className="text-lg font-extrabold text-[#ffe4d2] drop-shadow-[0_1px_1px_rgba(0,0,0,0.45)]">
                 {isLeadsLoading ? 'Loading leads…' : `${effectiveGuest ? '0' : newLeadsToday} new leads today!`}
               </h3>
-              <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#ffe4d2]">
-                These leads are from local businesses you can call
-              </span>
             </div>
             <p className="text-base font-semibold text-[#f5cbb2]">Send a welcome message to all new potential clients.</p>
 

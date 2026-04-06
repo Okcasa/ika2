@@ -597,6 +597,13 @@ function ProductPageContent() {
 
       <div className="grid grid-cols-12 gap-8 items-stretch flex-1 min-h-0">
         <div className="col-span-12 lg:col-span-8 space-y-6 min-h-0 flex flex-col">
+          <div className="flex justify-start">
+            <div className="text-base font-medium md:text-lg">
+              <span className="highlight-pop md:whitespace-nowrap">
+                These leads are from local businesses you can contact.
+              </span>
+            </div>
+          </div>
           <div className="grid md:grid-cols-2 gap-4" data-tutorial-id="products-overview">
             <Card
               id={`pkg-${topPopularBundle.id}`}

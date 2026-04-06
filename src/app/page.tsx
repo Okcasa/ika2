@@ -79,8 +79,8 @@ export default function LandingPage() {
               Pick your bundle, <span className="font-semibold text-white">access the data instantly</span>, and start
               connecting with <span className="font-semibold text-white">new prospects</span> right away.
             </p>
-            <div className="inline-flex max-w-xl items-center rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold uppercase tracking-wide text-blue-100 shadow-[0_8px_18px_rgba(0,0,0,0.35)] backdrop-blur-sm">
-              These leads are from local businesses you can call.
+            <div className="max-w-xl text-base font-medium leading-relaxed md:text-[1.125rem]">
+              <span className="highlight-pop md:whitespace-nowrap">These leads are from local businesses you can contact.</span>
             </div>
           </div>
 

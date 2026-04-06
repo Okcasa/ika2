@@ -142,46 +142,24 @@
   .highlight-pop {
     position: relative;
     display: inline-block;
-    padding: 0 6px;
+    padding: 4px 14px;
     border-radius: 999px;
-    font-weight: 800;
-    color: #0f172a;
-    background: linear-gradient(135deg, rgba(147, 197, 253, 0.9), rgba(196, 181, 253, 0.9));
+    font-weight: 600;
+    color: #0b1020;
+    background: linear-gradient(135deg, rgba(147, 197, 253, 0.85), rgba(196, 181, 253, 0.85));
     box-shadow:
       0 0 0 1px rgba(255, 255, 255, 0.3),
-      0 6px 18px rgba(30, 64, 175, 0.35);
-    animation: highlight-pop 2.2s ease-in-out infinite;
+      0 8px 20px rgba(30, 64, 175, 0.3);
   }
   .highlight-pop::after {
     content: "";
     position: absolute;
-    inset: -6px -10px;
+    inset: -6px -12px;
     border-radius: 999px;
     border: 1px solid rgba(147, 197, 253, 0.4);
     box-shadow: 0 0 20px rgba(147, 197, 253, 0.35);
-    opacity: 0.6;
-    animation: highlight-ring 2.2s ease-in-out infinite;
+    opacity: 0.35;
     pointer-events: none;
-  }
-  @keyframes highlight-pop {
-    0%, 100% {
-      transform: scale(1);
-      filter: brightness(1);
-    }
-    50% {
-      transform: scale(1.04);
-      filter: brightness(1.12);
-    }
-  }
-  @keyframes highlight-ring {
-    0%, 100% {
-      transform: scale(1);
-      opacity: 0.35;
-    }
-    50% {
-      transform: scale(1.08);
-      opacity: 0.7;
-    }
   }
 
   .font-outfit {
