@@ -37,6 +37,9 @@ const sidebarItems = [
   { icon: CheckSquare, label: 'Income', href: '/income' },
 ];
 
+const teamFabOpenRef = { current: false };
+let teamFabSetOpen: ((open: boolean) => void) | null = null;
+
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -499,20 +502,22 @@ export function Sidebar() {
       </div>
 
       {/* Logo */}
-      <Link href="/shop" className="flex items-center gap-2 mb-10 px-2 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-300">
-        <div className="h-10 w-10 min-w-[2.5rem] bg-[#1C1917] text-[#E5E4E2] rounded-full flex items-center justify-center">
-            <LayoutGrid className="h-6 w-6" />
-        </div>
+      <Link href="/shop" className="flex items-center gap-1 mb-10 px-2 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-300">
+        <img
+          src="/icon-512.png"
+          alt="ikaLeads"
+          className="h-20 w-20 min-w-[5rem] rounded-full"
+        />
         {width > 220 && (
            <span
              className={cn(
-               "font-bungee text-2xl truncate",
+               "font-bungee text-3xl -ml-1 truncate",
                isPatternDark
                  ? "text-stone-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)] [text-shadow:0_0_1px_rgba(0,0,0,0.75)]"
                  : "text-[var(--app-sidebar-title)]"
              )}
            >
-             Ika Platform
+             ikaLeads
            </span>
         )}
       </Link>
@@ -575,6 +580,43 @@ export function Sidebar() {
       )}
 
       <div className="mt-auto space-y-4 overflow-x-hidden">
+        {/* Team Access Button - original position */}
+        <button
+          onClick={() => {
+            const setOpen = (window as any).__teamFabSetOpen;
+            if (setOpen) setOpen((prev: boolean) => !prev);
+          }}
+          className={cn(
+            "w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-[13px] font-semibold tracking-wide transition-all duration-200",
+            isPatternDark
+              ? "bg-stone-800/60 text-stone-100 hover:bg-stone-700/80 border border-stone-700/50"
+              : "bg-stone-100 text-stone-800 hover:bg-stone-200 border border-stone-200"
+          )}
+        >
+          <div className={cn(
+            "h-8 w-8 rounded-xl flex items-center justify-center",
+            isPatternDark ? "bg-violet-600/80" : "bg-violet-500"
+          )}>
+            <Users className="h-4 w-4 text-white" />
+          </div>
+          <div className="flex-1 text-left">
+            <div className="truncate">Team Access</div>
+            {overview?.team?.name && (
+              <div className="text-[11px] text-stone-500 truncate">{overview.team.name}</div>
+            )}
+          </div>
+          {teamCaps.role && (
+            <span className={cn(
+              "text-[10px] font-bold px-2 py-0.5 rounded-full",
+              teamCaps.role === 'owner' ? "bg-amber-100 text-amber-700" :
+              teamCaps.role === 'admin' ? "bg-blue-100 text-blue-700" :
+              "bg-stone-100 text-stone-600"
+            )}>
+              {teamCaps.role}
+            </span>
+          )}
+        </button>
+
         <div className="backdrop-blur rounded-2xl p-3 shadow-sm border border-stone-200/70 bg-[var(--app-sidebar-card-bg)]">
           <div className="flex items-center gap-3">
             <div className="relative h-10 w-10 rounded-full bg-stone-200 text-stone-700 flex items-center justify-center font-bold">

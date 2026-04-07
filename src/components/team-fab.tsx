@@ -27,6 +27,25 @@ export function TeamFab() {
   const { overview, loading, refreshing, refresh, capabilities: teamCaps } = useTeamOverview();
   const { leadScope, setLeadScope } = useLeadScope();
   const [open, setOpen] = useState(false);
+
+  // Store state in ref for sidebar access
+  const openRef = useRef(false);
+  
+  // Register with global for sidebar button to trigger
+  useEffect(() => {
+    (window as any).__teamFabSetOpen = (val?: boolean) => {
+      if (typeof val === 'boolean') {
+        openRef.current = val;
+        setOpen(val);
+      } else {
+        openRef.current = !openRef.current;
+        setOpen(openRef.current);
+      }
+    };
+    return () => {
+      (window as any).__teamFabSetOpen = null;
+    };
+  }, []);
   const [confirmRemoveOpen, setConfirmRemoveOpen] = useState(false);
   const [memberToRemove, setMemberToRemove] = useState<{ id: string; label: string } | null>(null);
   const [teamBusy, setTeamBusy] = useState(false);
@@ -279,7 +298,8 @@ export function TeamFab() {
     [callTeamApi, refresh, toast, withBusy]
   );
 
-  if (hiddenRoute) return null;
+  // Always register global for sidebar button, even when hidden
+  // The button will still be hidden via CSS if needed
 
   useEffect(() => {
     if (!open) return;
@@ -305,7 +325,7 @@ export function TeamFab() {
       {open && (
         <div
           ref={panelRef}
-          className="font-outfit fixed bottom-24 right-4 z-[80] w-[360px] max-w-[calc(100vw-1.5rem)] rounded-2xl border border-stone-200 bg-white text-stone-900 shadow-2xl md:right-6 md:w-[420px]"
+          className="font-outfit fixed top-[450px] left-4 z-[80] w-[360px] max-w-[calc(100vw-1.5rem)] rounded-2xl border border-stone-200 bg-white text-stone-900 shadow-2xl md:left-6 md:w-[420px]"
         >
           <div className="flex items-center justify-between border-b border-stone-200 px-4 py-3">
             <div>
@@ -529,7 +549,7 @@ export function TeamFab() {
       <Button
         ref={fabButtonRef}
         onClick={() => setOpen((v) => !v)}
-        className="fixed bottom-4 right-4 z-[80] h-14 w-14 rounded-full bg-stone-900 text-white shadow-xl hover:bg-stone-800 md:bottom-6 md:right-6"
+        className="fixed top-4 right-4 z-[80] h-14 w-14 rounded-full bg-stone-900 text-white shadow-xl hover:bg-stone-800 md:top-6 md:right-6 hidden"
         aria-label="Open Team Access"
       >
         <Users className="h-5 w-5" />

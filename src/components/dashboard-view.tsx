@@ -131,6 +131,54 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
   const [notifications, setNotifications] = useState<Array<{ id: string; text: string; at: number; read: boolean }>>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Array<{ type: 'lead' | 'customer'; id: string; name: string; category?: string; status?: string }>>([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+
+  // Search handler
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query);
+    if (!query.trim()) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+    
+    const q = query.toLowerCase();
+    const results: Array<{ type: 'lead' | 'customer'; id: string; name: string; category?: string; status?: string }> = [];
+    
+    // Search leads
+    myLeads.forEach((lead: any) => {
+      const name = (lead.businessName || lead.name || '').toLowerCase();
+      const contact = (lead.contact_name || lead.phone || lead.email || '').toLowerCase();
+      const status = (lead.status || lead.leadStatus || '').toLowerCase();
+      
+      if (name.includes(q) || contact.includes(q) || status.includes(q)) {
+        results.push({
+          type: 'lead',
+          id: lead.id,
+          name: lead.businessName || lead.name || 'Unknown',
+          category: lead.status || 'New',
+          status: lead.leadStatus || 'new'
+        });
+      }
+    });
+    
+    // Limit results
+    setSearchResults(results.slice(0, 8));
+    setShowSearchResults(results.length > 0);
+  }, [myLeads]);
+
+  // Handle search result click
+  const handleSearchResultClick = useCallback((result: { type: 'lead' | 'customer'; id: string }) => {
+    setSearchQuery('');
+    setShowSearchResults(false);
+    if (result.type === 'lead') {
+      router.push(`/logs?leadId=${result.id}`);
+    } else {
+      router.push(`/customers?id=${result.id}`);
+    }
+  }, [router]);
   const seenNotificationIdsRef = useRef<Set<string>>(new Set());
   const dismissedNotificationIdsRef = useRef<Set<string>>(new Set());
   const teamLeadIdsRef = useRef<Set<string>>(new Set());
@@ -1075,9 +1123,33 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
             <Input
               type="search"
-              placeholder="Search anything..."
+              placeholder="Search leads..."
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+              onFocus={() => searchResults.length > 0 && setShowSearchResults(true)}
+              onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
               className="pl-10 h-12 rounded-full border-none bg-white shadow-sm placeholder:text-stone-400 text-stone-800 focus-visible:ring-stone-200"
             />
+            {showSearchResults && searchResults.length > 0 && (
+              <div className="absolute top-full mt-2 w-full bg-white rounded-2xl border border-stone-200 shadow-xl z-50 max-h-[300px] overflow-y-auto">
+                {searchResults.map((result) => (
+                  <button
+                    key={`${result.type}-${result.id}`}
+                    type="button"
+                    onClick={() => handleSearchResultClick(result)}
+                    className="w-full px-4 py-3 text-left hover:bg-stone-50 border-b border-stone-100 last:border-b-0 flex items-center justify-between"
+                  >
+                    <div>
+                      <div className="font-semibold text-stone-900 text-sm">{result.name}</div>
+                      <div className="text-xs text-stone-500">{result.category}</div>
+                    </div>
+                    <span className={`text-[10px] px-2 py-1 rounded-full ${result.type === 'lead' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                      {result.type}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
 
