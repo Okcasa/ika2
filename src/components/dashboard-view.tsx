@@ -1046,6 +1046,121 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
   return (
     <div className="shop-doodle-theme flex flex-col gap-4 max-w-[1600px] mx-auto h-full overflow-hidden px-2 md:px-3 py-4 md:py-5">
       <style jsx global>{`
+        .pay-btn {
+          position: relative;
+          padding: 12px 24px;
+          font-size: 16px;
+          background: #1a1a1a;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          transition: all 0.3s ease;
+        }
+        .pay-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+        }
+        .icon-container {
+          position: relative;
+          width: 24px;
+          height: 24px;
+        }
+        .icon {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 24px;
+          height: 24px;
+          color: #22c55e;
+          opacity: 0;
+          visibility: hidden;
+        }
+        .default-icon {
+          opacity: 1;
+          visibility: visible;
+        }
+        .pay-btn:hover .icon {
+          animation: none;
+        }
+        .pay-btn:hover .wallet-icon {
+          opacity: 0;
+          visibility: hidden;
+        }
+        .pay-btn:hover .card-icon {
+          animation: iconRotate 2.5s infinite;
+          animation-delay: 0s;
+        }
+        .pay-btn:hover .payment-icon {
+          animation: iconRotate 2.5s infinite;
+          animation-delay: 0.5s;
+        }
+        .pay-btn:hover .dollar-icon {
+          animation: iconRotate 2.5s infinite;
+          animation-delay: 1s;
+        }
+        .pay-btn:hover .check-icon {
+          animation: iconRotate 2.5s infinite;
+          animation-delay: 1.5s;
+        }
+        .pay-btn:active .icon {
+          animation: none;
+          opacity: 0;
+          visibility: hidden;
+          transition: all 0.3s ease;
+        }
+        .pay-btn:active .check-icon {
+          animation: checkmarkAppear 0.6s ease forwards;
+          visibility: visible;
+        }
+        .btn-text {
+          font-weight: 600;
+          font-family: system-ui, -apple-system, sans-serif;
+        }
+        @keyframes iconRotate {
+          0% {
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px) scale(0.5);
+          }
+          5% {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+          }
+          15% {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+          }
+          20% {
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px) scale(0.5);
+          }
+          100% {
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px) scale(0.5);
+          }
+        }
+        @keyframes checkmarkAppear {
+          0% {
+            opacity: 0;
+            transform: scale(0.5) rotate(-45deg);
+          }
+          50% {
+            opacity: 0.5;
+            transform: scale(1.2) rotate(0deg);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1) rotate(0deg);
+          }
+        }
         .keycap-button {
           position: relative;
           display: inline-flex;
@@ -1751,9 +1866,10 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
                  ))}
                </div>
 
-               <p className="text-xs text-stone-400 mt-7 mb-3">
-                 Need custom amount? Click here.
-               </p>
+                <p className="text-base font-semibold text-stone-200 mt-7 mb-3 flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-yellow-400" />
+                  Need custom amount of leads? Click here.
+                </p>
                <Button 
                 variant="outline" 
                 className="w-full mt-8 rounded-full h-12 border-stone-700 text-stone-400 hover:bg-stone-800 hover:text-stone-200"

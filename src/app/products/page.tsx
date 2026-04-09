@@ -493,7 +493,7 @@ function ProductPageContent() {
     ));
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto app-shell-text h-screen overflow-y-auto select-none flex flex-col gap-8">
+    <div className="p-8 max-w-[1600px] mx-auto app-shell-text h-screen overflow-y-auto select-none flex flex-col gap-8 overflow-x-hidden">
       <style jsx global>{`
         .keycap-button {
           position: relative;
@@ -902,7 +902,7 @@ function ProductPageContent() {
                         <p className="font-black text-stone-200">Custom Mining</p>
                         <p className="text-xs text-stone-500 font-medium">Bulk data extraction for specific industries.</p>
                     </div>
-                    <Button variant="outline" className="w-full rounded-2xl h-12 border-stone-600 text-stone-400 hover:bg-white hover:text-stone-900 transition-all font-black uppercase text-[10px] tracking-widest">
+                    <Button variant="outline" disabled className="w-full rounded-2xl h-12 border-stone-600 text-stone-400 hover:bg-white hover:text-stone-900 transition-all font-black uppercase text-sm tracking-widest cursor-not-allowed opacity-60">
                         Contact Support
                     </Button>
                 </div>
