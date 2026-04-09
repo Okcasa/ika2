@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import './globals.css';
 import Script from 'next/script';
+import { Suspense } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthGate } from "@/components/auth-gate";
 import { AppOverlays } from "@/components/app-overlays";
@@ -64,7 +65,9 @@ export default function RootLayout({
               'window.$crisp=[];window.CRISP_WEBSITE_ID="730842f6-029a-459a-bb98-fba0bf514de8";(function(){d=document;s=d.createElement("script");s.src="https://client.crisp.chat/l.js";s.async=1;d.getElementsByTagName("head")[0].appendChild(s);})();',
           }}
         />
-        <AuthGate>{children}</AuthGate>
+        <Suspense fallback={<div className="min-h-screen" />}>
+          <AuthGate>{children}</AuthGate>
+        </Suspense>
         <AppOverlays />
         <Toaster />
       </body>
