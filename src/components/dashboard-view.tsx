@@ -1340,6 +1340,19 @@ export function DashboardView({ isGuest = false, onAuthRequest }: DashboardViewP
                         className="keycap-button h-9 px-3 text-[10px] font-bold uppercase tracking-widest border-0 bg-transparent hover:bg-transparent flex items-center"
                         onClick={async () => {
                             await supabase.auth.signOut();
+                            // Clear tutorial state so it shows again on next login
+                            if (typeof window !== 'undefined') {
+                              localStorage.removeItem('ika_tutorial_master_done_v1');
+                              localStorage.removeItem('ika_tutorial_flow_state_v1');
+                              const keysToRemove: string[] = [];
+                              for (let i = 0; i < localStorage.length; i += 1) {
+                                const key = localStorage.key(i);
+                                if (key && key.startsWith('ika_tutorial_done:')) {
+                                  keysToRemove.push(key);
+                                }
+                              }
+                              keysToRemove.forEach((key) => localStorage.removeItem(key));
+                            }
                             window.location.href = '/';
                         }}
                     >

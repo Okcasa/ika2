@@ -314,6 +314,20 @@ export function Sidebar() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    // Clear tutorial state so it shows again on next login
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('ika_tutorial_master_done_v1');
+      localStorage.removeItem('ika_tutorial_flow_state_v1');
+      // Clear legacy tutorial keys
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i += 1) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('ika_tutorial_done:')) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach((key) => localStorage.removeItem(key));
+    }
     toast({
         title: "Signed Out",
         description: "Your session has been securely closed."

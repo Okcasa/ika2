@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 type TutorialStep = {
   selector: string;
@@ -122,6 +123,8 @@ export function AppTutorial() {
   const [isOpen, setIsOpen] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
+  const [isAuthed, setIsAuthed] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
 
   const steps = useMemo(() => TUTORIAL_STEPS[pathname] || [], [pathname]);
   const currentStep = steps[stepIndex] || null;
@@ -131,7 +134,29 @@ export function AppTutorial() {
     [pathname]
   );
 
+  // Check authentication before showing tutorial
   useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthed(!!session);
+      setAuthChecked(true);
+    };
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthed(!!session);
+      setAuthChecked(true);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    // Don't show tutorial until we've checked auth and user is signed in
+    if (!authChecked || !isAuthed) {
+      setIsOpen(false);
+      return;
+    }
     if (!pathname || steps.length === 0) {
       setIsOpen(false);
       return;

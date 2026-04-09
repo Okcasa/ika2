@@ -80,7 +80,7 @@ export default function LandingPage() {
               connecting with <span className="font-semibold text-white">new prospects</span> right away.
             </p>
             <div className="max-w-xl text-base font-medium leading-relaxed md:text-[1.125rem]">
-              <span className="highlight-pop md:whitespace-nowrap">These leads are from local businesses you can contact.</span>
+              <span className="highlight-pop md:whitespace-nowrap">These leads come with direct contact info you can reach out to immediately.</span>
             </div>
           </div>
 

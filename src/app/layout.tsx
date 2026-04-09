@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import './globals.css';
 import Script from 'next/script';
-import { Suspense } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthGate } from "@/components/auth-gate";
 import { AppOverlays } from "@/components/app-overlays";
@@ -17,8 +16,27 @@ const inter = localFont({
 });
 
 export const metadata: Metadata = {
-  title: 'Leads Marketplace',
-  description: 'A workspace for your team to manage leads.',
+  title: 'ikaLeads - Leads Marketplace',
+  description: 'The best leads platform for marketers. A workspace for your team to manage leads.',
+  openGraph: {
+    title: 'ikaLeads - Leads Marketplace',
+    description: 'The best leads platform for marketers. A workspace for your team to manage leads.',
+    type: 'website',
+    images: [
+      {
+        url: 'https://ikaLeads.io/icon-512.png',
+        width: 512,
+        height: 512,
+        alt: 'ikaLeads',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'ikaLeads - Leads Marketplace',
+    description: 'The best leads platform for marketers. A workspace for your team to manage leads.',
+    images: ['https://ikaLeads.io/icon-512.png'],
+  },
 };
 
 export default function RootLayout({
@@ -46,7 +64,7 @@ export default function RootLayout({
               'window.$crisp=[];window.CRISP_WEBSITE_ID="730842f6-029a-459a-bb98-fba0bf514de8";(function(){d=document;s=d.createElement("script");s.src="https://client.crisp.chat/l.js";s.async=1;d.getElementsByTagName("head")[0].appendChild(s);})();',
           }}
         />
-        <Suspense fallback={<div className="min-h-screen" />}><AuthGate>{children}</AuthGate></Suspense>
+        <AuthGate>{children}</AuthGate>
         <AppOverlays />
         <Toaster />
       </body>
