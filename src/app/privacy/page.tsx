@@ -1,7 +1,16 @@
+import Link from 'next/link';
+
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-[#0b1020] text-white">
       <div className="mx-auto w-full max-w-4xl px-6 py-16">
+        <Link href="/" className="mb-10 inline-flex items-center gap-4 transition hover:opacity-80">
+          <img src="/icon-512.png" alt="ikaLeads" className="h-20 w-20 rounded-full" />
+          <div className="flex flex-col">
+            <span className="font-geliat text-4xl font-bold tracking-tight text-white">ikaLeads</span>
+            <span className="text-base text-white/60">← Go back</span>
+          </div>
+        </Link>
         <h1 className="text-4xl font-bold tracking-tight">Privacy Policy</h1>
         <p className="mt-4 text-sm text-white/70">Last updated: February 10, 2026</p>
 
