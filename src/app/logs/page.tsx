@@ -1641,7 +1641,7 @@ function LogsPageContent() {
                 <div className="flex gap-3">
                    <Popover>
                      <PopoverTrigger asChild>
-                       <Button variant="outline" className="h-14 px-6 rounded-2xl border-stone-100 bg-white font-black uppercase text-[10px] tracking-widest hover:bg-stone-50 transition-all shadow-sm">
+                       <Button variant="outline" className="h-14 px-6 rounded-2xl bg-stone-900 text-white hover:bg-stone-800 font-black uppercase text-[10px] tracking-widest transition-all shadow-xl shadow-black/10 border-none">
                          <Tag className="w-4 h-4 mr-2" /> Categories
                        </Button>
                      </PopoverTrigger>
@@ -1668,9 +1668,6 @@ function LogsPageContent() {
                        </div>
                      </PopoverContent>
                    </Popover>
-                   <Button disabled={!teamCanEdit} className="h-14 px-8 rounded-2xl bg-stone-900 text-white hover:bg-stone-800 font-black uppercase text-[10px] tracking-widest transition-all shadow-xl shadow-black/10 disabled:opacity-50">
-                     <Phone className="w-4 h-4 mr-3" /> Start Call
-                   </Button>
                    <Button 
                      variant="outline"
                      disabled={!teamCanEdit}
@@ -1684,19 +1681,19 @@ function LogsPageContent() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 relative z-10">
                 <div className="p-5 bg-stone-50/50 rounded-3xl border border-stone-100/50 backdrop-blur-sm">
-                  <div className="flex items-center gap-2 text-stone-300 mb-3">
+                  <div className="flex items-center gap-2 text-stone-500 mb-3">
                     <Building2 className="w-4 h-4" />
                     <span className="text-[10px] font-black uppercase tracking-[0.2em]">Primary Location</span>
                   </div>
                   <p className="text-sm font-bold text-stone-900 leading-relaxed">{activeLead.address || activeLead.notes || 'No address available'}</p>
                 </div>
                 <div className="p-5 bg-stone-50/50 rounded-3xl border border-stone-100/50 backdrop-blur-sm">
-                  <div className="flex items-center gap-2 text-stone-300 mb-3">
+                  <div className="flex items-center gap-2 text-stone-500 mb-3">
                     <Phone className="w-4 h-4" />
                     <span className="text-[10px] font-black uppercase tracking-[0.2em]">Secure Contact</span>
                   </div>
                   <p className="text-sm font-bold text-stone-900 tracking-tight">{activeLead.phone || activeLead.phoneNumber || activeLead.correctedPhoneNumber || 'No phone available'}</p>
-                  <p className="text-[11px] font-black text-stone-400 uppercase tracking-widest mt-1">{activeLead.email || activeLead.website || 'No email available'}</p>
+                  <p className="text-[11px] font-black text-stone-600 uppercase tracking-widest mt-1">{activeLead.email || activeLead.website || 'No email available'}</p>
                 </div>
               </div>
             </div>
@@ -1728,8 +1725,8 @@ function LogsPageContent() {
                       </Button>
                     </div>
                   )}
-                  <h3 className="text-[10px] font-black text-stone-400 mb-6 uppercase tracking-[0.3em] flex items-center gap-3">
-                    <HistoryIcon className="w-4 h-4 text-stone-300" /> Interaction Engine
+                  <h3 className="text-[10px] font-black text-stone-600 mb-6 uppercase tracking-[0.3em] flex items-center gap-3">
+                    <HistoryIcon className="w-4 h-4 text-stone-500" /> Interaction Engine
                   </h3>
                   
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
@@ -1805,10 +1802,10 @@ function LogsPageContent() {
 
                     <div className="space-y-5">
                     <div className="space-y-3">
-                         <span className="text-[10px] font-black text-stone-300 uppercase tracking-[0.2em] ml-2">Internal Notes</span>
+                         <span className="text-[10px] font-black text-stone-600 uppercase tracking-[0.2em] ml-2">Internal Notes</span>
                         <Textarea 
                         placeholder="Add specific insights or next steps for this lead..." 
-                        className="resize-none bg-stone-50 border-none focus:bg-white focus:ring-2 focus:ring-stone-100 min-h-[96px] text-stone-900 font-bold p-6 rounded-[2rem] transition-all text-base placeholder:text-stone-300 shadow-inner"
+                        className="resize-none bg-stone-50 border-none focus:bg-white focus:ring-2 focus:ring-stone-100 min-h-[96px] text-stone-900 font-bold p-6 rounded-[2rem] transition-all text-base placeholder:text-stone-400 shadow-inner"
                         value={note}
                         disabled={!teamCanEdit}
                         onChange={(e) => setNote(e.target.value)}
@@ -1838,12 +1835,12 @@ function LogsPageContent() {
                         </div>
                         <div className="group">
                           <div className="flex justify-between items-baseline mb-1">
-                            <span className="text-xs font-bold uppercase tracking-wider text-stone-600">{log.type}</span>
-                            <span className="text-[10px] text-stone-400 font-medium">{log.date}</span>
+                            <span className="text-xs font-bold uppercase tracking-wider text-stone-700">{log.type}</span>
+                            <span className="text-[10px] text-stone-600 font-semibold">{log.date}</span>
                           </div>
                           <div className="bg-white p-3 rounded-xl border border-stone-100 shadow-sm group-hover:border-stone-200 transition-colors relative pr-8">
                             <p className="font-bold text-stone-900 text-sm mb-1">{log.result}</p>
-                            <p className="text-xs text-stone-500 leading-relaxed">{log.note}</p>
+                            <p className="text-xs text-stone-600 font-semibold leading-relaxed">{log.note}</p>
                             {(() => {
                               const actor = log.actor_name || log.actorName || log.actor;
                               if (!actor) return null;
@@ -1863,7 +1860,7 @@ function LogsPageContent() {
                       </div>
                     ))}
                     {(!activeLead.history || activeLead.history.length === 0) && (
-                      <p className="text-xs text-stone-400 italic text-center py-8">No past interactions logged.</p>
+                      <p className="text-xs text-stone-600 font-semibold italic text-center py-8">No past interactions logged.</p>
                     )}
                   </div>
                 </div>
@@ -1871,17 +1868,17 @@ function LogsPageContent() {
             </div>
           </div>
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <AlertDialogContent className="bg-white border-stone-200 shadow-xl rounded-2xl">
+          <AlertDialogContent className="bg-stone-900 text-white border-stone-800 shadow-xl rounded-2xl">
             <AlertDialogHeader>
-              <AlertDialogTitle className="text-stone-900">Delete Interaction Log?</AlertDialogTitle>
-              <AlertDialogDescription className="text-stone-500">
+              <AlertDialogTitle className="text-white">Delete Interaction Log?</AlertDialogTitle>
+              <AlertDialogDescription className="text-stone-300">
                 This will remove this log from the history and revert the lead's status and value to the previous state.
                 <br /><br />
                 Income recorded from this log will be removed.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setLogToDelete(null)} className="bg-white border-stone-200 text-stone-700 hover:bg-stone-50 rounded-xl">Cancel</AlertDialogCancel>
+              <AlertDialogCancel onClick={() => setLogToDelete(null)} className="bg-stone-800 border-stone-700 text-stone-100 hover:bg-stone-700 rounded-xl">Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={confirmDeleteLog} className="bg-red-600 hover:bg-red-700 rounded-xl text-white">Delete</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

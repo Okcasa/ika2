@@ -569,9 +569,6 @@ function IncomePageContent() {
                 <CardTitle className="text-3xl font-extrabold tracking-tight text-stone-900">Revenue Performance</CardTitle>
                 <CardDescription className="text-base text-stone-600 font-semibold">Daily revenue trends for the current period</CardDescription>
               </div>
-              <Button variant="ghost" size="sm" className="rounded-full text-stone-900 hover:text-stone-900 hover:bg-stone-100 font-semibold select-none">
-                 <Filter className="w-4 h-4 mr-2" /> Filter
-              </Button>
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <Badge className="border-0 bg-stone-900 text-white">Revenue</Badge>

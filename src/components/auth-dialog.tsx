@@ -46,17 +46,19 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
 
     try {
       if (isSignUp) {
+        const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/shop` : undefined;
         const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: {
               full_name: fullName,
-            }
-          }
+            },
+            emailRedirectTo: redirectTo,
+          },
         });
         if (error) throw error;
-        setMessage('Registration successful! Check your email for the confirmation link.');
+        setMessage('Registration successful! Check your email to confirm your account.');
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
@@ -98,7 +100,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[440px] border-stone-200 p-0 bg-white rounded-3xl shadow-2xl overflow-hidden transition-all duration-300">
+      <DialogContent className="sm:max-w-[520px] md:max-w-[560px] border border-white/10 p-0 bg-[#0b0b0f] text-stone-100 rounded-3xl shadow-2xl overflow-hidden transition-all duration-300">
         <DialogHeader className="sr-only">
           <DialogTitle>{isSignUp ? 'Create your account' : 'Sign in to Acme Co'}</DialogTitle>
           <DialogDescription>
@@ -116,7 +118,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
           </div>
 
           <div className="text-center space-y-1">
-            <h2 className="text-2xl font-bold tracking-tight text-stone-900">
+            <h2 className="text-2xl font-bold tracking-tight text-stone-100">
                 {isSignUp ? 'Create your account' : 'Sign in to Acme Co'}
             </h2>
             <p className="text-stone-400 text-sm">
@@ -129,21 +131,21 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
             {!isSignUp && lastUsedEmail && (
                 <Button 
                     variant="outline" 
-                    className="w-full h-auto py-3 px-4 border-stone-200 bg-white hover:bg-stone-50 transition-all rounded-xl flex flex-col items-start gap-0.5 group shadow-sm mb-2"
+                    className="w-full h-auto py-3 px-4 border-white/10 bg-[#10131a] hover:bg-[#141821] transition-all rounded-xl flex flex-col items-start gap-0.5 group shadow-sm mb-2 text-stone-100"
                     onClick={() => setEmail(lastUsedEmail)}
                 >
                     <div className="flex items-center justify-between w-full">
                         <span className="text-[9px] font-bold uppercase tracking-widest text-stone-400">Continue with previous email</span>
-                        <div className="bg-stone-100 text-[9px] px-1.5 py-0.5 rounded text-stone-500 group-hover:bg-stone-200">Last used</div>
+                        <div className="bg-white/10 text-[9px] px-1.5 py-0.5 rounded text-stone-300 group-hover:bg-white/20">Last used</div>
                     </div>
-                    <span className="text-sm font-semibold text-stone-700">{lastUsedEmail}</span>
+                    <span className="text-sm font-semibold text-stone-100">{lastUsedEmail}</span>
                 </Button>
             )}
 
             <div className="grid grid-cols-3 gap-3">
                 <Button 
                     variant="outline" 
-                    className="h-11 border-stone-200 hover:bg-stone-50 hover:border-stone-300 hover:scale-[0.98] transition-all rounded-xl shadow-sm"
+                    className="h-11 border-white/10 hover:bg-white/5 hover:border-white/20 hover:scale-[0.98] transition-all rounded-xl shadow-sm bg-[#10131a]"
                     onClick={handleGoogleSignIn}
                     disabled={loading}
                 >
@@ -157,12 +159,12 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                 <div className="relative group/wip cursor-not-allowed">
                     <Button 
                         variant="outline" 
-                        className="w-full h-11 border-stone-200 bg-stone-50/50 rounded-xl shadow-sm opacity-50 pointer-events-none"
+                        className="w-full h-11 border-white/10 bg-white/5 rounded-xl shadow-sm opacity-50 pointer-events-none"
                         disabled={true}
                     >
                         <Facebook className="w-5 h-5 text-stone-400 fill-stone-400" />
                     </Button>
-                    <div className="absolute inset-0 flex items-center justify-center bg-stone-800/80 rounded-xl opacity-0 group-hover/wip:opacity-100 transition-opacity pointer-events-none">
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/80 rounded-xl opacity-0 group-hover/wip:opacity-100 transition-opacity pointer-events-none">
                         <span className="text-[8px] font-black uppercase tracking-tighter text-white">WIP</span>
                     </div>
                 </div>
@@ -170,12 +172,12 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                 <div className="relative group/wip cursor-not-allowed">
                     <Button 
                         variant="outline" 
-                        className="w-full h-11 border-stone-200 bg-stone-50/50 rounded-xl shadow-sm opacity-50 pointer-events-none"
+                        className="w-full h-11 border-white/10 bg-white/5 rounded-xl shadow-sm opacity-50 pointer-events-none"
                         disabled={true}
                     >
                         <Github className="w-5 h-5 text-stone-400" />
                     </Button>
-                    <div className="absolute inset-0 flex items-center justify-center bg-stone-800/80 rounded-xl opacity-0 group-hover/wip:opacity-100 transition-opacity pointer-events-none">
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/80 rounded-xl opacity-0 group-hover/wip:opacity-100 transition-opacity pointer-events-none">
                         <span className="text-[8px] font-black uppercase tracking-tighter text-white">WIP</span>
                     </div>
                 </div>
@@ -184,17 +186,27 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-stone-100" />
+              <span className="w-full border-t border-white/10" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-3 text-stone-400 font-medium tracking-widest">or</span>
+              <span className="bg-[#0b0b0f] px-3 text-stone-400 font-medium tracking-widest">or</span>
             </div>
           </div>
 
           <form onSubmit={handleAuth} className="space-y-5">
+            {message && (
+              <Alert className="border-white/10 bg-white/5 text-stone-100">
+                <AlertDescription className="text-sm">{message}</AlertDescription>
+              </Alert>
+            )}
+            {error && (
+              <Alert className="border-red-500/30 bg-red-500/10 text-red-100">
+                <AlertDescription className="text-sm">{error}</AlertDescription>
+              </Alert>
+            )}
             {isSignUp && (
               <div className="space-y-1.5">
-                <Label htmlFor="name" className="text-sm font-semibold text-stone-700 ml-0.5">Full Name</Label>
+                <Label htmlFor="name" className="text-sm font-semibold text-stone-300 ml-0.5">Full Name</Label>
                 <Input
                   id="name"
                   type="text"
@@ -203,13 +215,13 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                   onChange={(e) => setFullName(e.target.value)}
                   required
                   disabled={loading}
-                  className="h-10 border-stone-200 focus:border-stone-400 focus:ring-0 rounded-lg transition-all text-sm"
+                  className="h-10 border-white/10 bg-[#11131a] text-stone-100 placeholder:text-stone-500 focus:border-white/30 focus:ring-0 rounded-lg transition-all text-sm"
                 />
               </div>
             )}
             
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-sm font-semibold text-stone-700 ml-0.5">Email address</Label>
+              <Label htmlFor="email" className="text-sm font-semibold text-stone-300 ml-0.5">Email address</Label>
               <Input
                 id="email"
                 type="email"
@@ -218,13 +230,13 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={loading}
-                className="h-10 border-stone-200 focus:border-stone-400 focus:ring-0 rounded-lg transition-all text-sm"
+                className="h-10 border-white/10 bg-[#11131a] text-stone-100 placeholder:text-stone-500 focus:border-white/30 focus:ring-0 rounded-lg transition-all text-sm"
               />
             </div>
             
             <div className="space-y-1.5">
               <div className="flex justify-between items-center">
-                <Label htmlFor="password" className="text-sm font-semibold text-stone-700 ml-0.5">Password</Label>
+                <Label htmlFor="password" className="text-sm font-semibold text-stone-300 ml-0.5">Password</Label>
               </div>
               <Input
                 id="password"
@@ -234,12 +246,12 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={loading}
-                className="h-10 border-stone-200 focus:border-stone-400 focus:ring-0 rounded-lg transition-all text-sm"
+                className="h-10 border-white/10 bg-[#11131a] text-stone-100 placeholder:text-stone-500 focus:border-white/30 focus:ring-0 rounded-lg transition-all text-sm"
               />
             </div>
 
             <Button 
-                className="w-full h-11 bg-[#2D2D2D] hover:bg-[#1D1D1D] text-white font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-2 group mt-2" 
+                className="w-full h-11 bg-white text-black hover:bg-stone-200 font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-2 group mt-2" 
                 type="submit" 
                 disabled={loading}
             >
@@ -254,12 +266,12 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
             </Button>
           </form>
           
-          <div className="pt-2 pb-2 text-center border-t border-stone-50">
-            <p className="text-stone-500 text-sm">
+          <div className="pt-2 pb-2 text-center border-t border-white/10">
+            <p className="text-stone-400 text-sm">
                 {isSignUp ? 'Already have an account?' : "Don't have an account?"}
                 <button
                     type="button"
-                    className="ml-1.5 font-bold text-stone-900 hover:text-stone-700 transition-colors"
+                    className="ml-1.5 font-bold text-white hover:text-stone-200 transition-colors"
                     onClick={() => {
                         setIsSignUp(!isSignUp);
                         setError(null);
@@ -273,9 +285,9 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
         </div>
         
         {/* Footer branding */}
-        <div className="bg-stone-50/50 py-4 border-t border-stone-100 text-center">
-            <p className="text-[9px] uppercase tracking-[0.2em] font-bold text-stone-400 flex items-center justify-center gap-1.5">
-                Secured by <span className="text-stone-500">Supabase</span>
+        <div className="bg-[#0f1116] py-4 border-t border-white/10 text-center">
+            <p className="text-[9px] uppercase tracking-[0.2em] font-bold text-stone-500 flex items-center justify-center gap-1.5">
+                Secured by <span className="text-stone-300">Supabase</span>
             </p>
         </div>
       </DialogContent>

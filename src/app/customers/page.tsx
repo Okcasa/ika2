@@ -799,9 +799,9 @@ function LeadsPageContent() {
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="keycap-button border-0 bg-transparent hover:bg-transparent">
-                <Filter className="w-4 h-4 mr-2" />
-                <span className="keycap-label">Filter</span>
+              <Button variant="outline" className="keycap-button h-12 px-5 border-0 bg-transparent hover:bg-transparent text-white">
+                <Filter className="w-4 h-4 mr-2 text-white" />
+                <span className="keycap-label text-white">Filter</span>
                 {activeFilterCount > 0 && (
                   <Badge className="ml-2 h-5 min-w-5 rounded-full border-0 bg-white/20 px-1.5 text-[10px] text-white">
                     {activeFilterCount}
@@ -1167,6 +1167,7 @@ function LeadsPageContent() {
                             size="icon" 
                             variant="ghost" 
                             className="lead-action-btn"
+                            title="View Activity"
                             onClick={() => {
                               setActivityLead(lead);
                               setIsActivityDialogOpen(true);
@@ -1186,6 +1187,7 @@ function LeadsPageContent() {
                             size="icon" 
                             variant="ghost" 
                             className="lead-action-btn"
+                            title="Open in Logs"
                             onClick={() => router.push(`/logs?leadId=${lead.id}`)}
                           >
                             <FileEdit className="lead-action-btn-icon" />

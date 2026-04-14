@@ -49,6 +49,7 @@ export function Sidebar() {
   const [userName, setUserName] = useState('Account');
   const [userRole, setUserRole] = useState('Member');
   const [userEmail, setUserEmail] = useState('');
+  const [isAuthed, setIsAuthed] = useState(false);
   const [currentUserId, setCurrentUserId] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [profileBio, setProfileBio] = useState('');
@@ -137,7 +138,19 @@ export function Sidebar() {
     const loadProfile = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session || !mounted) return;
+        if (!mounted) return;
+        if (!session) {
+          setIsAuthed(false);
+          setUserName('Account');
+          setUserRole('Member');
+          setUserEmail('');
+          setCurrentUserId(null);
+          setDisplayName('');
+          setProfileBio('');
+          setSettingsOpen(false);
+          return;
+        }
+        setIsAuthed(true);
         const metaName =
           session.user.user_metadata?.full_name ||
           session.user.user_metadata?.name ||
@@ -164,6 +177,31 @@ export function Sidebar() {
     return () => {
       mounted = false;
     };
+  }, []);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        setIsAuthed(false);
+        setUserName('Account');
+        setUserRole('Member');
+        setUserEmail('');
+        setCurrentUserId(null);
+        setDisplayName('');
+        setProfileBio('');
+        setSettingsOpen(false);
+        return;
+      }
+      setIsAuthed(true);
+      const metaName =
+        session.user.user_metadata?.full_name ||
+        session.user.user_metadata?.name ||
+        (session.user.email ? session.user.email.split('@')[0] : '');
+      if (metaName) setUserName(metaName);
+      if (session.user.email) setUserEmail(session.user.email);
+      setCurrentUserId(session.user.id);
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -631,28 +669,42 @@ export function Sidebar() {
           )}
         </button>
 
-        <div className="backdrop-blur rounded-2xl p-3 shadow-sm border border-stone-200/70 bg-[var(--app-sidebar-card-bg)]">
-          <div className="flex items-center gap-3">
-            <div className="relative h-10 w-10 rounded-full bg-stone-200 text-stone-700 flex items-center justify-center font-bold">
-              {userName.charAt(0).toUpperCase()}
-              <span className="absolute -bottom-0.5 -left-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-white" />
+        {isAuthed && (
+          <div className="backdrop-blur rounded-2xl p-3 shadow-sm border border-stone-200/70 bg-[var(--app-sidebar-card-bg)]">
+            <div className="flex items-center gap-3">
+              <div className="relative h-10 w-10 rounded-full bg-stone-200 text-stone-700 flex items-center justify-center font-bold">
+                {userName.charAt(0).toUpperCase()}
+                <span className="absolute -bottom-0.5 -left-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-white" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-stone-800 truncate">{userName}</div>
+                <div className="text-[11px] text-stone-500 truncate">{userRole}</div>
+              </div>
+              <div className="ml-auto flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="keycap-gear border-0 bg-transparent hover:bg-transparent"
+                  onClick={() => setSettingsOpen(true)}
+                  title="Settings"
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="keycap-gear border-0 bg-transparent hover:bg-transparent"
+                  onClick={handleLogout}
+                  title="Sign Out"
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-            <div className="min-w-0">
-              <div className="text-sm font-semibold text-stone-800 truncate">{userName}</div>
-              <div className="text-[11px] text-stone-500 truncate">{userRole}</div>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="ml-auto keycap-gear border-0 bg-transparent hover:bg-transparent"
-              onClick={() => setSettingsOpen(true)}
-            >
-              <Settings className="h-4 w-4" />
-            </Button>
           </div>
-        </div>
+        )}
       </div>
-      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+      <Dialog open={settingsOpen && isAuthed} onOpenChange={setSettingsOpen}>
         <DialogContent className="max-w-3xl bg-[#f1ece9] text-stone-900 p-0 rounded-3xl overflow-hidden font-poppins">
           <div className="flex items-start justify-between border-b border-stone-200 px-6 py-4">
             <DialogHeader className="text-left">
