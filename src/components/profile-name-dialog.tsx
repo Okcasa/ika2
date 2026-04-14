@@ -8,12 +8,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 
+const MAX_EDITS = 2;
+const COOLDOWN_HOURS = 48;
+
 export function ProfileNameDialog() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [editCount, setEditCount] = useState(0);
+  const [oldestEditTime, setOldestEditTime] = useState<Date | null>(null);
+  const [cooldownRemaining, setCooldownRemaining] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -37,6 +43,31 @@ export function ProfileNameDialog() {
       if (!profile?.full_name) {
         setOpen(true);
       }
+
+      // Load name edit history
+      const cutoff = new Date(Date.now() - COOLDOWN_HOURS * 60 * 60 * 1000);
+      const { data: edits } = await supabase
+        .from('name_edits')
+        .select('edited_at')
+        .eq('user_id', session.user.id)
+        .gte('edited_at', cutoff.toISOString())
+        .order('edited_at', { ascending: true });
+
+      if (edits && edits.length > 0) {
+        setEditCount(edits.length);
+        setOldestEditTime(new Date(edits[0].edited_at));
+
+        if (edits.length >= MAX_EDITS) {
+          const oldest = new Date(edits[0].edited_at);
+          const cooldownEnd = new Date(oldest.getTime() + COOLDOWN_HOURS * 60 * 60 * 1000);
+          const remaining = cooldownEnd.getTime() - Date.now();
+          if (remaining > 0) {
+            const hours = Math.floor(remaining / (1000 * 60 * 60));
+            const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+            setCooldownRemaining(`${hours}h ${minutes}m`);
+          }
+        }
+      }
     };
     load();
     return () => {
@@ -46,9 +77,23 @@ export function ProfileNameDialog() {
 
   const handleSave = async () => {
     if (!userId || !fullName.trim()) return;
+
+    if (editCount >= MAX_EDITS && cooldownRemaining) {
+      toast({
+        title: 'Name change limit reached',
+        description: `You can change your name 2 times every ${COOLDOWN_HOURS} hours. Please wait ${cooldownRemaining} before trying again.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       await supabase.from('user_profiles').upsert({ user_id: userId, full_name: fullName.trim() });
+
+      // Record this edit
+      await supabase.from('name_edits').insert({ user_id: userId });
+
       setOpen(false);
       toast({
         title: 'Profile saved',
@@ -64,6 +109,8 @@ export function ProfileNameDialog() {
       setLoading(false);
     }
   };
+
+  const isOnCooldown = editCount >= MAX_EDITS && !!cooldownRemaining;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -82,10 +129,20 @@ export function ProfileNameDialog() {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Your name"
+              disabled={isOnCooldown}
             />
           </div>
-          <Button onClick={handleSave} disabled={loading || !fullName.trim()} className="w-full">
-            {loading ? 'Saving...' : 'Save and continue'}
+          <p className="text-xs text-muted-foreground">
+            You can change your name {MAX_EDITS} times every {COOLDOWN_HOURS} hours.
+            {editCount > 0 && (
+              <span className="block mt-1">
+                Edits used: {editCount}/{MAX_EDITS}
+                {cooldownRemaining && <span className="text-amber-500"> · Cooldown: {cooldownRemaining}</span>}
+              </span>
+            )}
+          </p>
+          <Button onClick={handleSave} disabled={loading || !fullName.trim() || isOnCooldown} className="w-full">
+            {loading ? 'Saving...' : isOnCooldown ? `Wait ${cooldownRemaining}` : 'Save and continue'}
           </Button>
         </div>
       </DialogContent>

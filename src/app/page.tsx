@@ -203,7 +203,7 @@ export default function LandingPage() {
           </div>
           <div className="flex items-center gap-6">
             <a className="hover:text-white" href="/shop">Platform</a>
-            <a className="hover:text-white" href="#">Support</a>
+            <span>Support</span>
             <a className="hover:text-white" href="/privacy">Privacy</a>
           </div>
           <div className="text-white/50">© 2026 ikaLeads. All rights reserved.</div>
