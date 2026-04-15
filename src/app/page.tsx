@@ -205,6 +205,7 @@ export default function LandingPage() {
             <a className="hover:text-white" href="/shop">Platform</a>
             <span>Support</span>
             <a className="hover:text-white" href="/privacy">Privacy</a>
+            <a className="hover:text-white" href="/terms">Terms</a>
           </div>
           <div className="text-white/50">© 2026 ikaLeads. All rights reserved.</div>
         </div>
