@@ -18,20 +18,20 @@ const LEADS_KEY = 'ika_leads_data';
 const PURCHASE_HISTORY_KEY = 'ika_purchase_history';
 
 const PACKAGES = [
-  { id: 'starter', name: 'Starter Pack', leads: 30, price: 5.7, description: '30 Leads', color: 'bg-blue-100 text-blue-600', status: 'Active' },
-  { id: 'standard', name: 'Standard Pack', leads: 30, price: 5.7, description: '30 Leads', color: 'bg-emerald-100 text-emerald-600', status: 'Active' },
-  { id: 'growth', name: 'Growth Pack', leads: 90, price: 17.1, description: '90 Leads', color: 'bg-purple-100 text-purple-600', status: 'Active' },
-  { id: 'pro', name: 'Pro Bundle', leads: 180, price: 34.2, description: '180 Leads', color: 'bg-orange-100 text-orange-600', status: 'Active' },
-  { id: 'enterprise', name: 'Enterprise', leads: 280, price: 53.2, description: '280 Leads', color: 'bg-green-100 text-green-600', status: 'Active' },
+  { id: 'starter', name: 'Starter Pack', leads: 30, price: 3.6, description: '30 Leads', color: 'bg-blue-100 text-blue-600', status: 'Active' },
+  { id: 'standard', name: 'Standard Pack', leads: 30, price: 3.6, description: '30 Leads', color: 'bg-emerald-100 text-emerald-600', status: 'Active' },
+  { id: 'growth', name: 'Growth Pack', leads: 90, price: 10.8, description: '90 Leads', color: 'bg-purple-100 text-purple-600', status: 'Active' },
+  { id: 'pro', name: 'Pro Bundle', leads: 180, price: 21.6, description: '180 Leads', color: 'bg-orange-100 text-orange-600', status: 'Active' },
+  { id: 'enterprise', name: 'Enterprise', leads: 280, price: 33.6, description: '280 Leads', color: 'bg-green-100 text-green-600', status: 'Active' },
 ];
 
 const getBundlePrice = (leads: number) => {
   const qty = Math.max(1, leads);
   const tiers = [
-    { leads: 30, price: 5.7 },
-    { leads: 90, price: 17.1 },
-    { leads: 180, price: 34.2 },
-    { leads: 280, price: 53.2 },
+    { leads: 30, price: 3.6 },
+    { leads: 90, price: 10.8 },
+    { leads: 180, price: 21.6 },
+    { leads: 280, price: 33.6 },
   ];
 
   if (qty <= tiers[0].leads) {
