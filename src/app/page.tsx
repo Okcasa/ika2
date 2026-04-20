@@ -31,7 +31,7 @@ export default function LandingPage() {
       <div className="absolute z-[4] -top-24 -left-32 h-[520px] w-[520px] rounded-full bg-purple-600/30 blur-[120px]" />
       <div className="absolute z-[4] -bottom-40 -right-32 h-[620px] w-[620px] rounded-full bg-blue-600/30 blur-[140px]" />
 
-      <nav className="relative z-10 mx-auto flex w-full items-center justify-between px-10 pt-6">
+      <nav className="relative z-10 mx-auto flex w-full items-center justify-between px-10 pt-4">
         <div className="flex items-center gap-0">
           <img
             src="/icon-512.png"
@@ -69,6 +69,9 @@ export default function LandingPage() {
                   CONVERT
                 </span>
               </h2>
+            </div>
+            <div className="inline-flex items-center justify-center rounded-2xl border border-cyan-300/35 bg-cyan-400/15 px-6 py-3.5 text-base font-black tracking-wide text-cyan-100 shadow-[0_0_30px_rgba(34,211,238,0.22)] backdrop-blur-md md:text-lg">
+              <span>New accounts get <span className="font-extrabold text-white">5 free leads</span> to start instantly.</span>
             </div>
             <p className="max-w-xl rounded-2xl border border-white/10 bg-black/30 p-4 text-xl font-medium leading-relaxed text-blue-50/95 backdrop-blur-[2px] drop-shadow-[0_2px_10px_rgba(0,0,0,0.7)] md:text-2xl">
               A dedicated platform for <span className="highlight-pop">lead generation</span> and
