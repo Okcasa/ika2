@@ -17,17 +17,19 @@ const inter = localFont({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.ikaleads.site'),
   title: 'ikaLeads - Leads Marketplace',
   description: 'The best leads platform for marketers. A workspace for your team to manage leads.',
   openGraph: {
+    url: 'https://www.ikaleads.site/',
     title: 'ikaLeads - Leads Marketplace',
     description: 'The best leads platform for marketers. A workspace for your team to manage leads.',
     type: 'website',
     images: [
       {
-        url: 'https://ikaLeads.io/icon-512.png',
-        width: 512,
-        height: 512,
+        url: 'https://www.ikaleads.site/og-image.png',
+        width: 1424,
+        height: 752,
         alt: 'ikaLeads',
       },
     ],
@@ -36,7 +38,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'ikaLeads - Leads Marketplace',
     description: 'The best leads platform for marketers. A workspace for your team to manage leads.',
-    images: ['https://ikaLeads.io/icon-512.png'],
+    images: ['https://www.ikaleads.site/og-image.png'],
   },
 };
 
