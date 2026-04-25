@@ -1,4 +1,17 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Privacy Policy',
+  description: 'ikaLeads Privacy Policy - Learn how we protect your data, lead information, and account details on our lead marketplace platform.',
+  alternates: {
+    canonical: 'https://www.ikaleads.site/privacy',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+};
 
 export default function PrivacyPage() {
   return (

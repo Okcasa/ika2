@@ -1,0 +1,24 @@
+# robots.txt for ikaLeads
+# https://www.ikaleads.site
+
+User-agent: *
+Allow: /
+
+# Disallow auth-gated platform pages from indexing
+Disallow: /shop
+Disallow: /products
+Disallow: /customers
+Disallow: /income
+Disallow: /logs
+Disallow: /ls
+Disallow: /sum
+Disallow: /promote
+Disallow: /checkout
+Disallow: /accept-invite
+Disallow: /api/
+
+# Crawl-delay for bots
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://www.ikaleads.site/sitemap.xml

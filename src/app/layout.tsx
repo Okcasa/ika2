@@ -18,27 +18,54 @@ const inter = localFont({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.ikaleads.site'),
-  title: 'ikaLeads - Leads Marketplace',
-  description: 'The best leads platform for marketers. A workspace for your team to manage leads.',
+  title: {
+    default: 'ikaLeads - Buy Local Business Leads & SMMA Lead Marketplace',
+    template: '%s | ikaLeads',
+  },
+  description: 'ikaLeads is the #1 lead marketplace for SMMA agencies and local business marketers. Buy verified local business leads, sales leads, and B2B lead bundles instantly. Keep your pipeline full with high-quality prospects.',
+  keywords: ['leads', 'local business leads', 'SMMA leads', 'buy leads', 'lead marketplace', 'lead generation', 'sales leads', 'B2B leads', 'local business', 'prospecting', 'outreach', 'lead bundles', 'business growth', 'sales pipeline'],
+  authors: [{ name: 'ikaLeads' }],
+  creator: 'ikaLeads',
+  publisher: 'ikaLeads',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  alternates: {
+    canonical: 'https://www.ikaleads.site',
+  },
   openGraph: {
     url: 'https://www.ikaleads.site/',
-    title: 'ikaLeads - Leads Marketplace',
-    description: 'The best leads platform for marketers. A workspace for your team to manage leads.',
+    title: 'ikaLeads - Buy Local Business Leads & SMMA Lead Marketplace',
+    description: 'ikaLeads is the #1 lead marketplace for SMMA agencies and local business marketers. Buy verified local business leads, sales leads, and B2B lead bundles instantly.',
     type: 'website',
+    siteName: 'ikaLeads',
+    locale: 'en_US',
     images: [
       {
         url: 'https://www.ikaleads.site/og-image.png',
         width: 1424,
         height: 752,
-        alt: 'ikaLeads',
+        alt: 'ikaLeads - Local Business Leads Marketplace',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'ikaLeads - Leads Marketplace',
-    description: 'The best leads platform for marketers. A workspace for your team to manage leads.',
+    title: 'ikaLeads - Buy Local Business Leads & SMMA Lead Marketplace',
+    description: 'ikaLeads is the #1 lead marketplace for SMMA agencies and local business marketers. Buy verified local business leads, sales leads, and B2B lead bundles instantly.',
     images: ['https://www.ikaleads.site/og-image.png'],
+    creator: '@ikaleads',
+  },
+  verification: {
+    google: 'VYACs12nfZ9g-LOS6PQyGC1FmxL-p4YE409m2V_39lI',
   },
 };
 

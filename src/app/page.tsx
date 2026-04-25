@@ -1,3 +1,100 @@
+import type { Metadata } from 'next';
+import Script from 'next/script';
+
+export const metadata: Metadata = {
+  title: 'Buy Local Business Leads & SMMA Leads Online',
+  description: 'ikaLeads is the #1 lead marketplace for buying local business leads, SMMA leads, and B2B sales leads. Get verified lead bundles with direct contact info. Start your outreach today.',
+  keywords: ['buy leads', 'local business leads', 'SMMA leads', 'lead marketplace', 'lead generation', 'sales leads', 'B2B leads', 'prospecting', 'lead bundles', 'business leads for sale'],
+  alternates: {
+    canonical: 'https://www.ikaleads.site',
+  },
+  openGraph: {
+    url: 'https://www.ikaleads.site',
+    title: 'Buy Local Business Leads & SMMA Leads Online | ikaLeads',
+    description: 'ikaLeads is the #1 lead marketplace for buying local business leads, SMMA leads, and B2B sales leads. Get verified lead bundles with direct contact info.',
+    type: 'website',
+    images: [
+      {
+        url: 'https://www.ikaleads.site/og-image.png',
+        width: 1424,
+        height: 752,
+        alt: 'ikaLeads - Buy Local Business Leads',
+      },
+    ],
+  },
+};
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': 'https://www.ikaleads.site/#organization',
+      name: 'ikaLeads',
+      url: 'https://www.ikaleads.site',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://www.ikaleads.site/og-image.png',
+        width: 1424,
+        height: 752,
+      },
+      sameAs: [],
+      description: 'ikaLeads is the #1 lead marketplace for buying local business leads, SMMA leads, and B2B sales leads.',
+    },
+    {
+      '@type': 'WebSite',
+      '@id': 'https://www.ikaleads.site/#website',
+      url: 'https://www.ikaleads.site',
+      name: 'ikaLeads',
+      publisher: {
+        '@id': 'https://www.ikaleads.site/#organization',
+      },
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: {
+          '@type': 'EntryPoint',
+          urlTemplate: 'https://www.ikaleads.site/shop?q={search_term_string}',
+        },
+        'query-input': 'required name=search_term_string',
+      },
+    },
+    {
+      '@type': 'WebPage',
+      '@id': 'https://www.ikaleads.site/#webpage',
+      url: 'https://www.ikaleads.site',
+      name: 'Buy Local Business Leads & SMMA Leads Online',
+      isPartOf: {
+        '@id': 'https://www.ikaleads.site/#website',
+      },
+      about: {
+        '@id': 'https://www.ikaleads.site/#organization',
+      },
+      primaryImageOfPage: {
+        '@type': 'ImageObject',
+        url: 'https://www.ikaleads.site/og-image.png',
+      },
+      description: 'ikaLeads is the #1 lead marketplace for buying local business leads, SMMA leads, and B2B sales leads.',
+    },
+    {
+      '@type': 'SoftwareApplication',
+      name: 'ikaLeads',
+      applicationCategory: 'BusinessApplication',
+      operatingSystem: 'Any',
+      offers: {
+        '@type': 'Offer',
+        price: '3.60',
+        priceCurrency: 'USD',
+      },
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: '4.8',
+        ratingCount: '120',
+      },
+      description: 'A lead generation and sales enablement platform that provides curated lead bundles, marketplace access, and tools for managing leads.',
+    },
+  ],
+};
+
 export default function LandingPage() {
   const pipelineLetters = Array.from('PIPELINE');
   const conversionsLetters = Array.from('REVENUE');
@@ -18,6 +115,11 @@ export default function LandingPage() {
 
   return (
     <div className="relative flex h-screen flex-col overflow-hidden bg-[#0b1020] text-white">
+      <Script
+        id="json-ld"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="absolute inset-0 z-0 bg-[#05060f]" />
       <div className="absolute inset-0 z-[1] opacity-55 bg-[radial-gradient(1200px_600px_at_50%_-10%,#6d28d9_0%,#4c1d95_35%,#1e3a8a_65%,#0b1020_100%)]" />
       <div

@@ -1,4 +1,17 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Terms of Service',
+  description: 'ikaLeads Terms of Service - Read the terms and conditions for using our lead marketplace, purchasing lead bundles, and managing your account.',
+  alternates: {
+    canonical: 'https://www.ikaleads.site/terms',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+};
 
 export default function TermsPage() {
   return (
