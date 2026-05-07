@@ -6,6 +6,7 @@ import { Suspense } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthGate } from "@/components/auth-gate";
 import { AppOverlays } from "@/components/app-overlays";
+import { Analytics } from '@vercel/analytics/next';
 
 const inter = localFont({
   src: [
@@ -103,6 +104,7 @@ export default function RootLayout({
         </Suspense>
         <AppOverlays />
         <Toaster />
+        <Analytics />
       </body>
     </html>
   );
